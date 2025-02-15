@@ -46,7 +46,7 @@ If you are using Windows, you first need to install WSL(Windows-Subsystem-Linux)
 ---
 2. Clone the repository with git using the following command
    ```shell
-   git clone https://github.com/HASEL-UZH/sopra-fs25-template-client
+   git clone https://github.com/YOUR_USERNAME/YOUR-CLIENT-REPO
    ```
 ---
 3. Navigate to the cloned directory in the terminal, in example with ```cd sopra-fs25-template-client```
