@@ -100,17 +100,24 @@ If the four steps above did not work for you and re-running the setup.sh script 
    sudo nix profile install nixpkgs#direnv
    ```
 ---
-5. Find out what shell you are using and hook direnv into your shell according to [this guide](https://github.com/direnv/direnv/blob/master/docs/hook.md)
+5. Find out what shell you are using
    ```shell
    echo $SHELL
    ```
 ---
-6. Allow direnv to access the repository
+6. Hook direnv into your shell according to [this guide](https://github.com/direnv/direnv/blob/master/docs/hook.md)
+---
+7. Create the file '.envrc' to redict the execution flow
+   ```shell
+   echo "use flake" > .envrc
+   ```
+---
+8. Allow direnv to access the repository
    ```shell
    direnv allow
    ```
 
-If the six troubleshooting steps above still did not work for you, try the following as a **last resort**: Open a new terminal and navigate to the client repository with ```cd```. Run the command. Close the terminal again and do this for each of the six commands above, running each one in its own terminal, one after the other.
+If all troubleshooting steps above still did not work for you, try the following as a **last resort**: Open a new terminal and navigate to the client repository with ```cd```. Run the command. Close the terminal again and do this for each of the six commands above, running each one in its own terminal, one after the other.
 
 <br>
 <br>
