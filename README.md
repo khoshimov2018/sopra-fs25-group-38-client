@@ -107,12 +107,7 @@ If the four steps above did not work for you and re-running the setup.sh script 
 ---
 6. Hook direnv into your shell according to [this guide](https://github.com/direnv/direnv/blob/master/docs/hook.md)
 ---
-7. Create the file '.envrc' to redict the execution flow
-   ```shell
-   echo "use flake" > .envrc
-   ```
----
-8. Allow direnv to access the repository
+7. Allow direnv to access the repository
    ```shell
    direnv allow
    ```
