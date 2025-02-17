@@ -79,7 +79,7 @@ If the four steps above did not work for you and re-running the setup.sh script 
    ```shell
    sudo apt-get install curl
    ```
-   If you are not using Ubuntu, you will need to install git with your package manager of choice
+   If you are not using Ubuntu, you will need to install curl with your package manager of choice
 ---
 2. Download Determinate Nix
    ```shell
