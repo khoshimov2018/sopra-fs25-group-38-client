@@ -2,32 +2,32 @@
   description = "sopra-fs25-template-client";
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-24.05";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-24.11";
+    nixpkgs-stable.url = "github:nixos/nixpkgs/nixos-24.05";
     flake-utils.url = "github:numtide/flake-utils";
   };
 
   outputs = {
     self,
     nixpkgs,
+    nixpkgs-stable,
     flake-utils,
   }:
     flake-utils.lib.eachSystem ["aarch64-darwin" "x86_64-darwin" "x86_64-linux" "aarch64-linux"] (
       system: let
-        overlays = [
-          (self: super: {
-            nodejs = super.nodejs_22;
-          })
-        ];
-
         inherit (nixpkgs) lib;
+
         pkgs = import nixpkgs {
           inherit system;
-          overlays = overlays;
+        };
+
+        pkgsStable = import nixpkgs-stable {
+          inherit system;
         };
 
         nativeBuildInputs = with pkgs;
           [
-            nodejs
+            pkgsStable.nodejs_22
             git
             deno
             watchman
