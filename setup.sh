@@ -28,6 +28,12 @@ if [ -f /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh ]; then
     # source directly in shell as well
     . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
     export PATH="$HOME/.nix-profile/bin:$PATH"
+
+    # Try to install direnv, fix permissions if it fails
+    if ! run_command "nix profile install nixpkgs#direnv && direnv allow"; then
+        echo -e "\033[0;31mFailed to install direnv. Attempting to fix Nix permissions...\033[0m"
+        sudo chown -R "$(whoami)" /nix
+    fi
     run_command "nix profile install nixpkgs#direnv && direnv allow"
 else
     echo -e "\033[0;31mFailed to source nix-daemon. Nix-related commands will not be executed.\033[0m"
@@ -40,6 +46,7 @@ case "$SHELL" in
 */bash)
         echo "Detected Bash shell."
         run_command "echo 'eval \"\$(direnv hook bash)\"' >> ~/.bashrc"
+        run_command "echo 'eval \"\$(direnv hook bash)\"' >> ~/.bash_profile"
         eval "$(direnv hook bash)"
         source ~/.bashrc
         ;;
