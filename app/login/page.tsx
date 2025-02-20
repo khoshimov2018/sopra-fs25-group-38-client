@@ -38,7 +38,7 @@ const Login: React.FC = () => {
       }
 
       // Navigate to the user overview
-      router.push("/users/dashboard");
+      router.push("/users");
     } catch (error) {
       if (error instanceof Error) {
         alert(`Something went wrong during the login:\n${error.message}`);
