@@ -97,9 +97,11 @@ if (!(.\wsl --status 2>$null) -and !(wsl --status 2>$null)) {
 Write-Host "Setting WSL default version to 2..." -ForegroundColor Green
 try {
     .\wsl --set-default-version 2
+    .\wsl --set-version Ubuntu 2
 } catch {
     try {
         wsl --set-default-version 2
+        wsl --set-version Ubuntu 2
     } catch {
         Write-Host "Failed to set WSL default version: It may already be configured." -ForegroundColor Yellow
     }
@@ -109,10 +111,12 @@ Write-Host "Updating WSL..." -ForegroundColor Green
 try {
     .\wsl --update
     .\wsl --set-default-version 2
+    .\wsl --set-version Ubuntu 2
 } catch {
     try {
         wsl --update
         wsl --set-default-version 2
+        wsl --set-version Ubuntu 2
     } catch {
         Write-Host "Failed to update WSL. Please install the kernel manually from here: https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi" -ForegroundColor Yellow
     }

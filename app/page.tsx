@@ -21,19 +21,26 @@ export default function Home() {
         />
         <ol>
           <li>
-            <code>app/page.tsx</code> is the landing page for your application, currently being displayed.
+            <code>app/page.tsx</code>{" "}
+            is the landing page for your application, currently being displayed.
           </li>
           <li>
             <code>app/login/page.tsx</code> is the login page for users.
           </li>
           <li>
-            <code>app/users/page.tsx</code> is the dashboard that shows an overview of all users, fetched from the server.
+            <code>app/users/page.tsx</code>{" "}
+            is the dashboard that shows an overview of all users, fetched from
+            the server.
           </li>
           <li>
-            <code>app/users/[id]/page.tsx</code> is a slug page that shows info of a particular user. Since each user has its own id, each user has its own infopage, dynamically with the use of slugs.
+            <code>app/users/[id]/page.tsx</code>{" "}
+            is a slug page that shows info of a particular user. Since each user
+            has its own id, each user has its own infopage, dynamically with the
+            use of slugs.
           </li>
           <li>
-            To test, modify the current page <code>app/page.tsx</code> and save to see your changes instantly.
+            To test, modify the current page <code>app/page.tsx</code>{" "}
+            and save to see your changes instantly.
           </li>
         </ol>
 
