@@ -22,18 +22,28 @@ const useWindowSize = (): UseWindowSizeReturn => {
   });
 
   useEffect(() => {
-    function handleResize() {
+    // Define handleResize inside the effect to ensure it's properly cleaned up
+    const handleResize = () => {
       setWindowSize({
-        width: globalThis.innerWidth,
-        height: globalThis.innerHeight,
+        width: window.innerWidth,
+        height: window.innerHeight,
       });
-    }
+    };
+    
+    // Only run in browser environment
     if (typeof window !== "undefined") {
-      globalThis.addEventListener("resize", handleResize);
+      // Add event listener
+      window.addEventListener("resize", handleResize);
+      
       // Set initial dimensions
       handleResize();
+      
+      // Clean up event listener
+      return () => window.removeEventListener("resize", handleResize);
     }
-    return () => globalThis.removeEventListener("resize", handleResize);
+    
+    // Empty return for SSR
+    return undefined;
   }, []);
 
   return {

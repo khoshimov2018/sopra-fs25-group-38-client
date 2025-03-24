@@ -7,10 +7,54 @@ export class ApiService {
 
   constructor() {
     this.baseURL = getApiDomain();
-    this.defaultHeaders = {
+    
+    // Initialize default headers - client should not set CORS headers
+    const headers: HeadersInit = {
       "Content-Type": "application/json",
-      "Access-Control-Allow-Origin": "*",
     };
+    
+    this.defaultHeaders = headers;
+  }
+  
+  /**
+   * Get the current headers, including any auth token
+   * This ensures we always use the latest token from localStorage
+   */
+  private getHeaders(): HeadersInit {
+    // Create a new headers object starting with the default headers
+    const headers: Record<string, string> = { ...this.defaultHeaders as Record<string, string> };
+    
+    // Add auth token if available - gets fresh token each time
+    if (typeof window !== 'undefined') {
+      const tokenStr = localStorage.getItem("token");
+      if (tokenStr) {
+        try {
+          // First try to parse it in case it's JSON (older storage format)
+          let token = tokenStr;
+          try {
+            const parsed = JSON.parse(tokenStr);
+            if (typeof parsed === 'string') {
+              token = parsed;
+            }
+          } catch {
+            // Not JSON, use as is
+          }
+          
+          // Don't log the full token for security reasons
+          const displayToken = token.substring(0, 8) + '...';
+          console.log("Using token for API request:", displayToken);
+          headers["Authorization"] = `Bearer ${token}`;
+        } catch (error) {
+          console.error("Error processing token:", error);
+          // Fallback to using token directly
+          headers["Authorization"] = `Bearer ${tokenStr}`;
+        }
+      } else {
+        console.log("No token found in localStorage");
+      }
+    }
+    
+    return headers;
   }
 
   /**
@@ -26,33 +70,80 @@ export class ApiService {
     res: Response,
     errorMessage: string,
   ): Promise<T> {
+    console.log(`Response status: ${res.status} ${res.statusText}`);
+    
     if (!res.ok) {
       let errorDetail = res.statusText;
+      let errorBody = null;
+      
       try {
-        const errorInfo = await res.json();
-        if (errorInfo?.message) {
-          errorDetail = errorInfo.message;
-        } else {
-          errorDetail = JSON.stringify(errorInfo);
+        // Clone the response before parsing to avoid consuming it
+        const clonedRes = res.clone();
+        const responseText = await clonedRes.text();
+        console.log(`Error response body: ${responseText}`);
+        
+        try {
+          errorBody = JSON.parse(responseText);
+          if (errorBody?.message) {
+            errorDetail = errorBody.message;
+          } else {
+            errorDetail = JSON.stringify(errorBody);
+          }
+        } catch (error) {
+          console.error("Error parsing response JSON:", error);
+          errorDetail = responseText || res.statusText;
         }
-      } catch {
-        // If parsing fails, keep using res.statusText
+      } catch (textError) {
+        console.error("Error reading response text:", textError);
+        // If reading text fails, keep using res.statusText
       }
+      
       const detailedMessage = `${errorMessage} (${res.status}: ${errorDetail})`;
+      console.error("API Error:", detailedMessage);
+      
       const error: ApplicationError = new Error(
         detailedMessage,
       ) as ApplicationError;
       error.info = JSON.stringify(
-        { status: res.status, statusText: res.statusText },
+        { status: res.status, statusText: res.statusText, body: errorBody },
         null,
         2,
       );
       error.status = res.status;
       throw error;
     }
-    return res.headers.get("Content-Type")?.includes("application/json")
-      ? res.json() as Promise<T>
-      : Promise.resolve(res as T);
+    
+    try {
+      // Check if response is empty
+      const text = await res.text();
+      if (!text || text.trim() === '') {
+        console.log("Server returned empty response body");
+        return {} as T;
+      }
+      
+      // Try to parse as JSON
+      try {
+        const data = JSON.parse(text);
+        console.log("API response data:", data);
+        return data as T;
+      } catch (error) {
+        console.error("Error parsing JSON response:", error);
+        console.log("Raw response text:", text);
+        // Return empty object instead of throwing if we got a successful response
+        // but couldn't parse the JSON (may be empty or non-JSON)
+        if (res.ok) {
+          return {} as T;
+        }
+        throw new Error(`Failed to parse API response: ${error}`);
+      }
+    } catch (textError) {
+      console.error("Error reading response text:", textError);
+      if (res.ok) {
+        // If response is OK but we couldn't read the text, return empty object
+        return {} as T;
+      }
+      throw new Error(`Failed to read API response: ${textError}`);
+    }
   }
 
   /**
@@ -62,14 +153,28 @@ export class ApiService {
    */
   public async get<T>(endpoint: string): Promise<T> {
     const url = `${this.baseURL}${endpoint}`;
-    const res = await fetch(url, {
-      method: "GET",
-      headers: this.defaultHeaders,
-    });
-    return this.processResponse<T>(
-      res,
-      "An error occurred while fetching the data.\n",
-    );
+    console.log(`Making GET request to: ${url}`);
+    const headers = this.getHeaders();
+    
+    try {
+      const res = await fetch(url, {
+        method: "GET",
+        headers: headers,
+        // Properly configured fetch options
+        mode: 'cors',
+        credentials: 'omit', // Don't send or receive cookies
+        cache: 'no-cache',
+        redirect: 'follow',
+      });
+      
+      return this.processResponse<T>(
+        res,
+        "An error occurred while fetching the data.\n",
+      );
+    } catch (error) {
+      console.error(`Network error when fetching from ${url}:`, error);
+      throw new Error(`Network error: Unable to connect to server at ${url}. Please check your connection.`);
+    }
   }
 
   /**
@@ -80,15 +185,29 @@ export class ApiService {
    */
   public async post<T>(endpoint: string, data: unknown): Promise<T> {
     const url = `${this.baseURL}${endpoint}`;
-    const res = await fetch(url, {
-      method: "POST",
-      headers: this.defaultHeaders,
-      body: JSON.stringify(data),
-    });
-    return this.processResponse<T>(
-      res,
-      "An error occurred while posting the data.\n",
-    );
+    console.log(`Making POST request to: ${url}`);
+    const headers = this.getHeaders();
+    
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: headers,
+        body: JSON.stringify(data),
+        // Properly configured fetch options
+        mode: 'cors',
+        credentials: 'omit', // Don't send or receive cookies
+        cache: 'no-cache',
+        redirect: 'follow',
+      });
+      
+      return this.processResponse<T>(
+        res,
+        "An error occurred while posting the data.\n",
+      );
+    } catch (error) {
+      console.error(`Network error when posting to ${url}:`, error);
+      throw new Error(`Network error: Unable to connect to server at ${url}. Please check your connection.`);
+    }
   }
 
   /**
@@ -99,15 +218,37 @@ export class ApiService {
    */
   public async put<T>(endpoint: string, data: unknown): Promise<T> {
     const url = `${this.baseURL}${endpoint}`;
-    const res = await fetch(url, {
-      method: "PUT",
-      headers: this.defaultHeaders,
-      body: JSON.stringify(data),
-    });
-    return this.processResponse<T>(
-      res,
-      "An error occurred while updating the data.\n",
-    );
+    console.log(`Making PUT request to: ${url}`);
+    const headers = this.getHeaders();
+    
+    try {
+      const res = await fetch(url, {
+        method: "PUT",
+        headers: headers,
+        body: JSON.stringify(data),
+        // Properly configured fetch options
+        mode: 'cors',
+        credentials: 'omit', // Don't send or receive cookies
+        cache: 'no-cache',
+        redirect: 'follow',
+      });
+      
+      // Check if the response is empty
+      const contentType = res.headers.get('content-type');
+      if (res.status === 204 || !contentType || !contentType.includes('application/json')) {
+        console.log("Server returned no content or non-JSON response:", res.status);
+        // For 204 No Content responses, just return an empty success object
+        return {} as T;
+      }
+      
+      return this.processResponse<T>(
+        res,
+        "An error occurred while updating the data.\n",
+      );
+    } catch (error) {
+      console.error(`Network error when updating ${url}:`, error);
+      throw new Error(`Network error: Unable to connect to server at ${url}. Please check your connection.`);
+    }
   }
 
   /**
@@ -117,13 +258,27 @@ export class ApiService {
    */
   public async delete<T>(endpoint: string): Promise<T> {
     const url = `${this.baseURL}${endpoint}`;
-    const res = await fetch(url, {
-      method: "DELETE",
-      headers: this.defaultHeaders,
-    });
-    return this.processResponse<T>(
-      res,
-      "An error occurred while deleting the data.\n",
-    );
+    console.log(`Making DELETE request to: ${url}`);
+    const headers = this.getHeaders();
+    
+    try {
+      const res = await fetch(url, {
+        method: "DELETE",
+        headers: headers,
+        // Properly configured fetch options
+        mode: 'cors',
+        credentials: 'omit', // Don't send or receive cookies
+        cache: 'no-cache',
+        redirect: 'follow',
+      });
+      
+      return this.processResponse<T>(
+        res,
+        "An error occurred while deleting the data.\n",
+      );
+    } catch (error) {
+      console.error(`Network error when deleting from ${url}:`, error);
+      throw new Error(`Network error: Unable to connect to server at ${url}. Please check your connection.`);
+    }
   }
 }

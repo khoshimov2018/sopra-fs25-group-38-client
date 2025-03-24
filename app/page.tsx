@@ -2,7 +2,6 @@
 import "@ant-design/v5-patch-for-react-19";
 import { useRouter } from "next/navigation";
 import { Button } from "antd";
-import { BookOutlined, CodeOutlined, GlobalOutlined } from "@ant-design/icons";
 import styles from "@/styles/page.module.css";
 
 export default function Home() {
@@ -10,75 +9,42 @@ export default function Home() {
   return (
     <div className={styles.page}>
       <main className={styles.main}>
-        <h2 style={{ marginBottom: "2rem" }}>SOPRA FS25 - Group 38</h2>
+        <div className={styles.heading}>
+          <h1 style={{ fontSize: '2.5rem', margin: '20px 0', textAlign: 'center' }}>
+            Welcome to SoPra FS25!
+          </h1>
+          <p style={{ fontSize: '1.2rem', marginBottom: '40px', textAlign: 'center', maxWidth: '600px' }}>
+          </p>
+        </div>
 
         <div className={styles.ctas}>
           <Button
-            type="primary" // as defined in the ConfigProvider in [layout.tsx](./layout.tsx), all primary antd elements are colored #22426b, with buttons #75bd9d as override
-            color="red" // if a single/specific antd component needs yet a different color, it can be explicitly overridden in the component as shown here
-            variant="solid" // read more about the antd button and its options here: https://ant.design/components/button
-            onClick={() =>
-              globalThis.open(
-                "https://vercel.com/new",
-                "_blank",
-                "noopener,noreferrer",
-              )}
-            target="_blank"
-            rel="noopener noreferrer"
+            type="primary"
+            size="large"
+            variant="solid"
+            onClick={() => router.push("/login")}
+            style={{ backgroundColor: '#1677ff', margin: '0 10px' }}
           >
-            Deploy now
+            Login
           </Button>
           <Button
             type="default"
+            size="large"
             variant="solid"
-            onClick={() =>
-              globalThis.open(
-                "https://nextjs.org/docs",
-                "_blank",
-                "noopener,noreferrer",
-              )}
-            target="_blank"
-            rel="noopener noreferrer"
+            onClick={() => router.push("/register")}
+            style={{ margin: '0 10px' }}
           >
-            Read our docs
-          </Button>
-          <Button
-            type="primary"
-            variant="solid"
-            onClick={() => router.push("/login")}
-          >
-            Go to login
+            Register
           </Button>
         </div>
       </main>
-      <footer className={styles.footer}>
-        <Button
-          type="link"
-          icon={<BookOutlined />}
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn
-        </Button>
-        <Button
-          type="link"
-          icon={<CodeOutlined />}
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Examples
-        </Button>
-        <Button
-          type="link"
-          icon={<GlobalOutlined />}
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Go to nextjs.org →
-        </Button>
+      <footer className={styles.footer} style={{ marginTop: '40px' }}>
+        <div style={{ textAlign: 'center' }}>
+          <p>© 2025 User Management System - SoPra FS25</p>
+          <p style={{ fontSize: '0.8rem', marginTop: '10px', color: '#888' }}>
+            Created by Rakhmatillokhon Khoshimov
+          </p>
+        </div>
       </footer>
     </div>
   );

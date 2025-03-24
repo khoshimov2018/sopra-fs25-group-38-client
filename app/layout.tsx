@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { ConfigProvider, theme } from "antd";
+import { ConfigProvider, App, theme } from "antd";
 import { AntdRegistry } from "@ant-design/nextjs-registry";
 import "@/styles/globals.css";
 
@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "sopra-fs25-group-38",
-  description: "sopra-fs25-group-38-client",
+  title: "Student 23-060-361",
+  description: "sopra-fs25-template-client",
 };
 
 export default function RootLayout({
@@ -60,7 +60,11 @@ export default function RootLayout({
             },
           }}
         >
-          <AntdRegistry>{children}</AntdRegistry>
+          <AntdRegistry>
+            <App>
+              {children}
+            </App>
+          </AntdRegistry>
         </ConfigProvider>
       </body>
     </html>

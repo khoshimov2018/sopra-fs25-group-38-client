@@ -1,16 +1,15 @@
-// this code is part of S2 to display a list of all registered users
-// clicking on a user in this list will display /app/users/[id]/page.tsx
-"use client"; // For components that need React hooks and browser APIs, SSR (server side rendering) has to be disabled. Read more here: https://nextjs.org/docs/pages/building-your-application/rendering/server-side-rendering
+"use client"; 
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useApi } from "@/hooks/useApi";
 import useLocalStorage from "@/hooks/useLocalStorage";
 import { User } from "@/types/user";
-import { Button, Card, Table } from "antd";
-import type { TableProps } from "antd"; // antd component library allows imports of types
-// Optionally, you can import a CSS module or file for additional styling:
-// import "@/styles/views/Dashboard.scss";
+import { Button, Card, Table, Tag, message, Typography } from "antd";
+import type { TableProps } from "antd";
+import { formatDate } from "@/utils/date";
+
+const { Title } = Typography;
 
 // Columns for the antd table of User objects
 const columns: TableProps<User>["columns"] = [
@@ -18,6 +17,7 @@ const columns: TableProps<User>["columns"] = [
     title: "Username",
     dataIndex: "username",
     key: "username",
+    render: (text) => <Typography.Text strong>{text}</Typography.Text>,
   },
   {
     title: "Name",
@@ -25,81 +25,150 @@ const columns: TableProps<User>["columns"] = [
     key: "name",
   },
   {
-    title: "Id",
-    dataIndex: "id",
-    key: "id",
+    title: "Status",
+    dataIndex: "status",
+    key: "status",
+    render: (status) => (
+      <Tag color={status === "ONLINE" ? "green" : "red"}>
+        {status}
+      </Tag>
+    ),
+  },
+  {
+    title: "Creation Date",
+    dataIndex: "creationDate",
+    key: "creationDate",
+    render: (date) => (date ? formatDate(date) : "N/A"),
+  },
+  {
+    title: "Action",
+    key: "action",
+    render: (_, record) => (
+      <Button type="link" disabled={!record.id}>
+        {record.id ? "View Profile" : "No Profile"}
+      </Button>
+    ),
   },
 ];
 
-const Dashboard: React.FC = () => {
+const UsersList: React.FC = () => {
   const router = useRouter();
   const apiService = useApi();
   const [users, setUsers] = useState<User[] | null>(null);
-  // useLocalStorage hook example use
-  // The hook returns an object with the value and two functions
-  // Simply choose what you need from the hook:
-  const {
-    // value: token, // is commented out because we dont need to know the token value for logout
-    // set: setToken, // is commented out because we dont need to set or update the token value
-    clear: clearToken, // all we need in this scenario is a method to clear the token
-  } = useLocalStorage<string>("token", ""); // if you wanted to select a different token, i.e "lobby", useLocalStorage<string>("lobby", "");
+  const { value: token, clear: clearToken } = useLocalStorage<string>("token", "");
 
-  const handleLogout = (): void => {
-    // Clear token using the returned function 'clear' from the hook
-    clearToken();
-    router.push("/login");
+  const handleLogout = async (): Promise<void> => {
+    try {
+      // Get current user ID from one of the users that matches the stored token
+      if (users && token) {
+        const currentUser = users.find(user => user.token === token);
+        if (currentUser && currentUser.id) {
+          try {
+          // Call logout endpoint
+          await apiService.post(`/users/${currentUser.id}/logout`, {});
+          message.success("Logged out successfully!");
+        } catch (error) {
+          console.warn("Logout API call failed, but proceeding with local logout", error);
+        }
+        }
+      }
+      
+      // Clear token and redirect to login
+      clearToken();
+      router.push("/login");
+    } catch (error) {
+      console.error("Error during logout:", error);
+      // Even if the API call fails, clear the token and redirect to login
+      clearToken();
+      router.push("/login");
+    }
+  };
+
+  const handleProfileView = (userId: string) => {
+    router.push(`/users/${userId}`);
   };
 
   useEffect(() => {
+    // Debug the token value when mounting this component
+    console.log("Token in users page (from hook):", token);
+    
+    // Check token directly from localStorage - redundant precaution
+    const localStorageToken = localStorage.getItem("token");
+    console.log("Token in localStorage:", localStorageToken);
+    
+    // Get token from localStorage directly without JSON.parse
+    // The token is stored directly, not as a JSON string
+    const effectiveToken = token || localStorageToken;
+    console.log("Effective token used:", effectiveToken ? effectiveToken.substring(0, 8) + '...' : 'none');
+    
+    // Check if token exists from any source
+    if (!effectiveToken) {
+      console.error("No token found - redirecting to login");
+      message.error("Please login to view users");
+      window.location.href = "/login";
+      return;
+    }
+    
+    // If we get here, we have a token
     const fetchUsers = async () => {
       try {
-        // apiService.get<User[]> returns the parsed JSON object directly,
-        // thus we can simply assign it to our users variable.
+        // Log before making the API call
+        console.log("Making GET request to /users with token:", effectiveToken);
+        
         const users: User[] = await apiService.get<User[]>("/users");
+        console.log("Successfully fetched users data:", users);
         setUsers(users);
-        console.log("Fetched users:", users);
       } catch (error) {
+        console.error("Error in fetchUsers:", error);
+        
         if (error instanceof Error) {
-          alert(`Something went wrong while fetching users:\n${error.message}`);
+          // If unauthorized (401) or forbidden (403), redirect to login
+          if (error.message.includes("401") || error.message.includes("403")) {
+            console.error("Authorization error - redirecting to login");
+            message.error("Your session has expired. Please login again.");
+            clearToken();
+            localStorage.removeItem("token");
+            window.location.href = "/login";
+          } else {
+            message.error(`Failed to fetch users: ${error.message}`);
+          }
         } else {
           console.error("An unknown error occurred while fetching users.");
+          message.error("Failed to fetch users. Please try again.");
         }
       }
     };
 
     fetchUsers();
-  }, [apiService]); // dependency apiService does not re-trigger the useEffect on every render because the hook uses memoization (check useApi.tsx in the hooks).
-  // if the dependency array is left empty, the useEffect will trigger exactly once
-  // if the dependency array is left away, the useEffect will run on every state change. Since we do a state change to users in the useEffect, this results in an infinite loop.
-  // read more here: https://react.dev/reference/react/useEffect#specifying-reactive-dependencies
+  }, [token, clearToken, apiService]);
 
   return (
     <div className="card-container">
-      <Card
-        title="Get all users from secure endpoint:"
-        loading={!users}
-        className="dashboard-container"
+      <Card 
+        title={<Title level={3}>User Directory</Title>}
+        extra={
+          <Button onClick={handleLogout} type="primary" danger>
+            Logout
+          </Button>
+        }
+        style={{ width: '80%', maxWidth: 1000 }}
+        {...(!users && { children: <div style={{ textAlign: 'center', padding: '20px' }}>Loading users...</div> })}
       >
         {users && (
-          <>
-            {/* antd Table: pass the columns and data, plus a rowKey for stable row identity */}
-            <Table<User>
-              columns={columns}
-              dataSource={users}
-              rowKey="id"
-              onRow={(row) => ({
-                onClick: () => router.push(`/users/${row.id}`),
-                style: { cursor: "pointer" },
-              })}
-            />
-            <Button onClick={handleLogout} type="primary">
-              Logout
-            </Button>
-          </>
+          <Table<User>
+            columns={columns}
+            dataSource={users}
+            rowKey="id"
+            pagination={{ pageSize: 10 }}
+            onRow={(record) => ({
+              onClick: () => handleProfileView(record.id || ""),
+              style: { cursor: "pointer" }
+            })}
+          />
         )}
       </Card>
     </div>
   );
 };
 
-export default Dashboard;
+export default UsersList;

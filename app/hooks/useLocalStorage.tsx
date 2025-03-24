@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 
 interface LocalStorage<T> {
   value: T;
@@ -26,6 +26,9 @@ export default function useLocalStorage<T>(
   defaultValue: T,
 ): LocalStorage<T> {
   const [value, setValue] = useState<T>(defaultValue);
+  
+  // Keep a reference to the defaultValue to avoid dependency changes
+  const defaultValueRef = useRef(defaultValue);
 
   // On mount, try to read the stored value
   useEffect(() => {
@@ -33,28 +36,44 @@ export default function useLocalStorage<T>(
     try {
       const stored = globalThis.localStorage.getItem(key);
       if (stored) {
-        setValue(JSON.parse(stored) as T);
+        // For tokens, we may have stored them directly without JSON.stringify
+        // If parsing fails, use the raw string (for string values like tokens)
+        try {
+          setValue(JSON.parse(stored) as T);
+        } catch (parseError) {
+          // If we expected a string type and parsing failed, use the raw string
+          if (typeof defaultValueRef.current === 'string') {
+            setValue(stored as unknown as T);
+          } else {
+            throw parseError; // Re-throw for non-string types
+          }
+        }
       }
     } catch (error) {
       console.error(`Error reading localStorage key "${key}":`, error);
     }
-  }, [key]);
+  }, [key]); // Remove defaultValue dependency
 
   // Simple setter that updates both state and localStorage
-  const set = (newVal: T) => {
+  const set = useCallback((newVal: T) => {
     setValue(newVal);
     if (typeof window !== "undefined") {
-      globalThis.localStorage.setItem(key, JSON.stringify(newVal));
+      // For string values, we don't need to JSON stringify
+      if (typeof newVal === 'string') {
+        globalThis.localStorage.setItem(key, newVal as string);
+      } else {
+        globalThis.localStorage.setItem(key, JSON.stringify(newVal));
+      }
     }
-  };
+  }, [key]);
 
   // Removes the key from localStorage and resets the state
-  const clear = () => {
-    setValue(defaultValue);
+  const clear = useCallback(() => {
+    setValue(defaultValueRef.current);
     if (typeof window !== "undefined") {
       globalThis.localStorage.removeItem(key);
     }
-  };
+  }, [key]);
 
   return { value, set, clear };
 }
