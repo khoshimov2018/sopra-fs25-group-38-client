@@ -99,7 +99,15 @@ export class ApiService {
       }
       
       const detailedMessage = `${errorMessage} (${res.status}: ${errorDetail})`;
-      console.error("API Error:", detailedMessage);
+      
+      // Only log unexpected errors as errors, log expected errors as info
+      if (res.status === 404 || res.status === 401 || res.status === 403) {
+        // These are expected errors in normal app flow
+        console.info("API Response:", detailedMessage);
+      } else {
+        // Unexpected errors should still be logged as errors
+        console.error("API Error:", detailedMessage);
+      }
       
       const error: ApplicationError = new Error(
         detailedMessage,

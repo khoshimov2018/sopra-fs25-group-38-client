@@ -1,27 +1,29 @@
 :root {
-  /* Primary Color Palette */
-  --primary: #1668dc;
-  --primary-dark: #115bc0;
-  --primary-light: #4089f0;
+  /* Primary Color Palette - Updated based on Figma design */
+  --primary: #2C2C2C;
+  --primary-dark: #222222;
+  --primary-light: #444444;
   
   /* Background Colors */
-  --bg-page: rgb(41, 44, 59);
-  --bg-card: #1e1e2d;
-  --bg-input: #121212;
-  --bg-modal: #000000;
+  --bg-page: white;
+  --bg-gradient: linear-gradient(180deg, #E3D1D1 11%, #E3D1D1 20%, #2F76C3 80%, #2F76C3 100%);
+  --bg-card: #FFFFFF;
+  --bg-input: #FFFFFF;
+  --bg-modal: #FFFFFF;
   
   /* Text Colors */
-  --text-light: #ffffff;
-  --text-dark: #000000;
-  --text-secondary: #a0a0a0;
+  --text-light: #FFFFFF;
+  --text-dark: #1E1E1E;
+  --text-secondary: #757575;
+  --text-placeholder: #B3B3B3;
   
   /* Border Colors */
-  --border-color: #333333;
-  --border-color-light: #444444;
+  --border-color: #D9D9D9;
+  --border-color-light: #EFEFEF;
   
   /* State Colors */
-  --hover-color: #333333;
-  --focus-color: #2a5caa;
+  --hover-color: #F5F5F5;
+  --focus-color: #2F76C3;
   
   /* Status Colors */
   --success: #52c41a;
@@ -32,18 +34,18 @@
   --offline: #ff4d4f;
   
   /* Shadow Colors */
-  --shadow-color: rgba(0, 0, 0, 0.5);
+  --shadow-color: rgba(0, 0, 0, 0.1);
 
   /* Legacy variables */
   --background: var(--bg-card);
-  --foreground: var(--text-light);
+  --foreground: var(--text-dark);
 }
 
 @media (prefers-color-scheme: light) {
   :root {
-    /* Keep the dark theme regardless of system preference */
+    /* Use light theme colors */
     --background: var(--bg-card);
-    --foreground: var(--text-light);
+    --foreground: var(--text-dark);
   }
 }
 
@@ -74,7 +76,7 @@ a {
 
 @media (prefers-color-scheme: dark) {
   html {
-    color-scheme: dark;
+    color-scheme: light;
   }
 }
 
@@ -104,7 +106,7 @@ a {
 input, .ant-input, .ant-input-password {
   background-color: var(--bg-input) !important;
   border-color: var(--border-color) !important;
-  color: var(--text-light) !important;
+  color: var(--text-dark) !important;
 }
 
 input:focus, .ant-input:focus, .ant-input-password:focus {
@@ -128,7 +130,7 @@ input:focus, .ant-input:focus, .ant-input-password:focus {
 
 /* Form label styling */
 .ant-form-item-label > label {
-  color: var(--text-light) !important;
+  color: var(--text-dark) !important;
 }
 
 /* Message styling - consistent styling with dark theme */
@@ -244,9 +246,9 @@ input:focus, .ant-input:focus, .ant-input-password:focus {
 }
 
 .ant-btn-default {
-  background-color: transparent !important;
-  border-color: var(--border-color) !important;
-  color: var(--text-light) !important;
+  background-color: #FFFFFF !important;
+  border-color: var(--primary) !important;
+  color: var(--text-dark) !important;
 }
 
 .ant-btn-default:hover {

@@ -1,0 +1,256 @@
+/* main.module.css */
+
+/* Container that wraps everything below the header */
+.mainContainer {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  padding-top: 120px; /* Leaves space for the fixed header */
+  padding-bottom: 20px;
+}
+
+/* Fixed header at the top */
+.header {
+  position: fixed;       /* Changed from sticky to fixed */
+  top: 20;
+  left: 0;
+  width: 100%;
+  height: 60px;          /* Fixed header height */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 30px;
+  margin: 0;
+  z-index: 9999;         /* High z-index to stay on top */
+}
+
+.logoLink {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  margin-top: 10px;
+  margin-left: 100px; /* Offset some of the padding */
+}
+
+/* The headerLogo class will be applied to the Logo component */
+.headerLogo {
+  position: relative !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 220px !important;
+  height: auto !important;
+}
+
+.headerRight {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}
+
+.iconButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 26px;
+  color: var(--text-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+}
+
+/* 2-COLUMN PROFILE LAYOUT */
+.profileContainer {
+  display: flex;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+  gap: 2rem;
+}
+
+/* LEFT COLUMN: Profile Image */
+.profileImageContainer {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.profileImage {
+  width: 100%;
+  max-width: 500px; /* Controls how big the image can get */
+  height: auto;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+/* RIGHT COLUMN: Stacked sections */
+.rightSection {
+  flex: 1.2;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Card for name, style, goal, tags */
+.profileCard {
+  background-color: var(--bg-card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: 1.5rem;
+}
+
+.detailsSection {
+  margin-bottom: 15px;
+  border-bottom: 1px solid var(--border-color-light);
+  padding-bottom: 15px;
+}
+
+.detailsSection:last-child {
+  border-bottom: none;
+}
+
+.detailsLabel {
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  margin-bottom: 5px;
+}
+
+.detailsValue {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-dark);
+}
+
+.tagContainer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.tag {
+  background-color: var(--hover-color);
+  border-radius: 20px;
+  padding: 5px 15px;
+  font-size: var(--font-size-sm);
+}
+
+/* Study Level Card */
+.studyLevelContainer {
+  background-color: var(--bg-card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: 1.5rem;
+}
+
+.studyLevelTitle {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-medium);
+  margin-bottom: 20px;
+}
+
+.studyLevel {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 0;
+  border-bottom: 1px solid var(--border-color-light);
+}
+
+.studyLevel:last-child {
+  border-bottom: none;
+}
+
+.studyLevelLeft {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.studyLevelGrade {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  width: 40px;
+  text-align: center;
+}
+
+.studyLevelSubject {
+  font-size: var(--font-size-lg);
+}
+
+.studyLevelRight {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+/* Like/Dislike Buttons */
+.actionButtons {
+  display: flex;
+  justify-content: space-between;
+  gap: 30px;
+}
+
+.actionButton {
+  flex: 1;
+  padding: 15px 0;
+  border-radius: var(--radius-lg);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.dislikeButton {
+  background-color: #f5f5f5;
+  color: var(--text-dark);
+  border: 1px solid var(--border-color);
+}
+
+.likeButton {
+  background-color: var(--primary);
+  color: var(--text-light);
+  border: none;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 900px) {
+  .profileContainer {
+    flex-direction: column;
+    padding: 1rem;
+  }
+  .profileImageContainer {
+    max-width: 100%;
+    margin-bottom: 1rem;
+  }
+  .profileImage {
+    max-width: 300px;
+  }
+  .rightSection {
+    width: 100%;
+  }
+  .actionButtons {
+    flex-direction: column;
+    gap: 15px;
+  }
+}
+
+@media (max-width: 600px) {
+  .header {
+    padding: 0 15px;
+  }
+  .profileCard,
+  .studyLevelContainer {
+    padding: 1rem;
+  }
+  .studyLevelTitle {
+    margin-bottom: 10px;
+  }
+}

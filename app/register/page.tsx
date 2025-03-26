@@ -3,11 +3,17 @@
 import { useApi } from "@/hooks/useApi";
 import useLocalStorage from "@/hooks/useLocalStorage";
 import { User } from "@/types/user";
-import { Button, Card, Form, Input, message } from "antd";
+import { Form, Input, App, message as antMessage } from "antd";
+import { useMessage } from '@/hooks/useMessage';
 import Link from "next/link";
+import styles from "@/styles/theme/layout.module.css";
+import backgroundStyles from "@/styles/theme/backgrounds.module.css";
+import componentStyles from "@/styles/theme/components.module.css";
+import Logo from "@/components/Logo";
+import Button from "@/components/Button";
 
 interface FormFieldProps {
-  username: string;
+  email: string;
   name: string;
   password: string;
 }
@@ -16,11 +22,12 @@ const Register: React.FC = () => {
   const apiService = useApi();
   const [form] = Form.useForm();
   const { set: setToken } = useLocalStorage<string>("token", "");
+  const { message, contextHolder } = useMessage();
 
   const handleRegister = async (values: FormFieldProps) => {
     try {
       message.loading("Creating account...");
-      console.log("Attempting registration with:", values.username);
+      console.log("Attempting registration with:", values.email);
       
       // Call the API service to register new user
       const response = await apiService.post<User>("/users", values);
@@ -28,7 +35,7 @@ const Register: React.FC = () => {
 
       // Store registration credentials to use for auto-login
       const credentials = {
-        username: values.username,
+        email: values.email,
         password: values.password
       };
 
@@ -50,12 +57,12 @@ const Register: React.FC = () => {
           setToken(loginResponse.token);
           
           message.success("Registration successful! You are now online.");
-          console.log("Redirecting to /users");
+          console.log("Redirecting to main page");
           
           // More forceful navigation with a delay to ensure token is saved
           setTimeout(() => {
-            message.loading("Redirecting to user page...");
-            window.location.href = "/users";
+            message.loading("Redirecting to main page...");
+            window.location.href = "/main";
           }, 500);
         } else {
           // Even if auto-login fails, we can still proceed with the registration token
@@ -68,7 +75,7 @@ const Register: React.FC = () => {
             
             message.success("Registration successful!");
             setTimeout(() => {
-              window.location.href = "/users";
+              window.location.href = "/main";
             }, 500);
           } else {
             console.error("No token received in registration response");
@@ -86,7 +93,7 @@ const Register: React.FC = () => {
           
           message.success("Registration successful! (Login failed, please log in manually to appear online)");
           setTimeout(() => {
-            window.location.href = "/users";
+            window.location.href = "/main";
           }, 500);
         } else {
           console.error("No token received in registration response");
@@ -102,13 +109,13 @@ const Register: React.FC = () => {
       if (error instanceof Error) {
         // Display appropriate error message based on response
         if (error.message.includes("409")) {
-          message.error("Error: Username is already taken. Please choose a different username.");
-        } else if (error.message.includes("400") && error.message.toLowerCase().includes("username")) {
-          message.error("Error: Username cannot be empty.");
+          message.error("Error: Email is already taken. Please use a different email address.");
+        } else if (error.message.includes("400") && error.message.toLowerCase().includes("email")) {
+          message.error("Error: Email cannot be empty.");
         } else if (error.message.includes("400") && error.message.toLowerCase().includes("password")) {
           message.error("Error: Password cannot be empty.");
         } else if (error.message.includes("400")) {
-          message.error("Error: Both username and password are required.");
+          message.error("Error: Both email and password are required.");
         } else if (error.message.includes("Network") || error.message.includes("fetch") || error.message.includes("CORS")) {
           message.error("Error: Registration failed. Please try again later.");
           console.info("Network/CORS issue: If you're developing locally, make sure your backend server is running at http://localhost:8080 and has CORS configured.");
@@ -124,50 +131,67 @@ const Register: React.FC = () => {
   };
 
   return (
-    <div className="register-container">
-      <Card title="Register" style={{ width: 400, borderRadius: 8 }}>
-        <Form
-          form={form}
-          name="register"
-          size="large"
-          variant="outlined"
-          onFinish={handleRegister}
-          layout="vertical"
-        >
-          <Form.Item
-            name="username"
-            label="Username"
-            rules={[{ required: true, message: "Error: Username cannot be empty." }]}
+    <App>
+      {contextHolder}
+      <div className={`${styles.pageContainer} ${backgroundStyles.loginBackground}`}>
+        {/* Logo in top left corner */}
+        <Logo />
+        
+        {/* Centered registration form */}
+        <div className={styles.centeredContainer}>
+          <div className={componentStyles.formContainer}>
+            <h2 style={{ textAlign: 'center', marginBottom: '24px' }}>Register</h2>
+            <Form
+            form={form}
+            name="register"
+            onFinish={handleRegister}
+            layout="vertical"
           >
-            <Input placeholder="Enter username" />
-          </Form.Item>
-          <Form.Item
-            name="name"
-            label="Name"
-            rules={[{ required: true, message: "Error: Name cannot be empty." }]}
-          >
-            <Input placeholder="Enter name" />
-          </Form.Item>
-          <Form.Item
-            name="password"
-            label="Password"
-            rules={[{ required: true, message: "Error: Password cannot be empty." }]}
-          >
-            <Input.Password placeholder="Enter password" />
-          </Form.Item>
-          <Form.Item>
-            <Button type="primary" htmlType="submit" className="register-button">
-              Register
-            </Button>
-          </Form.Item>
-          <Form.Item style={{ marginBottom: 0 }}>
-            <div style={{ textAlign: 'center' }}>
-              Already have an account? <Link href="/login">Login</Link>
+            <Form.Item
+              name="email"
+              label="Email"
+              className={componentStyles.inputField}
+              required={false}
+              rules={[
+                { required: true, message: "Please input your email!" },
+                { type: 'email', message: "Please enter a valid email address!" }
+              ]}
+            >
+              <Input placeholder="Enter your email" className={componentStyles.input} style={{ color: '#1E1E1E' }} />
+            </Form.Item>
+            
+            <Form.Item
+              name="name"
+              label="Name"
+              className={componentStyles.inputField}
+              required={false}
+              rules={[{ required: true, message: "Please input your name!" }]}
+            >
+              <Input placeholder="Enter your name" className={componentStyles.input} style={{ color: '#1E1E1E' }} />
+            </Form.Item>
+            
+            <Form.Item
+              name="password"
+              label="Password"
+              className={componentStyles.inputField}
+              required={false}
+              rules={[{ required: true, message: "Please input your password!" }]}
+            >
+              <Input.Password placeholder="Enter your password" className={componentStyles.input} style={{ color: '#1E1E1E' }} />
+            </Form.Item>
+            
+            <Form.Item className={componentStyles.buttonContainer}>
+              <Button type="submit">Register</Button>
+            </Form.Item>
+            
+            <div className={componentStyles.linkContainer}>
+              Already have an account? <Link href="/login" className={componentStyles.link}>Login</Link>
             </div>
-          </Form.Item>
-        </Form>
-      </Card>
-    </div>
+          </Form>
+          </div>
+        </div>
+      </div>
+    </App>
   );
 };
 

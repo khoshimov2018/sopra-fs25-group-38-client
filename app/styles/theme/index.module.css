@@ -1,0 +1,8 @@
+/* Main theme index file - Import all theme modules */
+@import './colors.module.css';
+@import './typography.module.css';
+@import './layout.module.css';
+@import './backgrounds.module.css';
+@import './components.module.css';
+
+/* This file serves as an entry point to import all theme modules at once */

@@ -1,21 +1,17 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter } from "next/font/google";
 import { ConfigProvider, App, theme } from "antd";
 import { AntdRegistry } from "@ant-design/nextjs-registry";
 import "@/styles/globals.css";
+import "@/styles/theme/index.module.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
-  title: "Student 23-060-361",
+  title: "StudyBuddy",
   description: "sopra-fs25-template-client",
 };
 
@@ -26,37 +22,47 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable}`}>
+      <body className={`${inter.variable}`}>
         <ConfigProvider
           theme={{
             algorithm: theme.defaultAlgorithm,
             token: {
-              // general theme options are set in token, meaning all primary elements (button, menu, ...) will have this color
-              colorPrimary: "#22426b", // selected input field boarder will have this color as well
+              // general theme options are set in token using our theme variables
+              colorPrimary: "#2C2C2C", // matching --primary from our theme
               borderRadius: 8,
-              colorText: "#fff",
+              colorText: "#1E1E1E", // matching --text-dark from our theme
               fontSize: 16,
 
               // Alias Token
-              colorBgContainer: "#16181D",
+              colorBgContainer: "#FFFFFF", // matching --bg-card from our theme
             },
             // if a component type needs special styling, setting here will override default options set in token
             components: {
               Button: {
-                colorPrimary: "#75bd9d", // this will color all buttons in #75bd9d, overriding the default primaryColor #22426b set in token line 35
-                algorithm: true, // enable algorithm (redundant with line 33 but here for demo purposes)
-                controlHeight: 38,
+                colorPrimary: "#2C2C2C", // matching --primary from our theme
+                algorithm: true,
+                controlHeight: 40, // matching our theme button height
+                colorText: "#1E1E1E", // Set default button text color to black
+                colorBorder: "#2C2C2C", // Default border color
+                defaultColor: "#1E1E1E", // Default button color
+                defaultBg: "#FFFFFF", // Default button background
               },
               Input: {
-                colorBorder: "gray", // color boarder selected is not overridden but instead is set by primary color in line 35
-                colorTextPlaceholder: "#888888",
-                algorithm: false, // disable algorithm (line 32)
+                colorBorder: "#D9D9D9", // matching --border-color from our theme
+                colorTextPlaceholder: "#B3B3B3", // matching --text-placeholder from our theme
+                colorText: "#1E1E1E", // Ensure input text is black
+                colorTextBase: "#1E1E1E", // Base text color for inputs
+                algorithm: true,
               },
               Form: {
-                labelColor: "#fff",
-                algorithm: theme.defaultAlgorithm, // specify a specifc algorithm instead of true/false
+                labelColor: "#1E1E1E", // matching --text-dark from our theme
+                colorTextLabel: "#1E1E1E", // Ensure form labels are visible
+                algorithm: theme.defaultAlgorithm,
               },
-              Card: {},
+              Card: {
+                colorBgContainer: "#FFFFFF", // matching --bg-card from our theme
+                colorBorderSecondary: "#D9D9D9", // matching --border-color from our theme
+              },
             },
           }}
         >

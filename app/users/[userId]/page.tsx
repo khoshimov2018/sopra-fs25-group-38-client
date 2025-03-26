@@ -14,7 +14,7 @@ import dayjs from 'dayjs';
 
 // Type for the edit form values
 interface EditFormValues {
-  username: string;
+  email: string;
   birthday: dayjs.Dayjs | null;
 }
 
@@ -100,7 +100,7 @@ const UserProfile: React.FC = () => {
             const mergedData = {
               ...userData,
               // Override with cached values
-              username: cachedUserData.username || userData.username,
+              email: cachedUserData.email || userData.email,
               birthday: cachedUserData.birthday || userData.birthday
             };
             
@@ -173,14 +173,14 @@ const UserProfile: React.FC = () => {
   const handleEditClick = () => {
     if (user) {
       console.log("Setting form values for editing:", {
-        username: user.username || '',
+        email: user.email || '',
         birthday: user.birthday ? dayjs(user.birthday) : null
       });
       
       // Set form values after a short timeout to ensure the form is mounted
       setTimeout(() => {
         form.setFieldsValue({
-          username: user.username || '',
+          email: user.email || '',
           // Convert birthday string to dayjs object if it exists
           birthday: user.birthday ? dayjs(user.birthday) : null,
         });
@@ -207,9 +207,9 @@ const UserProfile: React.FC = () => {
       console.log("Form submission values:", values);
       
       // Format data for the API - include all fields required by the server
-      // The UserPostDTO on the server requires username, password, and can include birthday
+      // The UserPostDTO on the server requires email, password, and can include birthday
       const updateData = {
-        username: values.username,
+        email: values.email,
         password: "PROTECTED", // Server requires password field but doesn't actually use it for updates
         // Format birthday to ISO string if it exists
         birthday: values.birthday ? values.birthday.format('YYYY-MM-DD') : null,
@@ -230,7 +230,7 @@ const UserProfile: React.FC = () => {
         // Update locally first to ensure state changes even if server doesn't return data
         const updatedUserData = {
           ...user,
-          username: values.username,
+          email: values.email,
           birthday: values.birthday ? values.birthday.format('YYYY-MM-DD') : null,
         };
         
@@ -244,7 +244,7 @@ const UserProfile: React.FC = () => {
         // Call the API with updated data and ensure we're sending everything needed
         const completeUpdateData = {
           id: user.id,
-          username: values.username,
+          email: values.email,
           name: user.name || "", // Use existing name from user object
           status: user.status,
           // Send both birthday formats to ensure server accepts one of them
@@ -269,26 +269,26 @@ const UserProfile: React.FC = () => {
           console.log("Fetched updated user data:", freshUserData);
           
           // Check if the data was updated correctly
-          const usernameUpdated = freshUserData.username === values.username;
+          const emailUpdated = freshUserData.email === values.email;
           const birthdayUpdated = values.birthday ? 
             freshUserData.birthday === values.birthday.format('YYYY-MM-DD') : 
             freshUserData.birthday === null;
             
           console.log("Update verification:", {
-            usernameUpdated,
+            emailUpdated,
             birthdayUpdated,
             requestedBirthday: values.birthday ? values.birthday.format('YYYY-MM-DD') : null,
             actualBirthday: freshUserData.birthday
           });
           
-          if (!usernameUpdated || !birthdayUpdated) {
+          if (!emailUpdated || !birthdayUpdated) {
             console.warn("Some fields were not updated correctly by the server");
             console.warn("Server response after update:", freshUserData);
             
             // Log the issue for debugging
             console.log("UPDATE MISMATCH DETECTED:", {
-              usernameRequested: values.username,
-              usernameReceived: freshUserData.username,
+              emailRequested: values.email,
+              emailReceived: freshUserData.email,
               birthdayRequested: values.birthday ? values.birthday.format('YYYY-MM-DD') : null,
               birthdayReceived: freshUserData.birthday
             });
@@ -300,7 +300,7 @@ const UserProfile: React.FC = () => {
               // Create a cached version with the values the user intended
               const cacheData = {
                 ...freshUserData,
-                username: values.username,
+                email: values.email,
                 birthday: values.birthday ? values.birthday.format('YYYY-MM-DD') : null
               };
               
@@ -311,7 +311,7 @@ const UserProfile: React.FC = () => {
               // Make another server update attempt
               const secondUpdateData = {
                 ...freshUserData,
-                username: values.username,
+                email: values.email,
                 birthday: values.birthday ? values.birthday.format('YYYY-MM-DD') : null,
                 password: "PROTECTED"
               };
@@ -329,7 +329,7 @@ const UserProfile: React.FC = () => {
                 // Use the cached data with server data for stability
                 const mergedData = {
                   ...secondFreshData,
-                  username: values.username,
+                  email: values.email,
                   birthday: values.birthday ? values.birthday.format('YYYY-MM-DD') : null
                 };
                 
@@ -374,12 +374,12 @@ const UserProfile: React.FC = () => {
         if (error.message.includes('404')) {
           messageApi.error('User not found. Please try again.');
         } else if (error.message.includes('409')) {
-          messageApi.error('Username already exists. Please choose a different username.');
-          // Highlight the username field as having an error
+          messageApi.error('Email already exists. Please use a different email address.');
+          // Highlight the email field as having an error
           form.setFields([
             {
-              name: 'username',
-              errors: ['This username is already taken. Please choose another one.'],
+              name: 'email',
+              errors: ['This email is already taken. Please use another one.'],
             },
           ]);
         } else if (error.message.includes('400')) {
@@ -424,7 +424,7 @@ const UserProfile: React.FC = () => {
             <Breadcrumb
               items={[
                 { title: <Link style={{ color: 'white' }} href="/users">Users</Link> },
-                { title: user?.username || "User Profile" }
+                { title: user?.email || "User Profile" }
               ]}
               style={{ marginBottom: '12px' }}
             />
@@ -466,7 +466,7 @@ const UserProfile: React.FC = () => {
                 content: { whiteSpace: 'pre-wrap' }
               }}
             >
-              <Descriptions.Item label="Username">{user.username}</Descriptions.Item>
+              <Descriptions.Item label="Email">{user.email}</Descriptions.Item>
               <Descriptions.Item label="Name">{user.name || "N/A"}</Descriptions.Item>
               <Descriptions.Item label="Status">
                 <Tag color={user.status === "ONLINE" ? "green" : "red"}>
@@ -531,21 +531,16 @@ const UserProfile: React.FC = () => {
           // The values are already set in useEffect and handleEditClick
         >
           <Form.Item
-            name="username"
-            label={<span style={{ color: 'white' }}>Username</span>}
+            name="email"
+            label={<span style={{ color: 'white' }}>Email</span>}
             rules={[
-              { required: true, message: 'Please enter a username' },
-              { min: 3, message: 'Username must be at least 3 characters' },
-              { max: 20, message: 'Username cannot exceed 20 characters' },
-              { 
-                pattern: /^[a-zA-Z0-9_-]+$/, 
-                message: 'Username can only contain letters, numbers, underscores and hyphens' 
-              }
+              { required: true, message: 'Please enter your email' },
+              { type: 'email', message: 'Please enter a valid email address' }
             ]}
-            tooltip="Username must be 3-20 characters and can only contain letters, numbers, underscores and hyphens"
+            tooltip="Please enter a valid email address"
           >
             <Input 
-              placeholder="Enter your username" 
+              placeholder="Enter your email" 
               style={{ 
                 background: 'black', 
                 color: 'white',

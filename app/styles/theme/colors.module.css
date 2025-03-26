@@ -1,0 +1,39 @@
+/* Theme colors - Single source of truth for color values */
+:root {
+  /* Primary Color Palette */
+  --primary: #2C2C2C;
+  --primary-dark: #222222;
+  --primary-light: #444444;
+  
+  /* Background Colors */
+  --bg-page: white;
+  --bg-gradient: linear-gradient(180deg, rgba(227, 209, 209, 0.06) 11%, rgba(47, 118, 195, 0.3) 80%);
+  --bg-card: #FFFFFF;
+  --bg-input: #FFFFFF;
+  --bg-modal: #FFFFFF;
+  
+  /* Text Colors */
+  --text-light: #FFFFFF;
+  --text-dark: #1E1E1E;
+  --text-secondary: #757575;
+  --text-placeholder: #B3B3B3;
+  
+  /* Border Colors */
+  --border-color: #D9D9D9;
+  --border-color-light: #EFEFEF;
+  
+  /* State Colors */
+  --hover-color: #F5F5F5;
+  --focus-color: #2F76C3;
+  
+  /* Status Colors */
+  --success: #52c41a;
+  --warning: #faad14;
+  --error: #ff4d4f;
+  --info: #1677ff;
+  --online: #52c41a;
+  --offline: #ff4d4f;
+  
+  /* Shadow Colors */
+  --shadow-color: rgba(0, 0, 0, 0.1);
+}

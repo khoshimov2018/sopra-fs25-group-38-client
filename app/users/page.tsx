@@ -14,9 +14,9 @@ const { Title } = Typography;
 // Columns for the antd table of User objects
 const columns: TableProps<User>["columns"] = [
   {
-    title: "Username",
-    dataIndex: "username",
-    key: "username",
+    title: "Email",
+    dataIndex: "email",
+    key: "email",
     render: (text) => <Typography.Text strong>{text}</Typography.Text>,
   },
   {

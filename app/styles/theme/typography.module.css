@@ -1,0 +1,54 @@
+/* Typography styles - Single source of truth for font styling */
+:root {
+  /* Font Families */
+  --font-primary: 'Inter', Arial, sans-serif;
+  --font-secondary: Arial, Helvetica, sans-serif;
+  
+  /* Font Sizes */
+  --font-size-xs: 12px;
+  --font-size-sm: 14px;
+  --font-size-md: 16px;
+  --font-size-lg: 18px;
+  --font-size-xl: 24px;
+  --font-size-xxl: 32px;
+  
+  /* Line Heights */
+  --line-height-tight: 100%;
+  --line-height-normal: 140%;
+  --line-height-loose: 160%;
+  
+  /* Font Weights */
+  --font-weight-light: 300;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-bold: 600;
+}
+
+/* Text styles */
+.textBase {
+  font-family: var(--font-primary);
+  font-style: normal;
+  font-weight: var(--font-weight-regular);
+  font-size: var(--font-size-md);
+  line-height: var(--line-height-normal);
+  color: var(--text-dark);
+}
+
+.textSingleLine {
+  font-family: var(--font-primary);
+  font-style: normal;
+  font-weight: var(--font-weight-regular);
+  font-size: var(--font-size-md);
+  line-height: var(--line-height-tight);
+  color: var(--text-dark);
+}
+
+.textLink {
+  font-family: var(--font-primary);
+  font-style: normal;
+  font-weight: var(--font-weight-regular);
+  font-size: var(--font-size-md);
+  line-height: var(--line-height-normal);
+  color: var(--text-dark);
+  text-decoration-line: underline;
+}
