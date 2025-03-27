@@ -36,8 +36,8 @@ reason).
 | ------------------ | -------- | ------------------ | ------------------------------- | ----------------------------------- |
 | **[@notsofun]** | [24/03/2025-26/03/2025]   | [e1eaa784ad2a2663dde5721c789d1ee0e2843caa] | [Implemented framework of Chatting page] | [It is the key feature of our system.] |
 |                    | [date]   | [Link to Commit 2] | [Brief description of the task] | [Why this contribution is relevant] |
-| **[@githubUser2]** | [date]   | [Link to Commit 1] | [Brief description of the task] | [Why this contribution is relevant] |
-|                    | [date]   | [Link to Commit 2] | [Brief description of the task] | [Why this contribution is relevant] |
+| **[@Kai3421]** | [24/03/2025-26/03/2025]   | [dce42be4bde09360e9fa9cbb7831968a48cf22c5] | [added MatchGetDTO, MatchPostDTO & adapted DTOMapper for basic matching services] | [Used to find matches] |
+|                    | [24/03/2025-26/03/2025]   | [da8e06b223c7a9fb90ec16b4aba2c8432ef386f7] | [added MatchRepo and adjusted Match.java to adhere to logic for matching ] | [logic for creating a match - if User1likedUser2 and vice versa its a match :) ] |
 | **[@githubUser3]** | [date]   | [Link to Commit 1] | [Brief description of the task] | [Why this contribution is relevant] |
 |                    | [date]   | [Link to Commit 2] | [Brief description of the task] | [Why this contribution is relevant] |
 | **[@githubUser4]** | [date]   | [Link to Commit 1] | [Brief description of the task] | [Why this contribution is relevant] |
