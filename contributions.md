@@ -43,7 +43,7 @@ reason).
 | **[@darikzmn]** | [date]   | [Link to Commit 1] | [Brief description of the task] | [Why this contribution is relevant] |
 |                    | [date]   | [Link to Commit 2] | [Brief description of the task] | [Why this contribution is relevant] |
 | **[@RomanticSilence]** | [24/03/2025-24/03/2025]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-server/actions/runs/14034771907] | [create the User entity, merge the profile attr.] | [keeping the same data structure is very important for backend development] |
-|                    | [date]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-server/actions/runs/14038394598] | [implement and refine all data schema(class)] | [Having the same data schema is essential, and should be implemented first, also part of the previous class UML class doesn't fit expectation, so it need to be refined] |
+|                    | [24/03/2025-25/03/2025]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-server/actions/runs/14038394598] | [implement and refine all data schema(class)] | [Having the same data schema is essential, and should be implemented first, also part of the previous class UML class doesn't fit expectation, so it need to be refined] |
 | **[@githubUser6]** | [date]   | [Link to Commit 1] | [Brief description of the task] | [Why this contribution is relevant] |
 |                    | [date]   | [Link to Commit 2] | [Brief description of the task] | [Why this contribution is relevant] |
 
