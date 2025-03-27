@@ -38,8 +38,8 @@ reason).
 |                    | [date]   | [Link to Commit 2] | [Brief description of the task] | [Why this contribution is relevant] |
 | **[@Kai3421]** | [24/03/2025-26/03/2025]   | [dce42be4bde09360e9fa9cbb7831968a48cf22c5] | [added MatchGetDTO, MatchPostDTO & adapted DTOMapper for basic matching services] | [Used to find matches] |
 |                    | [24/03/2025-26/03/2025]   | [da8e06b223c7a9fb90ec16b4aba2c8432ef386f7] | [added MatchRepo and adjusted Match.java to adhere to logic for matching ] | [logic for creating a match - if User1likedUser2 and vice versa its a match :) ] |
-| **[@githubUser3]** | [date]   | [Link to Commit 1] | [Brief description of the task] | [Why this contribution is relevant] |
-|                    | [date]   | [Link to Commit 2] | [Brief description of the task] | [Why this contribution is relevant] |
+| **[@khoshimov2018]** | [24.03.2025-26.03.2025]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-client/commit/f0d3f4e4232e259ec6aa7e69d570df45a2ecab90] | [I have updated the UI of the login and register pages] | [created reusable components, created styles/theme,] |
+|                    | [24.03.2025-26.03.2025]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-client/commit/f0d3f4e4232e259ec6aa7e69d570df45a2ecab90] | [Cretaed Main page] | [Main page is where users can like and dislike the profiles] |
 | **[@darikzmn]** | [date]   | [Link to Commit 1] | [Brief description of the task] | [Why this contribution is relevant] |
 |                    | [date]   | [Link to Commit 2] | [Brief description of the task] | [Why this contribution is relevant] |
 | **[@githubUser5]** | [date]   | [Link to Commit 1] | [Brief description of the task] | [Why this contribution is relevant] |
