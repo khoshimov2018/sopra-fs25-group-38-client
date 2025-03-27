@@ -45,8 +45,8 @@ reason).
 |                    | [24.03.2025-27.03.2025]   | [b672fd843aa2b4180e30d5d5fa906f5cb60a65d1] | [Added bio, updated fields and validation in UserPostDTO, DTOMapper and UserService for profile editing.] | [It fulfills the backend requirements of User Story S4 (Profile editing).] |
 | **[@RomanticSilence]** | [24/03/2025-24/03/2025]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-server/actions/runs/14034771907] | [create the User entity, merge the profile attr.] | [keeping the same data structure is very important for backend development] |
 |                    | [24/03/2025-25/03/2025]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-server/actions/runs/14038394598] | [implement and refine all data schema(class)] | [Having the same data schema is essential, and should be implemented first, also part of the previous class UML class doesn't fit expectation, so it need to be refined] |
-| **[@githubUser6]** | [date]   | [Link to Commit 1] | [Brief description of the task] | [Why this contribution is relevant] |
-|                    | [date]   | [Link to Commit 2] | [Brief description of the task] | [Why this contribution is relevant] |
+| **[@AjeongShin]** | [24/03/2025-24/03/2025]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-server/commit/4b4f26c6359cb7c6ba7e0283067fdb0ca012143e] | [edited Course entity, added DTO and mapping logic, and implemented GET /courses endpoint to expose course list] | [Established the base structure to provide a consistent course list to the frontend and enable course-based user filtering] |
+|                    | [25/03/2025-25/03/2025]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-server/commit/4b4f26c6359cb7c6ba7e0283067fdb0ca012143e] | [implemented GET /students filtering by courseIds by adding service logic, and user mapping] | [Enabled course-based user matching by filtering students enrolled in all selected courses, laying the foundation for multi-criteria search.] |
 
 ---
 
