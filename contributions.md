@@ -62,6 +62,10 @@ reason).
 |                    | [date]   | [Link to Commit 2] | [Brief description of the task] | [Why this contribution is relevant] |
 | **[@githubUser4]** | [date]   | [Link to Commit 1] | [Brief description of the task] | [Why this contribution is relevant] |
 |                    | [date]   | [Link to Commit 2] | [Brief description of the task] | [Why this contribution is relevant] |
+| **[@githubUser5]** | [date]   | [Link to Commit 1] | [Brief description of the task] | [Why this contribution is relevant] |
+|                    | [date]   | [Link to Commit 2] | [Brief description of the task] | [Why this contribution is relevant] |
+| **[@AjeongShin]** | [29/03/2025-29/03/2025]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-server/commit/29a6ffa0916376b5a8a7c7a002fbb5c32373180b] | [Implement GET /students endpoint with filtering by courseIds or availability] | [Enables flexible backend filtering to support dynamic frontend search features based on course or time availability] |
+|                    | [date]   | [Link to Commit 2] | [Brief description of the task] | [Why this contribution is relevant] |
 
 ---
 
