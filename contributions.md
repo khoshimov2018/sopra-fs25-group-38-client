@@ -54,7 +54,7 @@ reason).
 
 | **Student**        | **Date** | **Link to Commit** | **Description**                 | **Relevance**                       |
 | ------------------ | -------- | ------------------ | ------------------------------- | ----------------------------------- |
-| **[@githubUser1]** | [date]   | [Link to Commit 1] | [Brief description of the task] | [Why this contribution is relevant] |
+| **[@khoshimov2018]** | [30.03.2025]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-client/commit/eac0d344b7aaf70bcac358adc79ec03868c0bd81] | [Created Profile Page] | [This is where a user can see his profile and can edit page by pressing the button edit page] |
 |                    | [date]   | [Link to Commit 2] | [Brief description of the task] | [Why this contribution is relevant] |
 | **[@githubUser2]** | [date]   | [Link to Commit 1] | [Brief description of the task] | [Why this contribution is relevant] |
 |                    | [date]   | [Link to Commit 2] | [Brief description of the task] | [Why this contribution is relevant] |
