@@ -65,7 +65,8 @@ reason).
 | **[@githubUser5]** | [date]   | [Link to Commit 1] | [Brief description of the task] | [Why this contribution is relevant] |
 |                    | [date]   | [Link to Commit 2] | [Brief description of the task] | [Why this contribution is relevant] |
 | **[@AjeongShin]** | [29/03/2025-29/03/2025]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-server/commit/29a6ffa0916376b5a8a7c7a002fbb5c32373180b] | [Implement GET /students endpoint with filtering by courseIds or availability] | [Enables flexible backend filtering to support dynamic frontend search features based on course or time availability] |
-|                    | [date]   | [Link to Commit 2] | [Brief description of the task] | [Why this contribution is relevant] |
+|                    | [02/04/2025-02/04/2025]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-server/commit/507047fb05a8d2f6a44c51d93bff035124fd5ab7] | [Fix server build failure by adding missing @Id annotation to entity] | [Ensures that the application can compile and run successfully with proper JPA configuration] |
+|                    | [02/04/2025-02/04/2025]   | [[https://github.com/khoshimov2018/sopra-fs25-group-38-server/commit/5f9cc61295b7568edd962a414334a78639d1fb81] | [Add unit tests for retrieving courses and filtering students by availability] | [Improves test coverage and ensures correct functionality for core GET endpoints] |
 
 ---
 
