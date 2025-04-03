@@ -13,6 +13,7 @@ import styles from "@/styles/main.module.css";
 import backgroundStyles from "@/styles/theme/backgrounds.module.css";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { timeStamp } from "console";
+import { marked } from "marked"; // 导入 marked 库
 
 const ChatPage: React.FC = () => {
   const [userMessages, setUserMessages] = useState<{ id: number; text: string; sender: string; timeStamp: number; avatar: string| null }[]>([]);
@@ -119,34 +120,38 @@ const ChatPage: React.FC = () => {
     return null; // 在客户端渲染之前不渲染任何内容
   }
 
-  const handleSendMessage = async () => {
-    if (inputValue.trim() === "") return;
-
+  const handleSendMessage = async (customPrompt?: string, quickReplyMessage?: string) => {
+    const messageText = quickReplyMessage || inputValue.trim();
+    if (messageText === "") return;
+  
     const userMessage = {
       id: Date.now(),
-      text: inputValue,
+      text: messageText,
       sender: "You",
       timeStamp: Date.now(),
-      avatar: userAvatar
+      avatar: userAvatar,
     };
     setUserMessages((prevMessages) => [...prevMessages, userMessage]);
-
-    setInputValue("");
-
+  
+    // 如果是用户输入的消息，清空输入框
+    if (!quickReplyMessage) {
+      setInputValue("");
+    }
+  
     try {
-      const prompt = `
-        You are a professional study advisor with a PhD in diverse fields. Please answer in academic way and briefly. Your answer should be less than 100 words/
+      const prompt = customPrompt || `
+        You are a professional study advisor with a PhD in diverse fields. Please answer in an academic way and briefly. Your answer should be less than 100 words.
         The conversation so far:
         ${[...otherMessages, ...userMessages, userMessage]
           .map((msg) => `${msg.sender}: ${msg.text}`)
           .join("\n")}
         AI Advisor:`;
-
+  
       const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
       const result = await model.generateContent(prompt);
       const response = await result.response;
       const aiReply = await response.text();
-
+  
       const aiMessage = {
         id: Date.now(),
         text: aiReply,
@@ -155,7 +160,6 @@ const ChatPage: React.FC = () => {
         avatar: aiAvatar,
       };
       setOtherMessages((prevMessages) => [...prevMessages, aiMessage]);
-
     } catch (error) {
       console.error("AI 回复失败：", error);
       const errorMessage = {
@@ -166,10 +170,45 @@ const ChatPage: React.FC = () => {
         avatar: aiAvatar,
       };
       setOtherMessages((prevMessages) => [...prevMessages, errorMessage]);
-
+  
       // 更新消息列表中的 AI 错误消息
       updateMessageList("AI Advisor", "AI 回复失败，请稍后再试。");
     }
+  };
+
+  // 渲染 Markdown 内容到页面
+  const renderMarkdown = (markdownText: string) => {
+    const htmlContent = marked(markdownText, { async: false }); // 将Markdown转成HTML
+    return <div dangerouslySetInnerHTML={{ __html: htmlContent }} />;
+  };
+
+  const handleQuickReplySuggestion = () => {
+    const quickReplyMessage = "Can you give me a suggestion on study?";
+    const prompt = `
+      You have many experiences in instructing study so you know how to advise intuitively by asking sutdents which course they want to take if you do not know.
+      Please answer briefly and directly.
+      The conversation so far:
+      ${[...otherMessages, ...userMessages]
+        .map((msg) => `${msg.sender}: ${msg.text}`)
+        .join("\n")}
+      AI Advisor:`;
+  
+    handleSendMessage(prompt, quickReplyMessage);
+  };
+  
+  const handleQuickReplySchedule = () => {
+    const quickReplyMessage = "Can you help me schedule my study?";
+    const prompt = `
+      You are a great planner and you know how to schedule students's study based on their weaknesses and strengths.
+      You could generate a result based on some simple questions and modify it based on students' requirements.
+      Please give a table if you are sure it is a perfect timeslot for students' study.
+      The conversation so far:
+      ${[...otherMessages, ...userMessages]
+        .map((msg) => `${msg.sender}: ${msg.text}`)
+        .join("\n")}
+      AI Advisor:`;
+  
+    handleSendMessage(prompt, quickReplyMessage);
   };
 
   const handleSelectChat = (chatName: string) => {
@@ -261,7 +300,6 @@ const ChatPage: React.FC = () => {
             {/* 右侧聊天页面 */}
             <div className="chat-page">
                 {/* 动态显示对方的用户名 */}
-                {/* 动态显示对方的用户名 */}
                 <div className="chat-header">
                     {selectedChat ? selectedChat : "Select a chat"}
                 </div>
@@ -283,7 +321,7 @@ const ChatPage: React.FC = () => {
                       {message.sender !== "You" && (
                         <img className="avatar" src={message.sender === "AI" ? aiAvatar : message.avatar || "/default-avatar.png"} alt="Avatar" />
                       )}
-                      <div className="message-bubble">{message.text}</div>
+                      <div className="message-bubble">{renderMarkdown(message.text)}</div>
                     </div>
                   ))}
                 </div>
@@ -295,7 +333,25 @@ const ChatPage: React.FC = () => {
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
                 />
-                <div className="send-button" onClick={handleSendMessage}>
+                {/* Quick Reply 按钮容器 */}
+                {selectedChat === "AI Advisor" && (
+                  <div className="quick-reply-container">
+                    <div
+                      className="quick-reply-bubble"
+                      onClick={handleQuickReplySuggestion}
+                    >
+                      Sugeestion
+                    </div>
+                    <div
+                      className="quick-reply-bubble"
+                      onClick={handleQuickReplySchedule}
+                    >
+                      Scheduler
+                    </div>
+                    {/* 如果需要更多按钮，可以继续添加 */}
+                  </div>
+                )}
+                <div className="send-button" onClick={() => handleSendMessage()}>
                   <div className="icon"></div>
                 </div>
               </div>
