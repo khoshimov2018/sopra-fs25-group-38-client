@@ -5,31 +5,14 @@ import { useRouter } from "next/navigation";
 import { useApi } from "@/hooks/useApi";
 import useLocalStorage from "@/hooks/useLocalStorage";
 import { useMessage } from '@/hooks/useMessage';
-import { User } from "@/types/user";
+import { UserProfile } from "@/types/profile";
 import Link from "next/link";
-import Image from "next/image";
 import Logo from "@/components/Logo";
-import { UserOutlined, MessageOutlined, FilterOutlined, LogoutOutlined, EditOutlined, CameraOutlined } from "@ant-design/icons";
+import { UserOutlined, MessageOutlined, FilterOutlined, LogoutOutlined } from "@ant-design/icons";
 import styles from "@/styles/profile.module.css";
 import mainStyles from "@/styles/main.module.css";
 import backgroundStyles from "@/styles/theme/backgrounds.module.css";
-import Button from "@/components/Button";
-import FormInput from "@/components/FormInput";
-import FormContainer from "@/components/FormContainer";
-
-// Extended user profile interface
-interface UserProfile extends User {
-  studyStyle?: string;
-  goal?: string;
-  tags?: string[];
-  studyLevels?: {
-    subject: string;
-    grade: string;
-    level: string;
-  }[];
-  profileImage?: string;
-  bio?: string;
-}
+import ProfileContent from "@/components/profile";
 
 const ProfilePage = () => {
   const router = useRouter();
@@ -37,8 +20,8 @@ const ProfilePage = () => {
   const { value: token, clear: clearToken } = useLocalStorage<string>("token", "");
   const { message, contextHolder } = useMessage();
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
-  const [isEditing, setIsEditing] = useState(false);
   const [editableUser, setEditableUser] = useState<UserProfile | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
 
   // Fetch user data
@@ -116,14 +99,15 @@ const ProfilePage = () => {
 
   const handleEditToggle = () => {
     if (isEditing) {
-      // Save changes
-      setCurrentUser(editableUser);
-      message.success("Profile updated successfully");
+      // Save changes using our dedicated save function
+      handleSaveProfile();
+    } else {
+      // Enter edit mode
+      setIsEditing(true);
     }
-    setIsEditing(!isEditing);
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     if (!editableUser) return;
     
     const { name, value } = e.target;
@@ -161,184 +145,155 @@ const ProfilePage = () => {
   };
 
   const handleImageUpload = () => {
-    message.info("Image upload functionality would be implemented here");
+    // In a real implementation, this would open a file picker dialog
+    // and allow the user to select an image to upload
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    
+    input.onchange = (e) => {
+      const target = e.target as HTMLInputElement;
+      if (target.files && target.files[0]) {
+        const file = target.files[0];
+        
+        // In a real implementation, we would upload the file to a server
+        // and get a URL back
+        // For demo purposes, we're using a local object URL
+        const imageUrl = URL.createObjectURL(file);
+        
+        if (editableUser) {
+          setEditableUser({
+            ...editableUser,
+            profileImage: imageUrl
+          });
+          
+          message.success("Profile photo updated successfully");
+        }
+      }
+    };
+    
+    input.click();
+  };
+  
+  const handleSaveProfile = () => {
+    if (!editableUser) return;
+    
+    // Validate required fields
+    if (!editableUser.name || !editableUser.email) {
+      message.error("Name and email are required fields");
+      return;
+    }
+    
+    // In a real implementation, we would send the updated profile to the server
+    // For demo purposes, we're just updating the local state
+    setCurrentUser(editableUser);
+    setIsEditing(false);
+    message.success("Profile updated successfully");
+  };
+
+  const handleAddTag = () => {
+    if (!editableUser) return;
+    const newTags = editableUser.tags ? [...editableUser.tags, ''] : [''];
+    setEditableUser({
+      ...editableUser,
+      tags: newTags
+    });
+  };
+
+  const handleRemoveTag = (index: number) => {
+    if (!editableUser || !editableUser.tags) return;
+    const newTags = [...editableUser.tags];
+    newTags.splice(index, 1);
+    setEditableUser({
+      ...editableUser,
+      tags: newTags
+    });
+  };
+
+  const handleAddStudyLevel = () => {
+    if (!editableUser) return;
+    const newLevel = { subject: '', grade: '', level: '' };
+    const newLevels = editableUser.studyLevels ? [...editableUser.studyLevels, newLevel] : [newLevel];
+    setEditableUser({
+      ...editableUser,
+      studyLevels: newLevels
+    });
+  };
+
+  const handleRemoveStudyLevel = (index: number) => {
+    if (!editableUser || !editableUser.studyLevels) return;
+    const newLevels = [...editableUser.studyLevels];
+    newLevels.splice(index, 1);
+    setEditableUser({
+      ...editableUser,
+      studyLevels: newLevels
+    });
   };
 
   if (loading || !currentUser) {
-    return React.createElement('div', null, [
-      contextHolder,
-      React.createElement('div', { className: backgroundStyles.loginBackground, key: 'bg' }, [
-        React.createElement('div', { 
-          style: { display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }, 
-          key: 'loading-container' 
-        }, [
-          React.createElement('div', { key: 'loading-text' }, 'Loading profile...')
-        ])
-      ])
-    ]);
+    return (
+      <div>
+        {contextHolder}
+        <div className={backgroundStyles.loginBackground}>
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+            <div>Loading profile...</div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
-  // Rendering profile content
-  const header = React.createElement('div', { className: mainStyles.header, key: 'header' }, [
-    React.createElement(Link, { href: '/main', className: mainStyles.logoLink, key: 'logo-link' }, [
-      React.createElement(Logo, { className: mainStyles.headerLogo, key: 'logo' })
-    ]),
-    React.createElement('div', { className: mainStyles.headerRight, key: 'header-right' }, [
-      React.createElement(Link, { href: '/profile', key: 'profile-link' }, [
-        React.createElement('button', { className: mainStyles.iconButton, key: 'profile-btn' }, [
-          React.createElement(UserOutlined, { key: 'user-icon' })
-        ])
-      ]),
-      React.createElement(Link, { href: '/messages', key: 'messages-link' }, [
-        React.createElement('button', { className: mainStyles.iconButton, key: 'message-btn' }, [
-          React.createElement(MessageOutlined, { key: 'message-icon' })
-        ])
-      ]),
-      React.createElement('button', { 
-        className: mainStyles.iconButton, 
-        onClick: handleFilterClick, 
-        key: 'filter-btn' 
-      }, [
-        React.createElement(FilterOutlined, { key: 'filter-icon' })
-      ]),
-      React.createElement('button', { 
-        className: mainStyles.iconButton, 
-        onClick: handleLogout, 
-        key: 'logout-btn' 
-      }, [
-        React.createElement(LogoutOutlined, { key: 'logout-icon' })
-      ])
-    ])
-  ]);
+  // Render the header with navigation
+  const header = (
+    <div className={mainStyles.header}>
+      <Link href="/main" className={mainStyles.logoLink}>
+        <Logo className={mainStyles.headerLogo} />
+      </Link>
+      <div className={mainStyles.headerRight}>
+        <Link href="/profile">
+          <button className={mainStyles.iconButton}>
+            <UserOutlined />
+          </button>
+        </Link>
+        <Link href="/messages">
+          <button className={mainStyles.iconButton}>
+            <MessageOutlined />
+          </button>
+        </Link>
+        <button className={mainStyles.iconButton} onClick={handleFilterClick}>
+          <FilterOutlined />
+        </button>
+        <button className={mainStyles.iconButton} onClick={handleLogout}>
+          <LogoutOutlined />
+        </button>
+      </div>
+    </div>
+  );
 
-  // Profile header with title and edit button
-  const profileHeader = React.createElement('div', { className: styles.profileHeader, key: 'profile-header' }, [
-    React.createElement('h1', { className: styles.profileTitle, key: 'title' }, 'Profile'),
-    React.createElement('button', { 
-      className: styles.editButton, 
-      onClick: handleEditToggle, 
-      key: 'edit-btn' 
-    }, [
-      React.createElement('span', { key: 'edit-text' }, isEditing ? 'Save' : 'Edit'),
-      React.createElement(EditOutlined, { className: styles.editIcon, key: 'edit-icon' })
-    ])
-  ]);
-
-  // Profile image section
-  const profileImage = React.createElement('div', { className: styles.profileImageSection, key: 'profile-image' }, [
-    React.createElement('div', { className: styles.imageContainer, key: 'image-container' }, [
-      React.createElement('img', { 
-        src: currentUser.profileImage, 
-        alt: currentUser.name || "Profile", 
-        className: styles.profileImage, 
-        key: 'img' 
-      }),
-      isEditing && React.createElement('button', { 
-        className: styles.uploadButton, 
-        onClick: handleImageUpload, 
-        key: 'upload-btn' 
-      }, [
-        React.createElement(CameraOutlined, { key: 'camera-icon' }),
-        ' Change Photo'
-      ])
-    ])
-  ]);
-
-  // Profile details in view mode
-  const renderViewMode = () => {
-    return React.createElement('div', { className: styles.profileCard, style: { border: 'none' }, key: 'card' }, [
-      // Name section
-      React.createElement('div', { className: styles.cardSection, key: 'name-section' }, [
-        React.createElement('div', { className: styles.detailsLabel, key: 'name-label' }, 'Name'),
-        React.createElement('div', { className: styles.detailsValue, key: 'name-value' }, currentUser.name)
-      ]),
-      
-      // Email section
-      React.createElement('div', { className: styles.cardSection, key: 'email-section' }, [
-        React.createElement('div', { className: styles.detailsLabel, key: 'email-label' }, 'Email'),
-        React.createElement('div', { className: styles.detailsValue, key: 'email-value' }, currentUser.email)
-      ]),
-      
-      // Birthday section (if available)
-      currentUser.birthday && React.createElement('div', { className: styles.cardSection, key: 'bday-section' }, [
-        React.createElement('div', { className: styles.detailsLabel, key: 'bday-label' }, 'Birthday'),
-        React.createElement('div', { className: styles.detailsValue, key: 'bday-value' }, 
-          new Date(currentUser.birthday).toLocaleDateString()
-        )
-      ]),
-      
-      // Bio section (if available)
-      currentUser.bio && React.createElement('div', { className: styles.cardSection, key: 'bio-section' }, [
-        React.createElement('div', { className: styles.detailsLabel, key: 'bio-label' }, 'Bio'),
-        React.createElement('div', { className: styles.detailsValue, key: 'bio-value' }, currentUser.bio)
-      ]),
-      
-      // Study Style section (if available)
-      currentUser.studyStyle && React.createElement('div', { className: styles.cardSection, key: 'style-section' }, [
-        React.createElement('div', { className: styles.detailsLabel, key: 'style-label' }, 'Study Style'),
-        React.createElement('div', { className: styles.detailsValue, key: 'style-value' }, currentUser.studyStyle)
-      ]),
-      
-      // Goal section (if available)
-      currentUser.goal && React.createElement('div', { className: styles.cardSection, key: 'goal-section' }, [
-        React.createElement('div', { className: styles.detailsLabel, key: 'goal-label' }, 'Goal'),
-        React.createElement('div', { className: styles.detailsValue, key: 'goal-value' }, currentUser.goal)
-      ]),
-      
-      // Tags section (if available)
-      currentUser.tags && currentUser.tags.length > 0 && React.createElement('div', { className: styles.cardSection, key: 'tags-section' }, [
-        React.createElement('div', { className: styles.detailsLabel, key: 'tags-label' }, 'Tags'),
-        React.createElement('div', { className: styles.tagContainer, key: 'tags-container' }, 
-          currentUser.tags.map((tag, index) => 
-            React.createElement('span', { key: `tag-${index}`, className: styles.tag }, tag)
-          )
-        )
-      ]),
-      
-      // Study Levels section (if available)
-      currentUser.studyLevels && currentUser.studyLevels.length > 0 && React.createElement('div', { className: styles.cardSection, key: 'levels-section' }, [
-        React.createElement('div', { className: styles.detailsLabel, key: 'levels-label' }, 'Study Levels'),
-        React.createElement('div', { className: styles.studyLevelContainer, key: 'levels-container' }, 
-          currentUser.studyLevels.map((level, index) => 
-            React.createElement('div', { key: `level-${index}`, className: styles.studyLevelRow }, [
-              React.createElement('div', { className: styles.studyLevelLeft, key: `level-left-${index}` }, [
-                React.createElement('span', { className: styles.studyLevelGrade, key: `grade-${index}` }, level.grade),
-                React.createElement('span', { className: styles.studyLevelSubject, key: `subject-${index}` }, level.subject),
-                React.createElement('span', { className: styles.studyLevelRight, key: `level-right-${index}` }, ` (${level.level})`)
-              ])
-            ])
-          )
-        )
-      ])
-    ]);
-  };
-
-  // Main content
-  const content = React.createElement('div', { className: styles.content, key: 'content' }, [
-    profileHeader,
-    React.createElement('div', { className: styles.profileGrid, key: 'grid' }, [
-      React.createElement('div', { className: styles.profileCard, style: { border: 'none' }, key: 'main-card' }, [
-        profileImage,
-        React.createElement('div', { className: styles.profileDetailsSection, key: 'details' }, [
-          isEditing ? 
-            // Edit mode - form inputs will be added in a separate implementation
-            React.createElement('div', { className: styles.editForm, key: 'edit-form' }, 'Loading edit form...') : 
-            // View mode
-            renderViewMode()
-        ])
-      ])
-    ])
-  ]);
-
-  return React.createElement('div', null, [
-    contextHolder,
-    React.createElement('div', { className: backgroundStyles.loginBackground, key: 'bg' }, [
-      React.createElement('div', { className: styles.profileContainer, key: 'container' }, [
-        header,
-        content
-      ])
-    ])
-  ]);
+  return (
+    <div>
+      {contextHolder}
+      <div className={backgroundStyles.loginBackground}>
+        <div className={styles.profileContainer}>
+          {header}
+          <ProfileContent
+            currentUser={currentUser}
+            editableUser={editableUser}
+            isEditing={isEditing}
+            onEditToggle={handleEditToggle}
+            onImageUpload={handleImageUpload}
+            onInputChange={handleInputChange}
+            onTagChange={handleTagChange}
+            onStudyLevelChange={handleStudyLevelChange}
+            onAddTag={handleAddTag}
+            onRemoveTag={handleRemoveTag}
+            onAddStudyLevel={handleAddStudyLevel}
+            onRemoveStudyLevel={handleRemoveStudyLevel}
+          />
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default ProfilePage;
