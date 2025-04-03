@@ -58,6 +58,7 @@ reason).
 |                    | [03.04.2025]   | [Link to Commit 2] | [Profile Page Edit] | [Users can edit their profile] |
 | **[@notsofun]** | [03.04.2025]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-client/commit/9b26fd2490f872d884cbb036a4174ce12ef5ff0c] | [Implemented Chatting with AI advisor] | [This is key user story in our project.] |
 |                    | [03.04.2025]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-client/commit/b1b3c896d4e111e6668e35f49929f6dabac1feeb] | [Implemened AI suggestions and scheduling redendered by Markdown] | [This is one key story in our project] |
+|                    | [03.04.2025]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-client/commit/8dfcb08706ed5ad00db7ca1c08e441e7884d7bae] | [Implemened fetching matched users from backend and display in the chat windows] | [This is one key story in our project] |
 | **[@githubUser3]** | [date]   | [Link to Commit 1] | [Brief description of the task] | [Why this contribution is relevant] |
 |                    | [date]   | [Link to Commit 2] | [Brief description of the task] | [Why this contribution is relevant] |
 | **[@githubUser4]** | [date]   | [Link to Commit 1] | [Brief description of the task] | [Why this contribution is relevant] |
