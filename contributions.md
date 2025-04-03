@@ -60,8 +60,8 @@ reason).
 |                    | [29.03-03.04]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-server/commit/8da95b4fb9bd7aa255accea987fc3b2679639798] | [added logic to fetch user ids in user service and added missing imports] | [need to fetch user ids for matches] |
 |                    | [29.03-03.04]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-server/commit/764c84736286e79dea1c2d148582cc4276a1a660] | [adjusted logic to only fetch user ids for ACCEPTED matches] | [should only be able to fetch the user ids for ACCEPTED machtes] |
 |                    | [29.03-03.04]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-server/commit/ba94de481e8f82f2e030c8799c16b86de04a1a99] | [adding logic to MatchPostDTO for matching] | [basis in order to match people] |
-| **[@githubUser3]** | [date]   | [Link to Commit 1] | [Brief description of the task] | [Why this contribution is relevant] |
-|                    | [date]   | [Link to Commit 2] | [Brief description of the task] | [Why this contribution is relevant] |
+| **[@RomanticSilence]** | [29.03-03.04]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-server/commit/21259aea8a440012e77d84cc9625431321e96998] | [create multiple entities & api for chatting system] | [this is the foundation of how the chatting information are saved and fetch] |
+|                    | [29.03-03.04]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-server/commit/be4fb693366226431855642cbfa01bc6f0cce8ec] | [build DTO for chatting system] | [essential for communication with the frontend for messaging] |
 | **[@githubUser4]** | [date]   | [Link to Commit 1] | [Brief description of the task] | [Why this contribution is relevant] |
 |                    | [date]   | [Link to Commit 2] | [Brief description of the task] | [Why this contribution is relevant] |
 | **[@githubUser5]** | [date]   | [Link to Commit 1] | [Brief description of the task] | [Why this contribution is relevant] |
