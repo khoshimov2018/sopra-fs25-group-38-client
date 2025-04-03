@@ -56,8 +56,10 @@ reason).
 | ------------------ | -------- | ------------------ | ------------------------------- | ----------------------------------- |
 | **[@khoshimov2018]** | [30.03.2025]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-client/commit/eac0d344b7aaf70bcac358adc79ec03868c0bd81] | [Created Profile Page] | [This is where a user can see his profile and can edit page by pressing the button edit page] |
 |                    | [03.04.2025]   | [Link to Commit 2] | [Profile Page Edit] | [Users can edit their profile] |
-| **[@githubUser2]** | [date]   | [Link to Commit 1] | [Brief description of the task] | [Why this contribution is relevant] |
-|                    | [date]   | [Link to Commit 2] | [Brief description of the task] | [Why this contribution is relevant] |
+| **[@Kai3421]** | [29.03-03.04]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-server/commit/7835cc7a9405da079bb06e6a2dacb7d4e5c176bf] | [add match_id for user through join column] | [important to find users with which other users are matched ] |
+|                    | [29.03-03.04]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-server/commit/8da95b4fb9bd7aa255accea987fc3b2679639798] | [added logic to fetch user ids in user service and added missing imports] | [need to fetch user ids for matches] |
+|                    | [29.03-03.04]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-server/commit/764c84736286e79dea1c2d148582cc4276a1a660] | [adjusted logic to only fetch user ids for ACCEPTED matches] | [should only be able to fetch the user ids for ACCEPTED machtes] |
+|                    | [29.03-03.04]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-server/commit/ba94de481e8f82f2e030c8799c16b86de04a1a99] | [adding logic to MatchPostDTO for matching] | [basis in order to match people] |
 | **[@githubUser3]** | [date]   | [Link to Commit 1] | [Brief description of the task] | [Why this contribution is relevant] |
 |                    | [date]   | [Link to Commit 2] | [Brief description of the task] | [Why this contribution is relevant] |
 | **[@githubUser4]** | [date]   | [Link to Commit 1] | [Brief description of the task] | [Why this contribution is relevant] |
