@@ -1,41 +1,43 @@
-"use client";
+'use client';
 
 import React, { useEffect, useState, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams} from "next/navigation";
 import { UserOutlined, MessageOutlined, FilterOutlined, LogoutOutlined } from "@ant-design/icons";
 import { useMessage } from "@/hooks/useMessage";
 import useLocalStorage from "@/hooks/useLocalStorage";
 import { App } from "antd";
 import Link from "next/link";
 import Logo from "@/components/Logo";
-import "../styles/chat.css";
+import "../../styles/chat.css";
 import styles from "@/styles/main.module.css";
 import backgroundStyles from "@/styles/theme/backgrounds.module.css";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { timeStamp } from "console";
 import { marked } from "marked"; // 导入 marked 库
+import { getApiDomain } from "@/utils/domain";
 
 const ChatPage: React.FC = () => {
   const [userMessages, setUserMessages] = useState<{ id: number; text: string; sender: string; timeStamp: number; avatar: string| null }[]>([]);
   const [otherMessages, setOtherMessages] = useState<{ id: number; text: string; sender: string; timeStamp: number; avatar: string| null}[]>([]);
+  const [matchedUsers, setMatchedUsers] = useState<{  userId: number; username: string; supportingText?: string }[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isClient, setIsClient] = useState(false);
+  const router = useRouter();
   const [selectedChat, setSelectedChat] = useState<string | null>(null);  // Track selected chat
   const Your_API_Key = "AIzaSyAA9DyJQQeK-E9E1PIblN7ay-g4PlwKbVw"
   const genAI = new GoogleGenerativeAI(Your_API_Key);
   const [userAvatar, setUserAvatar] = useState("/default-user-avatar.png"); // 默认头像
-
-  // 引用用于滚动到最新消息
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  const router = useRouter();
-  const { message, contextHolder } = useMessage();
-  const { clear: clearToken } = useLocalStorage<string>("token", "");
+  const aiAvatar = "/AI-Icon.svg";  // 你可以使用本地或外部的头像路径
 
   // 使用 useEffect 来确保只在客户端执行
   useEffect(() => {
     setIsClient(true); // 表示组件已经渲染到客户端
   }, []);
+
+    // 引用用于滚动到最新消息
+    const messagesEndRef = useRef<HTMLDivElement>(null);
+    const { userid } = useParams(); // 获取动态路由中的 userid
+    const { message, contextHolder } = useMessage();
+    const { clear: clearToken } = useLocalStorage<string>("token", "");
 
   const defaultAIMessage = {
     id: 1,
@@ -45,42 +47,80 @@ const ChatPage: React.FC = () => {
     avatar: userAvatar
   };
 
+
+    // 获取匹配用户列表
+
+    useEffect(() => {
+      const fetchMatchedUsers = async (userId: number) => {
+        try {
+          const response = await fetch(`${getApiDomain()}/api/matched-users?userId=${userId}`);
+          const data = await response.json();
+          console.log('Fetched matched users:', data);
+    
+          // 映射数据格式
+          const mappedData = data.map((item: { matchedUserId: number; matchedUsername: string; supportingText: string; }) => ({
+            userId: item.matchedUserId,
+            username: item.matchedUsername,
+            supportingText: item.supportingText, // 如果有 supportingText 字段的话
+          }));
+    
+          setMatchedUsers(mappedData); // 设置匹配的用户数据
+          console.log('matched:users', mappedData); // 打印映射后的数据
+        } catch (error) {
+          console.error("Failed to fetch matched users:", error);
+        }
+      };
+      fetchMatchedUsers(Number(userid));
+    }, [userid]);
+
+
+  // 加载聊天记录
+  const fetchChatHistory = async (userId: number) => {
+    try {
+      const response = await fetch(`${getApiDomain()}/api/chat-history?userId=${userId}`);
+      const data = await response.json();
+      setOtherMessages(data);
+    } catch (error) {
+      console.error("Failed to fetch chat history:", error);
+    }
+  };
+
   // 模拟从服务端获取消息
   useEffect(() => {
+    if (!userid) return; // 如果没有 userid，直接返回
+  
     const fetchMessages = async () => {
-      // 这里假设你从服务端获取数据（可以根据实际API修改）
-      const response = await fetch("/api/messages");  // 示例请求
-      const data = await response.json();
-      
-      if (data && data.length > 0) {
-        setOtherMessages(data);
-      } else {
-        // 如果没有消息，保持空数组
-        setOtherMessages([]);
+      try {
+        const response = await fetch(`${getApiDomain()}/api/messages/${userid}`);
+        const data = await response.json();
+  
+        if (data && data.length > 0) {
+          setOtherMessages(data);
+        } else {
+          setOtherMessages([]);
+        }
+      } catch (error) {
+        console.error("Failed to fetch messages:", error);
       }
     };
-
+  
     fetchMessages();
-  }, []);
-
-  // 模拟实时接收对方的消息
+  }, [userid]); // 当 userid 变化时重新请求数据
+  
   useEffect(() => {
     const receiveMessageFromOpponent = async () => {
-      // 每2秒请求一次服务端，获取是否有新的消息
-      const response = await fetch("/api/receive_message");  // 假设这是从服务端获取消息的 API
+      const response = await fetch(`${getApiDomain()}/api/receive_message`);
       const data = await response.json();
-
-      // 如果服务端返回新的消息，则更新消息列表
+  
       if (data && data.text) {
         updateMessageList("Opponent", data.text);
       }
     };
-
+  
     const intervalId = setInterval(receiveMessageFromOpponent, 2000);
-
-    // 清除定时器
+  
     return () => clearInterval(intervalId);
-  }, []); // 只在初次渲染时启动定时器
+  }, []);
 
   useEffect(() => {
     if (messagesEndRef.current) {
@@ -94,16 +134,31 @@ const ChatPage: React.FC = () => {
 //         .then((data) => setUserAvatar(data.avatar || "/default-user-avatar.png"));
 // }, []);
 
+  useEffect(() => {
+    const receiveMessageFromOpponent = async () => {
+      const response = await fetch(`${getApiDomain()}/api/receive_message`);
+      const data = await response.json();
+
+      if (data && data.text) {
+        updateMessageList(data.sender, data.text);
+      }
+    };
+
+    const intervalId = setInterval(receiveMessageFromOpponent, 2000);
+
+    return () => clearInterval(intervalId);
+  }, []);
+
   const updateMessageList = (sender: string, text: string) => {
     setOtherMessages((prevMessages) => {
       const existingMessageIndex = prevMessages.findIndex((msg) => msg.sender === sender);
 
       if (existingMessageIndex !== -1) {
-        // 如果消息列表中已经存在该用户，更新 supporting text
+        // 如果消息列表中已经存在该用户，更新消息内容
         const updatedMessages = [...prevMessages];
         updatedMessages[existingMessageIndex] = {
           ...updatedMessages[existingMessageIndex],
-          text, // 更新 supporting text
+          text, // 更新消息内容
         };
         return updatedMessages;
       } else {
@@ -114,11 +169,16 @@ const ChatPage: React.FC = () => {
         ];
       }
     });
-  };
 
-  if (!isClient) {
-    return null; // 在客户端渲染之前不渲染任何内容
-  }
+  // 更新匹配用户列表中的 supporting text
+  setMatchedUsers((prevUsers) =>
+    prevUsers.map((user) =>
+      user.username === sender
+        ? { ...user, supportingText: text } // 更新 supporting text
+        : user
+    )
+  );
+};
 
   const handleSendMessage = async (customPrompt?: string, quickReplyMessage?: string) => {
     const messageText = quickReplyMessage || inputValue.trim();
@@ -139,40 +199,68 @@ const ChatPage: React.FC = () => {
     }
   
     try {
-      const prompt = customPrompt || `
-        You are a professional study advisor with a PhD in diverse fields. Please answer in an academic way and briefly. Your answer should be less than 100 words.
-        The conversation so far:
-        ${[...otherMessages, ...userMessages, userMessage]
-          .map((msg) => `${msg.sender}: ${msg.text}`)
-          .join("\n")}
-        AI Advisor:`;
+      if (selectedChat === "AI Advisor") {
+        // **AI Advisor 的处理逻辑**
+        const prompt = customPrompt || `
+          You are a professional study advisor with a PhD in diverse fields. Please answer in an academic way and briefly. Your answer should be less than 100 words.
+          The conversation so far:
+          ${[...otherMessages, ...userMessages, userMessage]
+            .map((msg) => `${msg.sender}: ${msg.text}`)
+            .join("\n")}
+          AI Advisor:`;
   
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      const aiReply = await response.text();
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        const aiReply = await response.text();
   
-      const aiMessage = {
-        id: Date.now(),
-        text: aiReply,
-        sender: "AI Advisor",
-        timeStamp: Date.now(),
-        avatar: aiAvatar,
-      };
-      setOtherMessages((prevMessages) => [...prevMessages, aiMessage]);
+        const aiMessage = {
+          id: Date.now(),
+          text: aiReply,
+          sender: "AI Advisor",
+          timeStamp: Date.now(),
+          avatar: aiAvatar,
+        };
+        setOtherMessages((prevMessages) => [...prevMessages, aiMessage]);
+      } else {
+        // **普通用户的处理逻辑**
+        const response = await fetch(`${getApiDomain()}/chats/${selectedChat}/message`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            senderId: 1, // 假设当前用户 ID 为 1
+            message: messageText,
+          }),
+        });
+  
+        if (!response.ok) {
+          throw new Error(`Failed to send message: ${response.statusText}`);
+        }
+  
+        const data = await response.json();
+  
+        // 将服务器返回的消息 ID 和时间戳添加到消息列表
+        const serverMessage = {
+          id: data.messageId,
+          text: messageText,
+          sender: "You",
+          timeStamp: new Date(data.timestamp).getTime(),
+          avatar: userAvatar,
+        };
+        setUserMessages((prevMessages) => [...prevMessages, serverMessage]);
+      }
     } catch (error) {
-      console.error("AI 回复失败：", error);
+      console.error("消息发送失败：", error);
       const errorMessage = {
         id: Date.now(),
-        text: "AI 回复失败，请稍后再试。",
-        sender: "AI Advisor",
+        text: "消息发送失败，请稍后再试。",
+        sender: selectedChat === "AI Advisor" ? "AI Advisor" : "Server",
         timeStamp: Date.now(),
-        avatar: aiAvatar,
+        avatar: selectedChat === "AI Advisor" ? aiAvatar : null,
       };
       setOtherMessages((prevMessages) => [...prevMessages, errorMessage]);
-  
-      // 更新消息列表中的 AI 错误消息
-      updateMessageList("AI Advisor", "AI 回复失败，请稍后再试。");
     }
   };
 
@@ -211,8 +299,14 @@ const ChatPage: React.FC = () => {
     handleSendMessage(prompt, quickReplyMessage);
   };
 
-  const handleSelectChat = (chatName: string) => {
-    setSelectedChat(chatName);
+  // 处理选择聊天对象
+
+  const handleSelectChat = (chatName: string | number) => {
+    setSelectedChat(chatName.toString());
+    if (chatName === "AI Advisor") {
+    } else {
+      fetchChatHistory(Number(chatName));
+    }
   };
 
   const handleLogout = () => {
@@ -232,8 +326,6 @@ const ChatPage: React.FC = () => {
       window.location.href = "/login";
     }
   };
-
-  const aiAvatar = "/AI-Icon.svg";  // 你可以使用本地或外部的头像路径
 
   return (
     <App>
@@ -265,43 +357,39 @@ const ChatPage: React.FC = () => {
           <div className="chat-container">
             {/* 左侧消息列表 */}
             <div className="message-list-container">
-                <div className="message-list-header">Conversations</div>
-                <div className="message-list">
-                  {/* AI Advisor 始终置顶 */}
-                  <div className="message-item" onClick={() => handleSelectChat("AI Advisor")}>
-                    <div className="avatar" style={{ backgroundImage: `url(${aiAvatar})` }}></div>
+              <div className="message-list-header">Matched Users</div>
+              <div className="message-list">
+                {/* AI Advisor 始终置顶 */}
+                <div className="message-item" onClick={() => handleSelectChat("AI Advisor")}>
+                  <div className="avatar" style={{ backgroundImage: `url(${aiAvatar})` }}></div>
+                  <div className="content">
+                    <div className="headline">AI Advisor</div>
+                    <div className="supporting-text">{defaultAIMessage.text}</div>
+                  </div>
+                </div>
+
+                {/* 渲染匹配用户 */}
+                {matchedUsers.map((user) => (
+                  <div
+                    key={user.userId}
+                    className={`message-item ${selectedChat === user.username ? "selected" : ""}`}
+                    onClick={() => handleSelectChat(user.username)}
+                  >
+                    <div className="avatar"></div>
                     <div className="content">
-                      <div className="headline">AI Advisor</div>
-                      <div className="supporting-text">
-                        {otherMessages.find((msg) => msg.sender === "AI Advisor")?.text || "Hello! How can I assist you?"}
-                      </div>
+                      <div className="headline">{user.username}</div>
+                      <div className="supporting-text">{user.supportingText || "No messages yet"}</div>
                     </div>
                   </div>
-
-                  {/* 渲染其他用户的消息 */}
-                  {otherMessages
-                    .filter((message) => message.sender !== "You" && message.sender !== "AI Advisor")
-                    .map((message) => (
-                      <div
-                        key={message.id}
-                        className="message-item"
-                        onClick={() => handleSelectChat(message.sender)}
-                      >
-                        <div className="avatar"></div>
-                        <div className="content">
-                          <div className="headline">{message.sender}</div>
-                          <div className="supporting-text">{message.text}</div>
-                        </div>
-                      </div>
-                    ))}
-                </div>
+                ))}
+              </div>
             </div>
 
             {/* 右侧聊天页面 */}
             <div className="chat-page">
                 {/* 动态显示对方的用户名 */}
                 <div className="chat-header">
-                    {selectedChat ? selectedChat : "Select a chat"}
+                  {selectedChat ? `Chat with ${selectedChat}` : "Select a chat"}
                 </div>
                 <div className="chat-content">
                     {/* AI Advisor 默认消息，每次都显示 AI 头像 */}
@@ -314,12 +402,15 @@ const ChatPage: React.FC = () => {
 
                 {/* 渲染所有消息 */}
                 {[...otherMessages, ...userMessages]
-                  .sort((a, b) => a.timeStamp - b.timeStamp) // 按时间戳排序，保证正确的对话顺序
+                  .sort((a, b) => a.timeStamp - b.timeStamp) // 按时间戳排序
                   .map((message) => (
                     <div key={message.id} className={`chat-message ${message.sender === "You" ? "you" : ""}`}>
-                      {/* AI 消息或其他用户的消息都显示头像 */}
                       {message.sender !== "You" && (
-                        <img className="avatar" src={message.sender === "AI" ? aiAvatar : message.avatar || "/default-avatar.png"} alt="Avatar" />
+                        <img
+                          className="avatar"
+                          src={message.avatar || "/default-avatar.png"}
+                          alt="Avatar"
+                        />
                       )}
                       <div className="message-bubble">{renderMarkdown(message.text)}</div>
                     </div>
