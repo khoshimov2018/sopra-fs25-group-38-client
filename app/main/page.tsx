@@ -10,7 +10,7 @@ import { App, Button as AntButton } from "antd";
 import Link from "next/link";
 import Image from "next/image";
 import Logo from "@/components/Logo";
-import { UserOutlined, MessageOutlined, FilterOutlined } from "@ant-design/icons";
+import { UserOutlined, MessageOutlined, FilterOutlined, LogoutOutlined } from "@ant-design/icons";
 import styles from "@/styles/main.module.css";
 import backgroundStyles from "@/styles/theme/backgrounds.module.css";
 import Button from "@/components/Button";
@@ -210,19 +210,18 @@ const MainPage: React.FC = () => {
               <Logo className={styles.headerLogo} />
             </Link>
             <div className={styles.headerRight}>
-              <Link href="/messages">
-                <button className={styles.iconButton}><MessageOutlined /></button>
-              </Link>
               <Link href="/profile">
                 <button className={styles.iconButton}><UserOutlined /></button>
+              </Link>
+              <Link href="/chat">
+                <button className={styles.iconButton}><MessageOutlined /></button>
               </Link>
               <button className={styles.iconButton} onClick={handleLogout}><FilterOutlined /></button>
               <button
                 className={styles.iconButton}
                 onClick={actualLogout}
-                style={{ marginLeft: '15px', color: '#ff4d4f' }}
               >
-                Logout
+                <LogoutOutlined />
               </button>
             </div>
           </div>
@@ -240,44 +239,52 @@ const MainPage: React.FC = () => {
 
             {/* RIGHT COLUMN: Details + Study Level + Buttons */}
             <div className={styles.rightSection}>
-              {/* Profile Card (Name, Study Style, Goal, Tags) */}
-              <div className={styles.profileCard}>
-                <div className={styles.detailsSection}>
+              {/* Merged Profile & Study Level Card */}
+              <div className={`${styles.card} ${styles.profileCard}`}>
+                {/* Card Drag Handle (from Figma) */}
+                <div className={styles.cardHeader}>
+                  <div className={styles.dragHandle}></div>
+                </div>
+                {/* Name */}
+                <div className={styles.cardSection}>
                   <div className={styles.detailsLabel}>Name</div>
                   <div className={styles.detailsValue}>{currentProfile.name}</div>
                 </div>
 
-                <div className={styles.detailsSection}>
+                {/* Study Style */}
+                <div className={styles.cardSection}>
                   <div className={styles.detailsLabel}>Study Style</div>
                   <div className={styles.detailsValue}>{currentProfile.studyStyle}</div>
                 </div>
 
-                <div className={styles.detailsSection}>
+                {/* Goal */}
+                <div className={styles.cardSection}>
                   <div className={styles.detailsLabel}>Goal</div>
                   <div className={styles.detailsValue}>{currentProfile.goal}</div>
                 </div>
 
-                <div className={styles.detailsSection}>
+                {/* Tags */}
+                <div className={styles.cardSection}>
                   <div className={styles.tagContainer}>
                     {currentProfile.tags?.map((tag, index) => (
                       <span key={index} className={styles.tag}>{tag}</span>
                     ))}
                   </div>
                 </div>
-              </div>
 
-              {/* Study Level Card */}
-              <div className={styles.studyLevelContainer}>
-                <div className={styles.studyLevelTitle}>Study Level</div>
-                {currentProfile.studyLevels?.map((level, index) => (
-                  <div key={index} className={styles.studyLevel}>
-                    <div className={styles.studyLevelLeft}>
-                      <div className={styles.studyLevelGrade}>{level.grade}</div>
-                      <div className={styles.studyLevelSubject}>{level.subject}</div>
+                {/* Study Level Section */}
+                <div className={styles.cardSection}>
+                  <div className={styles.cardTitle}>Study Level</div>
+                  {currentProfile.studyLevels?.map((level, index) => (
+                    <div key={index} className={styles.studyLevelRow}>
+                      <div className={styles.studyLevelLeft}>
+                        <div className={styles.studyLevelGrade}>{level.grade}</div>
+                        <div className={styles.studyLevelSubject}>{level.subject}</div>
+                      </div>
+                      <div className={styles.studyLevelRight}>{level.level}</div>
                     </div>
-                    <div className={styles.studyLevelRight}>{level.level}</div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
 
               {/* Action Buttons */}
@@ -286,13 +293,15 @@ const MainPage: React.FC = () => {
                   className={`${styles.actionButton} ${styles.dislikeButton}`}
                   onClick={handleDislike}
                 >
-                  ✕ Dislike
+                  <span className={styles.buttonIcon}>✕</span>
+                  <span>Dislike</span>
                 </button>
                 <button
                   className={`${styles.actionButton} ${styles.likeButton}`}
                   onClick={handleLike}
                 >
-                  ★ Like
+                  <span className={styles.buttonIcon}>★</span>
+                  <span>Like</span>
                 </button>
               </div>
             </div>

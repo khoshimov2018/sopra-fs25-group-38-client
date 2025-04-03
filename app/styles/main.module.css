@@ -14,17 +14,18 @@
 
 /* Fixed header at the top */
 .header {
-  position: fixed;       /* Changed from sticky to fixed */
-  top: 20;
+  position: fixed;
+  top: 0;
   left: 0;
   width: 100%;
-  height: 60px;          /* Fixed header height */
+  height: 60px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 0 30px;
   margin: 0;
-  z-index: 9999;         /* High z-index to stay on top */
+  margin-top: 20px;
+  z-index: 9999;
 }
 
 .logoLink {
@@ -32,15 +33,15 @@
   display: flex;
   align-items: center;
   margin-top: 10px;
-  margin-left: 100px; /* Offset some of the padding */
+  margin-left: 100px;
 }
 
-/* The headerLogo class will be applied to the Logo component */
+/* The headerLogo class applied to the Logo component */
 .headerLogo {
   position: relative !important;
   top: 0 !important;
   left: 0 !important;
-  width: 220px !important;
+  width: 300px !important;
   height: auto !important;
 }
 
@@ -48,6 +49,7 @@
   display: flex;
   gap: 20px;
   align-items: center;
+  margin-top: 10px;
 }
 
 .iconButton {
@@ -60,8 +62,8 @@
   align-items: center;
   justify-content: center;
   padding: 8px;
+  margin-top: 10px;
 }
-
 /* 2-COLUMN PROFILE LAYOUT */
 .profileContainer {
   display: flex;
@@ -78,14 +80,16 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
+  height: 628px;
 }
 
 .profileImage {
-  width: 100%;
-  max-width: 500px; /* Controls how big the image can get */
-  height: auto;
+  width: 447px;
+  height: 628px;
   object-fit: cover;
   border-radius: 8px;
+  position: absolute;
 }
 
 /* RIGHT COLUMN: Stacked sections */
@@ -96,73 +100,119 @@
   gap: 1.5rem;
 }
 
-/* Card for name, style, goal, tags */
-.profileCard {
-  background-color: var(--bg-card);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-md);
+/* REUSABLE CARD STYLING */
+.card {
+  background-color: #F7F2FA; /* M3/sys/light/surface-container-low */
+  border-radius: 28px;
+  box-shadow: 0px 4px 8px 3px rgba(0, 0, 0, 0.15), 0px 1px 3px rgba(0, 0, 0, 0.3); /* M3/Elevation Light/3 */
   padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  color: #333;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
 }
 
-.detailsSection {
-  margin-bottom: 15px;
-  border-bottom: 1px solid var(--border-color-light);
-  padding-bottom: 15px;
+/* Profile card specific styling */
+.profileCard {
+  background-color: #F7F2FA;
+  position: relative;
+  border-radius: 28px 28px 0px 0px;
 }
 
-.detailsSection:last-child {
+/* Card header with drag handle from Figma */
+.cardHeader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px;
+  gap: 12px;
+  width: 100%;
+  align-self: stretch;
+}
+
+.dragHandle {
+  width: 32px;
+  height: 4px;
+  background: #79747E; /* M3/sys/light/outline */
+  border-radius: 100px;
+}
+
+/* Card sections */
+.cardSection {
+  border-bottom: 1px solid #e0e0e0;
+  padding-bottom: 0.75rem;
+  margin-bottom: 0.75rem;
+  width: 100%;
+  align-self: stretch;
+}
+
+.cardSection:last-child {
   border-bottom: none;
+  margin-bottom: 0;
 }
 
+/* Card title */
+.cardTitle {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: #333;
+}
+
+/* Profile details labeling */
 .detailsLabel {
-  color: var(--text-secondary);
-  font-size: var(--font-size-sm);
-  margin-bottom: 5px;
+  font-size: 0.9rem;
+  color: #777;
+  margin-bottom: 0.25rem;
 }
 
 .detailsValue {
-  font-size: var(--font-size-lg);
-  font-weight: var(--font-weight-medium);
-  color: var(--text-dark);
+  font-size: 1rem;
+  font-weight: 500;
+  color: #333;
 }
 
+/* Tag styling */
 .tagContainer {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 10px;
+  gap: 0.5rem;
 }
 
 .tag {
-  background-color: var(--hover-color);
-  border-radius: 20px;
-  padding: 5px 15px;
-  font-size: var(--font-size-sm);
+  background-color: #FFFFFF;
+  color: #1D1B20;
+  border: 1px solid #CAC4D0;
+  border-radius: 90px 8px 90px 90px;
+  padding: 6px 16px;
+  height: 32px;
+  width: auto;
+  min-width: 113px;
+  box-sizing: border-box;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: 'Roboto', sans-serif;
+  font-style: normal;
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 20px;
+  letter-spacing: 0.1px;
+  white-space: nowrap;
 }
 
-/* Study Level Card */
-.studyLevelContainer {
-  background-color: var(--bg-card);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-md);
-  padding: 1.5rem;
-}
-
-.studyLevelTitle {
-  font-size: var(--font-size-xl);
-  font-weight: var(--font-weight-medium);
-  margin-bottom: 20px;
-}
-
-.studyLevel {
+/* STUDY LEVEL ROWS */
+.studyLevelRow {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 15px 0;
-  border-bottom: 1px solid var(--border-color-light);
+  border-bottom: 1px solid #e0e0e0;
+  padding: 0.75rem 0;
+  width: 100%;
 }
 
-.studyLevel:last-child {
+.studyLevelRow:last-child {
   border-bottom: none;
 }
 
@@ -173,19 +223,28 @@
 }
 
 .studyLevelGrade {
-  font-size: var(--font-size-lg);
-  font-weight: var(--font-weight-bold);
+  display: flex;
+  justify-content: center;
+  align-items: center;
   width: 40px;
+  height: 40px;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 24px;
+  letter-spacing: 0.15px;
+  background: #EADDFF; /* M3/sys/light/primary-container */
+  color: #4F378A; /* M3/sys/light/on-primary-container */
+  border-radius: 100px;
   text-align: center;
 }
 
 .studyLevelSubject {
-  font-size: var(--font-size-lg);
+  font-size: 1rem;
 }
 
 .studyLevelRight {
-  font-size: var(--font-size-sm);
-  color: var(--text-secondary);
+  font-size: 0.9rem;
+  color: #666;
 }
 
 /* Like/Dislike Buttons */
@@ -197,27 +256,66 @@
 
 .actionButton {
   flex: 1;
-  padding: 15px 0;
-  border-radius: var(--radius-lg);
-  font-size: var(--font-size-lg);
-  font-weight: var(--font-weight-medium);
+  padding: 12px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 8px;
+  position: relative;
+}
+
+.buttonIcon {
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.dislikeButton .buttonIcon {
+  color: #1E1E1E;
+  font-size: 20px;
+}
+
+.likeButton .buttonIcon {
+  color: #F5F5F5;
+  font-size: 20px;
 }
 
 .dislikeButton {
-  background-color: #f5f5f5;
-  color: var(--text-dark);
-  border: 1px solid var(--border-color);
+  background-color: #E3E3E3;
+  color: #1E1E1E;
+  border: 1px solid #767676;
+  border-radius: 8px;
+  font-family: 'Inter', sans-serif;
+  font-style: normal;
+  font-weight: 600;
+  font-size: 24px;
+  line-height: 120%;
+  letter-spacing: -0.02em;
+  height: 79px;
+  width: 237px;
+  box-sizing: border-box;
+  position: relative;
 }
 
 .likeButton {
-  background-color: var(--primary);
-  color: var(--text-light);
-  border: none;
+  background-color: #2C2C2C;
+  color: #F5F5F5;
+  border: 1px solid #2C2C2C;
+  border-radius: 8px;
+  font-family: 'Inter', sans-serif;
+  font-style: normal;
+  font-weight: 600;
+  font-size: 24px;
+  line-height: 120%;
+  letter-spacing: -0.02em;
+  height: 79px;
+  width: 240px;
+  box-sizing: border-box;
+  position: relative;
 }
 
 /* Responsive Adjustments */
@@ -226,16 +324,24 @@
     flex-direction: column;
     padding: 1rem;
   }
+  
   .profileImageContainer {
     max-width: 100%;
     margin-bottom: 1rem;
+    height: 450px;
   }
+  
   .profileImage {
+    width: 100%;
     max-width: 300px;
+    height: 450px;
+    position: relative;
   }
+  
   .rightSection {
     width: 100%;
   }
+  
   .actionButtons {
     flex-direction: column;
     gap: 15px;
@@ -246,11 +352,13 @@
   .header {
     padding: 0 15px;
   }
-  .profileCard,
-  .studyLevelContainer {
+  
+  .card,
+  .profileCard {
     padding: 1rem;
   }
-  .studyLevelTitle {
+  
+  .cardTitle {
     margin-bottom: 10px;
   }
 }

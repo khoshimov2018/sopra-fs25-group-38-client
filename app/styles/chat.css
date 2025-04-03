@@ -132,6 +132,8 @@
   
   .message-item .content {
     flex-grow: 1;
+    overflow: hidden;
+    width: 100%;
   }
   
   .message-item .content .headline {
@@ -143,6 +145,10 @@
   .message-item .content .supporting-text {
     font-size: 14px;
     color: #49454f;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
   }
   
   /* 右侧聊天页面 */
@@ -209,7 +215,7 @@
     border-top: 1px solid #e0d7f3;
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
   }
   
   .chat-input {
@@ -241,6 +247,50 @@
   .send-button:hover {
     background: #4e4659;
   }
+
+  /* 快速回复容器样式 */
+  .quick-reply-container {
+    position: absolute; 
+    bottom: 68px; /* 距离输入框上方20px（假设输入框高度60px） */
+    right: 10px;
+    align-self: flex-end; /* 右对齐 */
+    margin-top: auto; /* 自动顶部外边距 */
+    margin-bottom: 20px; /* 与输入框间距 */
+    z-index: 10;
+    display: flex;
+    gap: 8px;
+  }
+
+  /* Quick Reply Bubble */
+.quick-reply-bubble {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  white-space: nowrap;
+  width: auto; /* 自动适应内容宽度 */
+  height: 44px;
+  min-height: 44px;
+  background: #E8DEF8; /* 浅紫色背景 */
+  border-radius: 20px 20px 8px 20px; /* 圆角样式 */
+  font-family: 'Roboto', sans-serif;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 24px;
+  letter-spacing: 0.5px;
+  color: #4A4459; /* 文字颜色 */
+  cursor: pointer; /* 鼠标悬停时显示手型 */
+  /* 移除绝对定位 */
+  position: static;
+  bottom: auto;
+  right: auto;
+}
+
+.quick-reply-bubble:hover {
+  background: #D0C4E8; /* 鼠标悬停时的背景颜色 */
+  transform: translateY(-1px);
+}
   
   .send-button .icon {
     width: 28px;
