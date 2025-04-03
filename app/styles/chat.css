@@ -132,6 +132,8 @@
   
   .message-item .content {
     flex-grow: 1;
+    overflow: hidden;
+    width: 100%;
   }
   
   .message-item .content .headline {
@@ -143,6 +145,10 @@
   .message-item .content .supporting-text {
     font-size: 14px;
     color: #49454f;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
   }
   
   /* 右侧聊天页面 */

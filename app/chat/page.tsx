@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { UserOutlined, MessageOutlined, FilterOutlined } from "@ant-design/icons";
+import { UserOutlined, MessageOutlined, FilterOutlined, LogoutOutlined } from "@ant-design/icons";
 import { useMessage } from "@/hooks/useMessage";
 import useLocalStorage from "@/hooks/useLocalStorage";
 import { App } from "antd";
@@ -11,16 +11,21 @@ import Logo from "@/components/Logo";
 import "../styles/chat.css";
 import styles from "@/styles/main.module.css";
 import backgroundStyles from "@/styles/theme/backgrounds.module.css";
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import { timeStamp } from "console";
 
 const ChatPage: React.FC = () => {
-    const [userMessages, setUserMessages] = useState<{ id: number; text: string; sender: string }[]>([]);
-  const [otherMessages, setOtherMessages] = useState<{ id: number; text: string; sender: string }[]>([]);
+  const [userMessages, setUserMessages] = useState<{ id: number; text: string; sender: string; timeStamp: number; avatar: string| null }[]>([]);
+  const [otherMessages, setOtherMessages] = useState<{ id: number; text: string; sender: string; timeStamp: number; avatar: string| null}[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isClient, setIsClient] = useState(false);
   const [selectedChat, setSelectedChat] = useState<string | null>(null);  // Track selected chat
+  const Your_API_Key = "AIzaSyAA9DyJQQeK-E9E1PIblN7ay-g4PlwKbVw"
+  const genAI = new GoogleGenerativeAI(Your_API_Key);
+  const [userAvatar, setUserAvatar] = useState("/default-user-avatar.png"); // 默认头像
 
-// 引用用于滚动到最新消息
-const messagesEndRef = useRef<HTMLDivElement>(null);
+  // 引用用于滚动到最新消息
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const router = useRouter();
   const { message, contextHolder } = useMessage();
@@ -35,6 +40,8 @@ const messagesEndRef = useRef<HTMLDivElement>(null);
     id: 1,
     text: "Hello! How can I assist you?",
     sender: "AI Advisor",
+    timeStamp: Date.now(),
+    avatar: userAvatar
   };
 
   // 模拟从服务端获取消息
@@ -64,10 +71,7 @@ const messagesEndRef = useRef<HTMLDivElement>(null);
 
       // 如果服务端返回新的消息，则更新消息列表
       if (data && data.text) {
-        setOtherMessages((prevMessages) => [
-          ...prevMessages,
-          { id: prevMessages.length + 1, text: data.text, sender: "Opponent" },
-        ]);
+        updateMessageList("Opponent", data.text);
       }
     };
 
@@ -77,28 +81,95 @@ const messagesEndRef = useRef<HTMLDivElement>(null);
     return () => clearInterval(intervalId);
   }, []); // 只在初次渲染时启动定时器
 
-    useEffect(() => {
-        if (messagesEndRef.current) {
-        messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
-        }
-    }, [userMessages, otherMessages]);
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [userMessages, otherMessages]);
 
+//   useEffect(() => {
+//     fetch(`/api/getUserAvatar?userId=${currentUserId}`)
+//         .then((res) => res.json())
+//         .then((data) => setUserAvatar(data.avatar || "/default-user-avatar.png"));
+// }, []);
+
+  const updateMessageList = (sender: string, text: string) => {
+    setOtherMessages((prevMessages) => {
+      const existingMessageIndex = prevMessages.findIndex((msg) => msg.sender === sender);
+
+      if (existingMessageIndex !== -1) {
+        // 如果消息列表中已经存在该用户，更新 supporting text
+        const updatedMessages = [...prevMessages];
+        updatedMessages[existingMessageIndex] = {
+          ...updatedMessages[existingMessageIndex],
+          text, // 更新 supporting text
+        };
+        return updatedMessages;
+      } else {
+        // 如果消息列表中不存在该用户，添加新消息
+        return [
+          ...prevMessages,
+          { id: prevMessages.length + 1, text, sender, timeStamp: Date.now(), avatar: null },
+        ];
+      }
+    });
+  };
 
   if (!isClient) {
     return null; // 在客户端渲染之前不渲染任何内容
   }
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (inputValue.trim() === "") return;
 
-    // 添加用户消息到 userMessages
-    setUserMessages((prevMessages) => [
-        ...prevMessages,
-        { id: prevMessages.length + otherMessages.length + 1, text: inputValue, sender: "You" },
-    ]);
+    const userMessage = {
+      id: Date.now(),
+      text: inputValue,
+      sender: "You",
+      timeStamp: Date.now(),
+      avatar: userAvatar
+    };
+    setUserMessages((prevMessages) => [...prevMessages, userMessage]);
 
-    // Clear the input field
     setInputValue("");
+
+    try {
+      const prompt = `
+        You are a professional study advisor with a PhD in diverse fields. Please answer in academic way and briefly. Your answer should be less than 100 words/
+        The conversation so far:
+        ${[...otherMessages, ...userMessages, userMessage]
+          .map((msg) => `${msg.sender}: ${msg.text}`)
+          .join("\n")}
+        AI Advisor:`;
+
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      const aiReply = await response.text();
+
+      const aiMessage = {
+        id: Date.now(),
+        text: aiReply,
+        sender: "AI Advisor",
+        timeStamp: Date.now(),
+        avatar: aiAvatar,
+      };
+      setOtherMessages((prevMessages) => [...prevMessages, aiMessage]);
+
+    } catch (error) {
+      console.error("AI 回复失败：", error);
+      const errorMessage = {
+        id: Date.now(),
+        text: "AI 回复失败，请稍后再试。",
+        sender: "AI Advisor",
+        timeStamp: Date.now(),
+        avatar: aiAvatar,
+      };
+      setOtherMessages((prevMessages) => [...prevMessages, errorMessage]);
+
+      // 更新消息列表中的 AI 错误消息
+      updateMessageList("AI Advisor", "AI 回复失败，请稍后再试。");
+    }
   };
 
   const handleSelectChat = (chatName: string) => {
@@ -136,19 +207,18 @@ const messagesEndRef = useRef<HTMLDivElement>(null);
               <Logo className={styles.headerLogo} />
             </Link>
             <div className={styles.headerRight}>
-              <Link href="/messages">
-                <button className={styles.iconButton}><MessageOutlined /></button>
-              </Link>
               <Link href="/profile">
                 <button className={styles.iconButton}><UserOutlined /></button>
+              </Link>
+              <Link href="/chat">
+                <button className={styles.iconButton}><MessageOutlined /></button>
               </Link>
               <button className={styles.iconButton} onClick={handleLogout}><FilterOutlined /></button>
               <button
                 className={styles.iconButton}
                 onClick={actualLogout}
-                style={{ marginLeft: '15px', color: '#ff4d4f' }}
               >
-                Logout
+                <LogoutOutlined />
               </button>
             </div>
           </div>
@@ -158,68 +228,64 @@ const messagesEndRef = useRef<HTMLDivElement>(null);
             <div className="message-list-container">
                 <div className="message-list-header">Conversations</div>
                 <div className="message-list">
-                {/* AI Advisor 始终置顶 */}
-                <div className="message-item" onClick={() => handleSelectChat("AI Advisor")}>
+                  {/* AI Advisor 始终置顶 */}
+                  <div className="message-item" onClick={() => handleSelectChat("AI Advisor")}>
                     <div className="avatar" style={{ backgroundImage: `url(${aiAvatar})` }}></div>
                     <div className="content">
-                    <div className="headline">AI Advisor</div>
-                    <div className="supporting-text">{defaultAIMessage.text}</div>
+                      <div className="headline">AI Advisor</div>
+                      <div className="supporting-text">
+                        {otherMessages.find((msg) => msg.sender === "AI Advisor")?.text || "Hello! How can I assist you?"}
+                      </div>
                     </div>
-                </div>
+                  </div>
 
-                {/* 渲染服务端返回的对方消息 */}
-                {otherMessages.length > 0 ? (
-                    otherMessages
-                    .filter((message) => message.sender !== "You") // 过滤掉自己发送的消息
+                  {/* 渲染其他用户的消息 */}
+                  {otherMessages
+                    .filter((message) => message.sender !== "You" && message.sender !== "AI Advisor")
                     .map((message) => (
-                        <div
+                      <div
                         key={message.id}
                         className="message-item"
-                        onClick={() => handleSelectChat(message.sender)} // 点击时选中聊天
-                        >
+                        onClick={() => handleSelectChat(message.sender)}
+                      >
                         <div className="avatar"></div>
                         <div className="content">
-                            <div className="headline">{message.sender}</div>
-                            <div className="supporting-text">{message.text}</div>
+                          <div className="headline">{message.sender}</div>
+                          <div className="supporting-text">{message.text}</div>
                         </div>
-                        </div>
-                    ))
-                ) : (
-                    <div className="message-item">
-                    <div className="content">
-                        <div className="headline">No other messages available.</div>
-                    </div>
-                    </div>
-                )}
+                      </div>
+                    ))}
                 </div>
             </div>
 
             {/* 右侧聊天页面 */}
             <div className="chat-page">
                 {/* 动态显示对方的用户名 */}
+                {/* 动态显示对方的用户名 */}
                 <div className="chat-header">
-                {selectedChat ? selectedChat : "Select a chat"}
+                    {selectedChat ? selectedChat : "Select a chat"}
                 </div>
                 <div className="chat-content">
-                {/* 如果选择的是AI Advisor，显示AI Advisor的默认消息 */}
-                {selectedChat === "AI Advisor" && (
-                    <div key={defaultAIMessage.id} className="chat-message">
-                    <div className="avatar" style={{ backgroundImage: `url(${aiAvatar})` }}></div>
-                    <div className="message-bubble">{defaultAIMessage.text}</div>
-                    </div>
-                )}
+                    {/* AI Advisor 默认消息，每次都显示 AI 头像 */}
+                    {selectedChat === "AI Advisor" && aiAvatar && (
+                        <div key={defaultAIMessage.id} className="chat-message">
+                            <img className="avatar" src={aiAvatar} alt="AI Avatar" />
+                            <div className="message-bubble">{defaultAIMessage.text}</div>
+                        </div>
+                    )}
 
-                {/* 渲染服务端返回的对方消息 */}
-                {[...otherMessages, ...userMessages].map((message) => (
-                    <div
-                    key={message.id}
-                    className={`chat-message ${message.sender === "You" ? "you" : ""}`}
-                    >
-                    {/* 仅在对方发送消息时显示头像 */}
-                    {message.sender !== "You" && <div className="avatar"></div>}
-                    <div className="message-bubble">{message.text}</div>
+                {/* 渲染所有消息 */}
+                {[...otherMessages, ...userMessages]
+                  .sort((a, b) => a.timeStamp - b.timeStamp) // 按时间戳排序，保证正确的对话顺序
+                  .map((message) => (
+                    <div key={message.id} className={`chat-message ${message.sender === "You" ? "you" : ""}`}>
+                      {/* AI 消息或其他用户的消息都显示头像 */}
+                      {message.sender !== "You" && (
+                        <img className="avatar" src={message.sender === "AI" ? aiAvatar : message.avatar || "/default-avatar.png"} alt="Avatar" />
+                      )}
+                      <div className="message-bubble">{message.text}</div>
                     </div>
-                ))}
+                  ))}
                 </div>
               <div className="chat-input-container">
                 <input
