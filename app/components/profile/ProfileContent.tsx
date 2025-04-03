@@ -40,7 +40,7 @@ const ProfileContent: React.FC<ProfileContentProps> = ({
       <ProfileHeader isEditing={isEditing} onEditToggle={onEditToggle} />
       
       <div className={styles.profileGrid}>
-        <div className={styles.profileCard} style={{ border: 'none' }}>
+        <div className={styles.profileCard}>
           <ProfileImage 
             currentUser={currentUser}
             editableUser={editableUser}

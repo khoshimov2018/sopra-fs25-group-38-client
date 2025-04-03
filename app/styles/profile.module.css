@@ -15,8 +15,8 @@
 /* Content area */
 .content {
   position: relative;
-  width: 1098px;
-  min-height: 676px;
+  width: 1300px;
+  min-height: 800px;
   background: #FEF7FF;
   border-radius: 8px;
   margin: 0 auto;
@@ -84,9 +84,9 @@
 /* Card layout */
 .profileGrid {
   position: absolute;
-  width: 970px;
-  height: 554px;
-  left: 64px;
+  width: 1200px;
+  height: 700px;
+  left: 50px;
   top: 88px;
   display: flex;
   justify-content: center;
@@ -97,12 +97,13 @@
 .profileCard {
   box-sizing: border-box;
   position: relative;
-  width: 970px;
-  height: 554px;
+  width: 1150px;
+  height: 680px;
   background: #FFFFFF;
-  border: none;
+  border: 1px solid #D9D9D9;
   border-radius: 8px;
   overflow: hidden;
+  margin: 0 auto;
 }
 
 /* Profile image section */
@@ -153,9 +154,9 @@
   align-items: flex-start;
   padding: 0px;
   gap: 16px;
-  width: 738px;
+  width: 900px;
   min-width: 160px;
-  height: 385px;
+  height: 600px;
   left: 204px;
   top: 25px;
   z-index: 1;
@@ -295,19 +296,31 @@
 }
 
 .formField {
-  flex: 1;
-  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 0px;
+  gap: 8px;
+  position: absolute;
+  width: 800px;
+  height: 76px;
+  left: 85px;
+  top: 18px;
 }
 
 .inputLabel {
-  display: block;
-  margin-bottom: 8px;
-  font-family: 'Inter', sans-serif;
+  width: 683px;
+  height: 22px;
+  font-family: 'Inter';
   font-style: normal;
   font-weight: 400;
   font-size: 16px;
   line-height: 140%;
   color: #1E1E1E;
+  flex: none;
+  order: 0;
+  align-self: stretch;
+  flex-grow: 0;
 }
 
 .formInput {
@@ -315,17 +328,22 @@
   flex-direction: row;
   align-items: center;
   padding: 12px 16px;
-  width: 100%;
-  height: 36px;
+  width: 800px;
+  min-width: 240px;
+  height: 46px;
   background: #FFFFFF;
   border: 1px solid #D9D9D9;
   border-radius: 8px;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Inter';
   font-style: normal;
   font-weight: 400;
   font-size: 16px;
-  line-height: 100%;
-  color: #1E1E1E;
+  line-height: 140%;
+  color: #757575;
+  flex: none;
+  order: 2;
+  align-self: stretch;
+  flex-grow: 0;
 }
 
 .formTextarea {
@@ -333,16 +351,17 @@
   flex-direction: row;
   align-items: flex-start;
   padding: 12px 16px;
-  width: 100%;
+  width: 683px;
+  min-width: 240px;
   background: #FFFFFF;
   border: 1px solid #D9D9D9;
   border-radius: 8px;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Inter';
   font-style: normal;
   font-weight: 400;
   font-size: 16px;
-  line-height: 140%;
-  color: #1E1E1E;
+  line-height: 100%;
+  color: #B3B3B3;
   resize: vertical;
   min-height: 80px;
 }
@@ -432,13 +451,20 @@
 .studyLevelEditRow {
   display: flex;
   flex-direction: row;
-  gap: 16px;
-  align-items: flex-end;
+  gap: 23px;
+  align-items: flex-start;
+  width: 683px;
+  height: 36px;
 }
 
 .studyLevelField {
-  flex: 1;
-  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 0px;
+  gap: 8px;
+  width: 342px;
+  height: 30px;
 }
 
 .studyLevelInput {
@@ -446,17 +472,18 @@
   flex-direction: row;
   align-items: center;
   padding: 12px 16px;
-  width: 100%;
+  width: 342px;
+  min-width: 240px;
   height: 36px;
   background: #FFFFFF;
   border: 1px solid #D9D9D9;
   border-radius: 8px;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Inter';
   font-style: normal;
   font-weight: 400;
   font-size: 16px;
   line-height: 100%;
-  color: #1E1E1E;
+  color: #B3B3B3;
 }
 
 .removeStudyLevelButton {
