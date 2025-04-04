@@ -71,6 +71,9 @@ reason).
 | **[@AjeongShin]** | [29/03/2025-29/03/2025]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-server/commit/29a6ffa0916376b5a8a7c7a002fbb5c32373180b] | [Implement GET /students endpoint with filtering by courseIds or availability] | [Enables flexible backend filtering to support dynamic frontend search features based on course or time availability] |
 |                    | [02/04/2025-02/04/2025]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-server/commit/507047fb05a8d2f6a44c51d93bff035124fd5ab7] | [Fix server build failure by adding missing @Id annotation to entity] | [Ensures that the application can compile and run successfully with proper JPA configuration] |
 |                    | [02/04/2025-02/04/2025]   | [[https://github.com/khoshimov2018/sopra-fs25-group-38-server/commit/5f9cc61295b7568edd962a414334a78639d1fb81] | [Add unit tests for retrieving courses and filtering students by availability] | [Improves test coverage and ensures correct functionality for core GET endpoints] |
+| **[@notsofun]** | [03.04.2025]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-client/commit/9b26fd2490f872d884cbb036a4174ce12ef5ff0c] | [Implemented Chatting with AI advisor] | [This is key user story in our project.] |
+ |                    | [03.04.2025]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-client/commit/b1b3c896d4e111e6668e35f49929f6dabac1feeb] | [Implemened AI suggestions and scheduling redendered by Markdown] | [This is one key story in our project] |
+ |                    | [03.04.2025]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-client/commit/8dfcb08706ed5ad00db7ca1c08e441e7884d7bae] | [Implemened fetching matched users from backend and display in the chat windows] | [This is one key story in our project] |
 
 ---
 
