@@ -30,7 +30,7 @@ const Register: React.FC = () => {
       console.log("Attempting registration with:", values.email);
       
       // Call the API service to register new user
-      const response = await apiService.post<User>("/users", values);
+      const response = await apiService.post<User>("/users/register", values);
       console.log("Registration response:", response);
 
       // Store registration credentials to use for auto-login
