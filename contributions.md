@@ -79,7 +79,9 @@ reason).
 
 ## Contributions Week 3 - [Begin Date] to [End Date]
 
-_Continue with the same table format as above._
+| **Student**        | **Date** | **Link to Commit** | **Description**                 | **Relevance**                       |
+| ------------------ | -------- | ------------------ | ------------------------------- | ----------------------------------- |
+| **[@notsofun]** | [09.04.2025]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-client/commit/17ab37368cc7d6141f4369ea286047e36cb50ce4] | [Modified logic of Chat to meet requirements of backedn that users can really chat on the page] | [To ensure that users could really chat once users could register.] |
 
 ---
 
