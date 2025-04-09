@@ -83,19 +83,42 @@ export class ApiService {
         console.log(`Error response body: ${responseText}`);
         
         try {
-          errorBody = JSON.parse(responseText);
-          if (errorBody?.message) {
-            errorDetail = errorBody.message;
+          // Only try to parse if there's actual content
+          if (responseText && responseText.trim() !== '') {
+            errorBody = JSON.parse(responseText);
+            if (errorBody?.message) {
+              errorDetail = errorBody.message;
+            } else {
+              errorDetail = JSON.stringify(errorBody);
+            }
           } else {
-            errorDetail = JSON.stringify(errorBody);
+            // Handle empty response with better error message
+            console.log("Empty error response body");
+            // Use status code to provide more informative messages
+            if (res.status === 400) {
+              errorDetail = "Bad Request - Invalid input data";
+            } else if (res.status === 401) {
+              errorDetail = "Unauthorized - Authentication required";
+            } else if (res.status === 403) {
+              errorDetail = "Forbidden - Insufficient permissions";
+            } else if (res.status === 404) {
+              errorDetail = "Not Found - Resource does not exist";
+            } else if (res.status === 409) {
+              errorDetail = "Conflict - Resource already exists";
+            } else if (res.status === 500) {
+              errorDetail = "Server Error - Please try again later";
+            } else {
+              errorDetail = res.statusText || `HTTP Error ${res.status}`;
+            }
           }
         } catch (error) {
           console.error("Error parsing response JSON:", error);
-          errorDetail = responseText || res.statusText;
+          errorDetail = responseText || res.statusText || "Unknown error";
         }
       } catch (textError) {
         console.error("Error reading response text:", textError);
-        // If reading text fails, keep using res.statusText
+        // If reading text fails, provide meaningful fallback message
+        errorDetail = `Failed to read error details (${res.status})`;
       }
       
       const detailedMessage = `${errorMessage} (${res.status}: ${errorDetail})`;
@@ -140,6 +163,7 @@ export class ApiService {
         // Return empty object instead of throwing if we got a successful response
         // but couldn't parse the JSON (may be empty or non-JSON)
         if (res.ok) {
+          console.log("Response was OK but couldn't parse JSON - returning empty object");
           return {} as T;
         }
         throw new Error(`Failed to parse API response: ${error}`);
@@ -195,6 +219,10 @@ export class ApiService {
     const url = `${this.baseURL}${endpoint}`;
     console.log(`Making POST request to: ${url}`);
     const headers = this.getHeaders();
+    
+    // Log request details for debugging
+    console.log("Request headers:", JSON.stringify(headers, null, 2));
+    console.log("Request payload:", JSON.stringify(data, null, 2));
     
     try {
       const res = await fetch(url, {
