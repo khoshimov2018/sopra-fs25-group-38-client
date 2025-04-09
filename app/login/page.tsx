@@ -42,13 +42,13 @@ const Login: React.FC = () => {
       const response = await apiService.post<User>("/login", values);
 
       // Store token and redirect
-      if (response.token) {
+      if (response && response.token) {
         message.success("Connected to server successfully!");
         
-        // Set token directly without JSON.stringify to avoid double-encoding
+        // Set token in localStorage directly as a string, not JSON
         localStorage.setItem("token", response.token);
         
-        // Also set via the hook for React state
+        // Also set via the hook for React state management
         setToken(response.token);
         
         message.success("Login successful!");
@@ -59,7 +59,9 @@ const Login: React.FC = () => {
           window.location.href = "/main";
         }, 500);
       } else {
-        message.error("Login failed: No authentication token received");
+        // This would only happen if the server didn't include a token in the response
+        console.error("Login response missing token:", response);
+        message.error("Login failed: No authentication token received from server");
       }
     } catch (error) {
       // Clear any loading message

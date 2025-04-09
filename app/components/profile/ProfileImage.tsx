@@ -1,10 +1,11 @@
 import React from 'react';
-import { CameraOutlined } from '@ant-design/icons';
+import { CameraOutlined, UserOutlined } from '@ant-design/icons';
 import styles from '@/styles/profile.module.css';
 import { UserProfile } from '@/types/profile';
+import { Avatar } from 'antd';
 
 interface ProfileImageProps {
-  currentUser: UserProfile;
+  currentUser: UserProfile | null;
   editableUser?: UserProfile | null;
   isEditing: boolean;
   onImageUpload: () => void;
@@ -16,14 +17,37 @@ const ProfileImage: React.FC<ProfileImageProps> = ({
   isEditing,
   onImageUpload
 }) => {
+  // Handle null case
+  if (!currentUser) {
+    return (
+      <div className={styles.profileImageSection}>
+        <div className={styles.imageContainer}>
+          <Avatar size={150} icon={<UserOutlined />} />
+        </div>
+      </div>
+    );
+  }
+
+  const profilePicture = isEditing && editableUser 
+    ? editableUser.profilePicture 
+    : currentUser.profilePicture;
+    
   return (
     <div className={styles.profileImageSection}>
       <div className={styles.imageContainer}>
-        <img 
-          src={isEditing && editableUser ? editableUser.profileImage : currentUser.profileImage} 
-          alt={currentUser.name || "Profile"} 
-          className={styles.profileImage}
-        />
+        {profilePicture ? (
+          <img 
+            src={profilePicture} 
+            alt={currentUser.name || "Profile"} 
+            className={styles.profileImage}
+          />
+        ) : (
+          <Avatar
+            size={150}
+            icon={<UserOutlined />}
+            className={styles.profileImage}
+          />
+        )}
         {isEditing && (
           <button 
             className={styles.uploadButton} 

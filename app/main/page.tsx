@@ -16,19 +16,8 @@ import backgroundStyles from "@/styles/theme/backgrounds.module.css";
 import Button from "@/components/Button";
 
 
-// Mocked user profile data for now
-// This would be replaced with API data in production
-interface UserProfile extends User {
-  studyStyle?: string;
-  goal?: string;
-  tags?: string[];
-  studyLevels?: {
-    subject: string;
-    grade: string;
-    level: string;
-  }[];
-  profileImage?: string;
-}
+// Use the actual UserProfile type from the profile.ts file
+import { UserProfile } from "@/types/profile";
 
 const MainPage: React.FC = () => {
   const router = useRouter();
@@ -47,15 +36,18 @@ const MainPage: React.FC = () => {
       email: "sakura@example.com",
       token: null,
       status: "ONLINE",
-      studyStyle: "Casual, Just Feel Free",
-      goal: "To pass whole exams in this semester",
-      tags: ["Life recorder", "Firefighter", "Semester Freshwoman"],
-      studyLevels: [
-        { subject: "Mathematics", grade: "A", level: "Expert" },
-        { subject: "SoPra", grade: "A", level: "Beginner" },
-        { subject: "Informatics", grade: "A", level: "Beginner" }
+      availability: "WEEKDAYS",
+      studyLevel: "Bachelor",
+      studyStyle: "Visual learner, group study",
+      studyGoals: "Pass exams, Learn new concepts, Understand materials",
+      formattedStudyGoals: ["Pass exams", "Learn new concepts", "Understand materials"],
+      knowledgeLevel: "INTERMEDIATE",
+      userCourses: [
+        { courseId: 1, courseName: "Mathematics", knowledgeLevel: "EXPERT" },
+        { courseId: 2, courseName: "SoPra", knowledgeLevel: "BEGINNER" },
+        { courseId: 3, courseName: "Informatics", knowledgeLevel: "BEGINNER" }
       ],
-      profileImage: "https://placehold.co/600x800/5f9ea0/white.png?text=Sakura"
+      profilePicture: "https://placehold.co/600x800/5f9ea0/white.png?text=Sakura"
     },
     {
       id: "2",
@@ -63,15 +55,18 @@ const MainPage: React.FC = () => {
       email: "takashi@example.com",
       token: null,
       status: "ONLINE",
-      studyStyle: "Focused, Collaborative",
-      goal: "Maintain 4.0 GPA and understand core concepts",
-      tags: ["Night owl", "Coffee lover", "CS Major"],
-      studyLevels: [
-        { subject: "Computer Science", grade: "A", level: "Expert" },
-        { subject: "Physics", grade: "B", level: "Intermediate" },
-        { subject: "English", grade: "A", level: "Advanced" }
+      availability: "EVENINGS",
+      studyLevel: "Master",
+      studyStyle: "Focused, independent learner",
+      studyGoals: "Maintain 4.0 GPA, Understand core concepts",
+      formattedStudyGoals: ["Maintain 4.0 GPA", "Understand core concepts"],
+      knowledgeLevel: "ADVANCED",
+      userCourses: [
+        { courseId: 4, courseName: "Computer Science", knowledgeLevel: "EXPERT" },
+        { courseId: 5, courseName: "Physics", knowledgeLevel: "INTERMEDIATE" },
+        { courseId: 6, courseName: "English", knowledgeLevel: "ADVANCED" }
       ],
-      profileImage: "https://placehold.co/600x800/9370db/white.png?text=Takashi"
+      profilePicture: "https://placehold.co/600x800/9370db/white.png?text=Takashi"
     },
     {
       id: "3",
@@ -79,15 +74,18 @@ const MainPage: React.FC = () => {
       email: "emma@example.com",
       token: null,
       status: "ONLINE",
-      studyStyle: "Structured, Morning Person",
-      goal: "Complete all assignments one week before deadline",
-      tags: ["Early bird", "Organized", "Biology Focus"],
-      studyLevels: [
-        { subject: "Biology", grade: "A", level: "Expert" },
-        { subject: "Chemistry", grade: "A", level: "Advanced" },
-        { subject: "Statistics", grade: "B", level: "Intermediate" }
+      availability: "WEEKENDS",
+      studyLevel: "PhD",
+      studyStyle: "Early bird, structured approach",
+      studyGoals: "Complete assignments early, Research opportunities",
+      formattedStudyGoals: ["Complete assignments early", "Research opportunities"],
+      knowledgeLevel: "EXPERT",
+      userCourses: [
+        { courseId: 7, courseName: "Biology", knowledgeLevel: "EXPERT" },
+        { courseId: 8, courseName: "Chemistry", knowledgeLevel: "ADVANCED" },
+        { courseId: 9, courseName: "Statistics", knowledgeLevel: "INTERMEDIATE" }
       ],
-      profileImage: "https://placehold.co/600x800/ff6347/white.png?text=Emma"
+      profilePicture: "https://placehold.co/600x800/ff6347/white.png?text=Emma"
     }
   ];
 
@@ -107,6 +105,22 @@ const MainPage: React.FC = () => {
       router.push("/login");
       return;
     }
+    
+    // Ensure token is still valid by fetching the current user
+    const validateToken = async () => {
+      try {
+        await apiService.get('/users/me');
+        console.log("Token validated successfully");
+      } catch (error) {
+        console.error("Token validation failed:", error);
+        message.error("Your session has expired. Please login again.");
+        localStorage.removeItem("token");
+        clearToken();
+        router.push("/login");
+      }
+    };
+    
+    validateToken();
 
     // Load mock profiles for now - only do this once
     if (profiles.length === 0) {
@@ -139,17 +153,19 @@ const MainPage: React.FC = () => {
   
   const actualLogout = async () => {
     try {
-      message.success("Logging out...");
-      // In production, call the logout endpoint
-      if (currentUser && currentUser.id) {
-        try {
-          await apiService.post(`/users/${currentUser.id}/logout`, {});
-        } catch (error) {
-          console.warn("Logout API call failed, but proceeding with local logout", error);
-        }
+      message.loading("Logging out...");
+      
+      // Call the server's logout endpoint with the Authorization header
+      // The server expects a token in the header, not a body payload
+      try {
+        await apiService.post('/users/logout', {});
+        message.success("Logged out successfully");
+      } catch (error) {
+        console.warn("Logout API call failed, but proceeding with local logout", error);
+        message.warning("Server logout failed, but you've been logged out locally");
       }
       
-      // Clear token and redirect to login
+      // Clear token from both localStorage and state management
       localStorage.removeItem("token");
       clearToken();
       
@@ -157,8 +173,12 @@ const MainPage: React.FC = () => {
       window.location.href = "/login";
     } catch (error) {
       console.error("Error during logout:", error);
+      
+      // Ensure token is removed even if an error occurs
       localStorage.removeItem("token");
       clearToken();
+      
+      message.error("Error during logout, but you've been logged out locally");
       window.location.href = "/login";
     }
   };
@@ -210,8 +230,29 @@ const MainPage: React.FC = () => {
               <Logo className={styles.headerLogo} />
             </Link>
             <div className={styles.headerRight}>
-              <Link href="/profile">
-                <button className={styles.iconButton}><UserOutlined /></button>
+              <Link href="/profile" prefetch={true}>
+                <button 
+                  className={styles.iconButton}
+                  onClick={() => {
+                    // Store a flag to indicate navigation to profile
+                    localStorage.setItem("navigatingToProfile", "true");
+                    
+                    // Pre-fetch and cache the user profile before navigation
+                    const fetchProfileData = async () => {
+                      try {
+                        const response = await apiService.get('/users/me');
+                        if (response) {
+                          localStorage.setItem("cachedUserProfile", JSON.stringify(response));
+                        }
+                      } catch (error) {
+                        console.error("Failed to prefetch user profile:", error);
+                      }
+                    };
+                    fetchProfileData();
+                  }}
+                >
+                  <UserOutlined />
+                </button>
               </Link>
               <Link href="/chat">
                 <button className={styles.iconButton}><MessageOutlined /></button>
@@ -231,7 +272,7 @@ const MainPage: React.FC = () => {
             {/* LEFT COLUMN: Larger Profile Image */}
             <div className={styles.profileImageContainer}>
               <img
-                src={currentProfile.profileImage}
+                src={currentProfile.profilePicture || "https://placehold.co/600x800/9370db/white.png?text=Profile"}
                 alt={currentProfile.name || "Profile"}
                 className={styles.profileImage}
               />
@@ -251,37 +292,43 @@ const MainPage: React.FC = () => {
                   <div className={styles.detailsValue}>{currentProfile.name}</div>
                 </div>
 
+                {/* Study Level */}
+                <div className={styles.cardSection}>
+                  <div className={styles.detailsLabel}>Study Level</div>
+                  <div className={styles.detailsValue}>{currentProfile.studyLevel}</div>
+                </div>
+
                 {/* Study Style */}
                 <div className={styles.cardSection}>
                   <div className={styles.detailsLabel}>Study Style</div>
-                  <div className={styles.detailsValue}>{currentProfile.studyStyle}</div>
+                  <div className={styles.detailsValue}>{currentProfile.studyStyle || "Not specified"}</div>
                 </div>
 
-                {/* Goal */}
+                {/* Availability */}
                 <div className={styles.cardSection}>
-                  <div className={styles.detailsLabel}>Goal</div>
-                  <div className={styles.detailsValue}>{currentProfile.goal}</div>
+                  <div className={styles.detailsLabel}>Availability</div>
+                  <div className={styles.detailsValue}>{currentProfile.availability}</div>
                 </div>
 
-                {/* Tags */}
+                {/* Study Goals */}
                 <div className={styles.cardSection}>
-                  <div className={styles.tagContainer}>
-                    {currentProfile.tags?.map((tag, index) => (
-                      <span key={index} className={styles.tag}>{tag}</span>
-                    ))}
+                  <div className={styles.detailsLabel}>Study Goals</div>
+                  <div className={styles.detailsValue}>
+                    {currentProfile.formattedStudyGoals && currentProfile.formattedStudyGoals.length > 0 ? 
+                      currentProfile.formattedStudyGoals.join(', ') : 
+                      currentProfile.studyGoals || 'Not specified'}
                   </div>
                 </div>
 
-                {/* Study Level Section */}
+                {/* Study Courses Section */}
                 <div className={styles.cardSection}>
-                  <div className={styles.cardTitle}>Study Level</div>
-                  {currentProfile.studyLevels?.map((level, index) => (
+                  <div className={styles.cardTitle}>Courses</div>
+                  {currentProfile.userCourses?.map((course, index) => (
                     <div key={index} className={styles.studyLevelRow}>
                       <div className={styles.studyLevelLeft}>
-                        <div className={styles.studyLevelGrade}>{level.grade}</div>
-                        <div className={styles.studyLevelSubject}>{level.subject}</div>
+                        <div className={styles.studyLevelSubject}>{course.courseName}</div>
                       </div>
-                      <div className={styles.studyLevelRight}>{level.level}</div>
+                      <div className={styles.studyLevelRight}>{course.knowledgeLevel}</div>
                     </div>
                   ))}
                 </div>

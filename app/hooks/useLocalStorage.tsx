@@ -35,18 +35,24 @@ export default function useLocalStorage<T>(
     if (typeof window === "undefined") return; // SSR safeguard
     try {
       const stored = globalThis.localStorage.getItem(key);
-      if (stored) {
-        // For tokens, we may have stored them directly without JSON.stringify
-        // If parsing fails, use the raw string (for string values like tokens)
-        try {
-          setValue(JSON.parse(stored) as T);
-        } catch (parseError) {
-          // If we expected a string type and parsing failed, use the raw string
-          if (typeof defaultValueRef.current === 'string') {
-            setValue(stored as unknown as T);
-          } else {
-            throw parseError; // Re-throw for non-string types
-          }
+      if (!stored) return; // No value stored
+      
+      // Special case for token - we always store it as a plain string
+      if (key === "token") {
+        setValue(stored as unknown as T);
+        return;
+      }
+      
+      // For non-token values, try to parse as JSON
+      try {
+        setValue(JSON.parse(stored) as T);
+      } catch (parseError) {
+        // If parsing fails and we expect a string, use the raw value
+        if (typeof defaultValueRef.current === 'string') {
+          setValue(stored as unknown as T);
+        } else {
+          console.error(`Failed to parse stored value for key "${key}":`, parseError);
+          // Don't throw, just keep the default value
         }
       }
     } catch (error) {
@@ -58,10 +64,16 @@ export default function useLocalStorage<T>(
   const set = useCallback((newVal: T) => {
     setValue(newVal);
     if (typeof window !== "undefined") {
-      // For string values, we don't need to JSON stringify
-      if (typeof newVal === 'string') {
+      // Special handling for token - always store as string
+      if (key === "token") {
         globalThis.localStorage.setItem(key, newVal as string);
-      } else {
+      }
+      // For other string values, we don't need to JSON stringify
+      else if (typeof newVal === 'string') {
+        globalThis.localStorage.setItem(key, newVal as string);
+      } 
+      // For objects, arrays, etc.
+      else {
         globalThis.localStorage.setItem(key, JSON.stringify(newVal));
       }
     }

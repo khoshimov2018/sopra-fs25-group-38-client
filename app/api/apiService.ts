@@ -26,30 +26,25 @@ export class ApiService {
     
     // Add auth token if available - gets fresh token each time
     if (typeof window !== 'undefined') {
-      const tokenStr = localStorage.getItem("token");
-      if (tokenStr) {
-        try {
-          // First try to parse it in case it's JSON (older storage format)
-          let token = tokenStr;
-          try {
-            const parsed = JSON.parse(tokenStr);
-            if (typeof parsed === 'string') {
-              token = parsed;
-            }
-          } catch {
-            // Not JSON, use as is
-          }
-          
-          // Don't log the full token for security reasons
+      // We always store the token directly as a string, not JSON
+      const token = localStorage.getItem("token");
+      
+      if (token) {
+        // Add the Bearer prefix as expected by the server
+        headers["Authorization"] = `Bearer ${token}`;
+        
+        // Only log in development mode for debugging and not on sensitive pages
+        if (process.env.NODE_ENV === 'development' && 
+            !document.URL.includes('/profile') && 
+            !document.URL.includes('/courses')) {
+          // Only show the beginning of the token for security
           const displayToken = token.substring(0, 8) + '...';
           console.log("Using token for API request:", displayToken);
-          headers["Authorization"] = `Bearer ${token}`;
-        } catch (error) {
-          console.error("Error processing token:", error);
-          // Fallback to using token directly
-          headers["Authorization"] = `Bearer ${tokenStr}`;
         }
-      } else {
+      } else if (process.env.NODE_ENV === 'development' && 
+          !document.URL.includes('/register') && 
+          !document.URL.includes('/login')) {
+        // Only log in development for non-auth pages
         console.log("No token found in localStorage");
       }
     }
@@ -70,9 +65,10 @@ export class ApiService {
     res: Response,
     errorMessage: string,
   ): Promise<T> {
-    console.log(`Response status: ${res.status} ${res.statusText}`);
-    
+    // Only log status in case of errors to reduce noise
     if (!res.ok) {
+      console.log(`Response status: ${res.status} ${res.statusText}`);
+    
       let errorDetail = res.statusText;
       let errorBody = null;
       
@@ -155,7 +151,10 @@ export class ApiService {
       // Try to parse as JSON
       try {
         const data = JSON.parse(text);
-        console.log("API response data:", data);
+        // Only log in development environment or if it's an error response
+        if (process.env.NODE_ENV === 'development' && (!res.ok || data.error)) {
+          console.log("API response data:", data);
+        }
         return data as T;
       } catch (error) {
         console.error("Error parsing JSON response:", error);
@@ -185,7 +184,16 @@ export class ApiService {
    */
   public async get<T>(endpoint: string): Promise<T> {
     const url = `${this.baseURL}${endpoint}`;
-    console.log(`Making GET request to: ${url}`);
+    // Always log course requests for debugging
+    if (endpoint === '/courses') {
+      console.log(`Making GET request for courses: ${url}`);
+    }
+    // Log other requests only in development and not on auth pages
+    else if (process.env.NODE_ENV === 'development' && 
+        !document.URL.includes('/register') &&
+        !document.URL.includes('/login')) {
+      console.log(`Making GET request to: ${url}`);
+    }
     const headers = this.getHeaders();
     
     try {
@@ -194,7 +202,7 @@ export class ApiService {
         headers: headers,
         // Properly configured fetch options
         mode: 'cors',
-        credentials: 'omit', // Don't send or receive cookies
+        credentials: 'include', // Include credentials for CORS requests with cookies
         cache: 'no-cache',
         redirect: 'follow',
       });
@@ -217,12 +225,18 @@ export class ApiService {
    */
   public async post<T>(endpoint: string, data: unknown): Promise<T> {
     const url = `${this.baseURL}${endpoint}`;
-    console.log(`Making POST request to: ${url}`);
-    const headers = this.getHeaders();
     
-    // Log request details for debugging
-    console.log("Request headers:", JSON.stringify(headers, null, 2));
-    console.log("Request payload:", JSON.stringify(data, null, 2));
+    // Only log in development and not on register/login pages
+    if (process.env.NODE_ENV === 'development' && 
+        !document.URL.includes('/register') &&
+        !document.URL.includes('/login')) {
+      console.log(`Making POST request to: ${url}`);
+      // Log request details for debugging
+      console.log("Request headers:", JSON.stringify(this.getHeaders(), null, 2));
+      console.log("Request payload:", JSON.stringify(data, null, 2));
+    }
+    
+    const headers = this.getHeaders();
     
     try {
       const res = await fetch(url, {
@@ -231,7 +245,7 @@ export class ApiService {
         body: JSON.stringify(data),
         // Properly configured fetch options
         mode: 'cors',
-        credentials: 'omit', // Don't send or receive cookies
+        credentials: 'include', // Include credentials for CORS requests with cookies
         cache: 'no-cache',
         redirect: 'follow',
       });
@@ -254,7 +268,14 @@ export class ApiService {
    */
   public async put<T>(endpoint: string, data: unknown): Promise<T> {
     const url = `${this.baseURL}${endpoint}`;
-    console.log(`Making PUT request to: ${url}`);
+    
+    // Only log in development and not on register/login pages
+    if (process.env.NODE_ENV === 'development' && 
+        !document.URL.includes('/register') &&
+        !document.URL.includes('/login')) {
+      console.log(`Making PUT request to: ${url}`);
+    }
+    
     const headers = this.getHeaders();
     
     try {
@@ -264,7 +285,7 @@ export class ApiService {
         body: JSON.stringify(data),
         // Properly configured fetch options
         mode: 'cors',
-        credentials: 'omit', // Don't send or receive cookies
+        credentials: 'include', // Include credentials for CORS requests with cookies
         cache: 'no-cache',
         redirect: 'follow',
       });
@@ -294,7 +315,14 @@ export class ApiService {
    */
   public async delete<T>(endpoint: string): Promise<T> {
     const url = `${this.baseURL}${endpoint}`;
-    console.log(`Making DELETE request to: ${url}`);
+    
+    // Only log in development and not on register/login pages
+    if (process.env.NODE_ENV === 'development' && 
+        !document.URL.includes('/register') &&
+        !document.URL.includes('/login')) {
+      console.log(`Making DELETE request to: ${url}`);
+    }
+    
     const headers = this.getHeaders();
     
     try {
@@ -303,7 +331,7 @@ export class ApiService {
         headers: headers,
         // Properly configured fetch options
         mode: 'cors',
-        credentials: 'omit', // Don't send or receive cookies
+        credentials: 'include', // Include credentials for CORS requests with cookies
         cache: 'no-cache',
         redirect: 'follow',
       });
