@@ -1,12 +1,13 @@
 'use client';
 
 import React, { useEffect, useState, useRef } from "react";
-import { useRouter, useParams} from "next/navigation";
+import {useParams} from "next/navigation";
 import { UserOutlined, MessageOutlined, FilterOutlined, LogoutOutlined } from "@ant-design/icons";
 import { useMessage } from "@/hooks/useMessage";
 import useLocalStorage from "@/hooks/useLocalStorage";
 import { App } from "antd";
 import Link from "next/link";
+import { useApi } from "@/hooks/useApi";
 import Logo from "@/components/Logo";
 import "../../styles/chat.css";
 import styles from "@/styles/main.module.css";
@@ -18,26 +19,55 @@ import { getApiDomain } from "@/utils/domain";
 const ChatPage: React.FC = () => {
   const [userMessages, setUserMessages] = useState<{ id: number; text: string; sender: string; timeStamp: number; avatar: string| null }[]>([]);
   const [otherMessages, setOtherMessages] = useState<{ id: number; text: string; sender: string; timeStamp: number; avatar: string| null}[]>([]);
-  const [matchedUsers, setMatchedUsers] = useState<{  userId: number; username: string; supportingText?: string }[]>([]);
+  const [channels, setChannels] = useState<{ channelId: number; channelName: string; supportingText?: string }[]>([
+    {
+      channelId: -1, // 特殊 ID 表示 AI Advisor
+      channelName: "AI Advisor",
+      supportingText: "Hello! How can I assist you?",
+    },
+  ]);
+  const [messages, setMessages] = useState<{ id: number; text: string; sender: string; timeStamp: number; avatar: string | null }[]>([]);
   const [inputValue, setInputValue] = useState("");
-  const [isClient, setIsClient] = useState(false);
-  const router = useRouter();
-  const [selectedChat, setSelectedChat] = useState<string | null>(null);  // Track selected chat
+  const apiService = useApi();
+  const [selectedChannel, setSelectedChannel] = useState<string | null>(null);  // Track selected chat
   const Your_API_Key = "AIzaSyAA9DyJQQeK-E9E1PIblN7ay-g4PlwKbVw"
   const genAI = new GoogleGenerativeAI(Your_API_Key);
   const [userAvatar, setUserAvatar] = useState("/default-user-avatar.png"); // 默认头像
   const aiAvatar = "/AI-Icon.svg";  // 你可以使用本地或外部的头像路径
 
-  // 使用 useEffect 来确保只在客户端执行
-  useEffect(() => {
-    setIsClient(true); // 表示组件已经渲染到客户端
-  }, []);
+  // 引用用于滚动到最新消息
+  const messagesEndRef = useRef<HTMLDivElement | null >(null);
+  const { userid } = useParams(); // 获取动态路由中的 userid
+  const { message, contextHolder } = useMessage();
+  const { clear: clearToken } = useLocalStorage<string>("token", "");
 
-    // 引用用于滚动到最新消息
-    const messagesEndRef = useRef<HTMLDivElement>(null);
-    const { userid } = useParams(); // 获取动态路由中的 userid
-    const { message, contextHolder } = useMessage();
-    const { clear: clearToken } = useLocalStorage<string>("token", "");
+  // 定义 ChatParticipantGetDTO 类型
+  interface ChatParticipantGetDTO {
+    userId: number;
+    userName: string;
+    userProfileImage: string;
+    role: string;
+  }
+
+  // 定义 ChatChannelGetDTO 类型
+  interface ChatChannelGetDTO {
+    channelId: number;
+    channelName: string;
+    channelType: 'individual' | 'group'; // 或者你可以直接使用字符串类型 'string'，不过使用具体的枚举值会更好
+    channelProfileImage: string;
+    createdAt: string;
+    updatedAt: string;
+    participants: ChatParticipantGetDTO[];
+  }
+
+  interface MessageGetDTO {
+    messageId: Number;
+    senderId: Number;
+    channelId: Number;
+    senderProfileImage: String;
+    context: String;
+    timestamp: String;
+  }
 
   const defaultAIMessage = {
     id: 1,
@@ -48,137 +78,100 @@ const ChatPage: React.FC = () => {
   };
 
 
-    // 获取匹配用户列表
-
-    useEffect(() => {
-      const fetchMatchedUsers = async (userId: number) => {
-        try {
-          const response = await fetch(`${getApiDomain()}/api/matched-users?userId=${userId}`);
-          const data = await response.json();
-          console.log('Fetched matched users:', data);
-    
-          // 映射数据格式
-          const mappedData = data.map((item: { matchedUserId: number; matchedUsername: string; supportingText: string; }) => ({
-            userId: item.matchedUserId,
-            username: item.matchedUsername,
-            supportingText: item.supportingText, // 如果有 supportingText 字段的话
-          }));
-    
-          setMatchedUsers(mappedData); // 设置匹配的用户数据
-          console.log('matched:users', mappedData); // 打印映射后的数据
-        } catch (error) {
-          console.error("Failed to fetch matched users:", error);
-        }
-      };
-      fetchMatchedUsers(Number(userid));
-    }, [userid]);
-
-
-  // 加载聊天记录
-  const fetchChatHistory = async (userId: number) => {
-    try {
-      const response = await fetch(`${getApiDomain()}/api/chat-history?userId=${userId}`);
-      const data = await response.json();
-      setOtherMessages(data);
-    } catch (error) {
-      console.error("Failed to fetch chat history:", error);
-    }
-  };
-
-  // 模拟从服务端获取消息
   useEffect(() => {
-    if (!userid) return; // 如果没有 userid，直接返回
+    const fetchMatchedUsers = async (userId: number) => {
+      try {
+        const response = await apiService.get<ChatChannelGetDTO[]>(`/chat/channels/user/${userId}`);
+        console.log('Fetched chat channels:', response);
+        const data = response;
+  
+        const mappedData = data.map(channel => {
+          const latestMessage = channel.updatedAt ? `Last message at ${new Date(channel.updatedAt).toLocaleString()}` : "No messages yet";
+          if (channel.channelType === 'individual') {
+            // 找出参与者中不是自己的那一位
+            const targetUser = channel.participants.find(p => p.userId !== userId);
+            if (!targetUser) return null; // 安全校验
+  
+            return {
+              channelId: targetUser.userId,
+              channelName: targetUser.userName,
+              supportingText: latestMessage,
+            };
+          } else {
+            // 群聊逻辑：使用频道信息
+            return {
+              channelId: channel.channelId, // 用 channelId 作为唯一标识
+              channelName: channel.channelName,
+              supportingText: latestMessage,
+            };
+          }
+        }).filter(Boolean); // 过滤 null
+  
+        setChannels(mappedData as { channelId: number; channelName: string; supportingText?: string }[]);
+        console.log('Mapped matched users:', mappedData);
+      } catch (error) {
+        console.error("Failed to fetch chat channels:", error);
+      }
+    };
+  
+    const intervalId = setInterval(fetchMatchedUsers, 2000000000000); // 每 200ms 获取频道列表
+    return () => clearInterval(intervalId); // 清理定时器
+  }, [userid]);
+
+  // Fetching messages for selected channel
+  useEffect(() => {
+    if (!selectedChannel) return;
   
     const fetchMessages = async () => {
       try {
-        const response = await fetch(`${getApiDomain()}/api/messages/${userid}`);
-        const data = await response.json();
+        const response = await apiService.get<MessageGetDTO[]>(`/chat/channels/${selectedChannel}`);
+        const data = response;
   
-        if (data && data.length > 0) {
-          setOtherMessages(data);
-        } else {
-          setOtherMessages([]);
-        }
+        const mappedMessages = data.map(message => ({
+          id: Number(message.messageId),
+          text: String(message.context),
+          sender: String(message.senderId),
+          timeStamp: new Date(String(message.timestamp)).getTime(),
+          avatar: String(message.senderProfileImage) || null,
+        }));
+  
+        setMessages(mappedMessages);
       } catch (error) {
         console.error("Failed to fetch messages:", error);
       }
     };
   
-    fetchMessages();
-  }, [userid]); // 当 userid 变化时重新请求数据
-  
-  useEffect(() => {
-    const receiveMessageFromOpponent = async () => {
-      const response = await fetch(`${getApiDomain()}/api/receive_message`);
-      const data = await response.json();
-  
-      if (data && data.text) {
-        updateMessageList("Opponent", data.text);
-      }
-    };
-  
-    const intervalId = setInterval(receiveMessageFromOpponent, 2000);
-  
-    return () => clearInterval(intervalId);
-  }, []);
+    const intervalId = setInterval(fetchMessages, 2000000000000); // 每 200ms 获取消息
+    return () => clearInterval(intervalId); // 清理定时器
+  }, [selectedChannel]);
 
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
-  }, [userMessages, otherMessages]);
-
-//   useEffect(() => {
-//     fetch(`/api/getUserAvatar?userId=${currentUserId}`)
-//         .then((res) => res.json())
-//         .then((data) => setUserAvatar(data.avatar || "/default-user-avatar.png"));
-// }, []);
-
-  useEffect(() => {
-    const receiveMessageFromOpponent = async () => {
-      const response = await fetch(`${getApiDomain()}/api/receive_message`);
-      const data = await response.json();
-
-      if (data && data.text) {
-        updateMessageList(data.sender, data.text);
-      }
-    };
-
-    const intervalId = setInterval(receiveMessageFromOpponent, 2000);
-
-    return () => clearInterval(intervalId);
-  }, []);
-
+  }, [userMessages, otherMessages,messages]);
+ 
   const updateMessageList = (sender: string, text: string) => {
-    setOtherMessages((prevMessages) => {
-      const existingMessageIndex = prevMessages.findIndex((msg) => msg.sender === sender);
-
-      if (existingMessageIndex !== -1) {
-        // 如果消息列表中已经存在该用户，更新消息内容
-        const updatedMessages = [...prevMessages];
-        updatedMessages[existingMessageIndex] = {
-          ...updatedMessages[existingMessageIndex],
-          text, // 更新消息内容
-        };
-        return updatedMessages;
-      } else {
-        // 如果消息列表中不存在该用户，添加新消息
-        return [
-          ...prevMessages,
-          { id: prevMessages.length + 1, text, sender, timeStamp: Date.now(), avatar: null },
-        ];
-      }
-    });
-
-  // 更新匹配用户列表中的 supporting text
-  setMatchedUsers((prevUsers) =>
-    prevUsers.map((user) =>
-      user.username === sender
-        ? { ...user, supportingText: text } // 更新 supporting text
-        : user
-    )
-  );
-};
+    if (sender === "AI Advisor") {
+      // 直接更新 AI Advisor 的 supporting text
+      setChannels((prevChannels) =>
+        prevChannels.map((channel) =>
+          channel.channelName === "AI Advisor"
+            ? { ...channel, supportingText: text }
+            : channel
+        )
+      );
+    } else {
+      // 普通用户的逻辑
+      setChannels((prevChannels) =>
+        prevChannels.map((channel) =>
+          channel.channelName === sender
+            ? { ...channel, supportingText: text }
+            : channel
+        )
+      );
+    }
+  };
 
   const handleSendMessage = async (customPrompt?: string, quickReplyMessage?: string) => {
     const messageText = quickReplyMessage || inputValue.trim();
@@ -199,7 +192,7 @@ const ChatPage: React.FC = () => {
     }
   
     try {
-      if (selectedChat === "AI Advisor") {
+      if (selectedChannel === "AI Advisor") {
         // **AI Advisor 的处理逻辑**
         const prompt = customPrompt || `
           You are a professional study advisor with a PhD in diverse fields. Please answer in an academic way and briefly. Your answer should be less than 100 words.
@@ -222,43 +215,61 @@ const ChatPage: React.FC = () => {
           avatar: aiAvatar,
         };
         setOtherMessages((prevMessages) => [...prevMessages, aiMessage]);
-      } else {
-        // **普通用户的处理逻辑**
-        const response = await fetch(`${getApiDomain()}/chats/${selectedChat}/message`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
+        // 更新 AI Advisor 的 supporting text
+        updateMessageList("AI Advisor", aiReply);
+      } else  {
+        // For noraml users
+        try {
+          const messagePostDTO = {
             senderId: 1, // 假设当前用户 ID 为 1
-            message: messageText,
-          }),
-        });
-  
-        if (!response.ok) {
-          throw new Error(`Failed to send message: ${response.statusText}`);
+            context: messageText,
+          };
+      
+          const response = await apiService.post<MessageGetDTO>(
+            `/chat/${selectedChannel}/message`,
+            messagePostDTO
+          );
+      
+          const data = response; // 如果你的 apiService 已经封装了 response.data
+      
+          const serverMessage = {
+            id: Number(data.messageId),
+            text: String(data.context), // Ensure text is a primitive string
+            sender: String(data.senderId) === "1" ? "You" : String(data.senderId),
+            timeStamp: new Date(String(data.timestamp)).getTime(),
+            avatar: data.senderProfileImage ? String(data.senderProfileImage) : null, // Ensure avatar is a primitive string or null
+          };
+      
+          // 更新当前用户的消息列表
+          setUserMessages((prevMessages) => [...prevMessages, serverMessage]);
+      
+          // 同步更新频道预览内容
+          if (selectedChannel) {
+            updateMessageList(String(selectedChannel), String(serverMessage.text));
+          }
+      
+        } catch (error) {
+          console.error("消息发送失败：", error);
+      
+          const errorMessage = {
+            id: Date.now(),
+            text: "Failed in sending messages, please try again later",
+            sender: "Server",
+            timeStamp: Date.now(),
+            avatar: null,
+          };
+      
+          setOtherMessages((prevMessages) => [...prevMessages, errorMessage]);
         }
-  
-        const data = await response.json();
-  
-        // 将服务器返回的消息 ID 和时间戳添加到消息列表
-        const serverMessage = {
-          id: data.messageId,
-          text: messageText,
-          sender: "You",
-          timeStamp: new Date(data.timestamp).getTime(),
-          avatar: userAvatar,
-        };
-        setUserMessages((prevMessages) => [...prevMessages, serverMessage]);
       }
     } catch (error) {
       console.error("消息发送失败：", error);
       const errorMessage = {
         id: Date.now(),
-        text: "消息发送失败，请稍后再试。",
-        sender: selectedChat === "AI Advisor" ? "AI Advisor" : "Server",
+        text: "Failed in sending messages, please try again later",
+        sender: selectedChannel === "AI Advisor" ? "AI Advisor" : "Server",
         timeStamp: Date.now(),
-        avatar: selectedChat === "AI Advisor" ? aiAvatar : null,
+        avatar: selectedChannel === "AI Advisor" ? aiAvatar : null,
       };
       setOtherMessages((prevMessages) => [...prevMessages, errorMessage]);
     }
@@ -302,11 +313,7 @@ const ChatPage: React.FC = () => {
   // 处理选择聊天对象
 
   const handleSelectChat = (chatName: string | number) => {
-    setSelectedChat(chatName.toString());
-    if (chatName === "AI Advisor") {
-    } else {
-      fetchChatHistory(Number(chatName));
-    }
+    setSelectedChannel(chatName.toString());
   };
 
   const handleLogout = () => {
@@ -364,20 +371,27 @@ const ChatPage: React.FC = () => {
                   <div className="avatar" style={{ backgroundImage: `url(${aiAvatar})` }}></div>
                   <div className="content">
                     <div className="headline">AI Advisor</div>
-                    <div className="supporting-text">{defaultAIMessage.text}</div>
+                    <div className="supporting-text">
+                    {
+                      channels.find((channel) => channel.channelName === "AI Advisor")?.supportingText ||
+                      "Hello! How can I assist you?"
+                    }
+                    </div>
                   </div>
                 </div>
 
                 {/* 渲染匹配用户 */}
-                {matchedUsers.map((user) => (
+                {channels
+                  .filter((user) => user.channelId !== -1)
+                  .map((user) => (
                   <div
-                    key={user.userId}
-                    className={`message-item ${selectedChat === user.username ? "selected" : ""}`}
-                    onClick={() => handleSelectChat(user.username)}
+                    key={user.channelId}
+                    className={`message-item ${selectedChannel === user.channelName ? "selected" : ""}`}
+                    onClick={() => setSelectedChannel(user.channelName)}
                   >
                     <div className="avatar"></div>
                     <div className="content">
-                      <div className="headline">{user.username}</div>
+                      <div className="headline">{user.channelName}</div>
                       <div className="supporting-text">{user.supportingText || "No messages yet"}</div>
                     </div>
                   </div>
@@ -389,11 +403,11 @@ const ChatPage: React.FC = () => {
             <div className="chat-page">
                 {/* 动态显示对方的用户名 */}
                 <div className="chat-header">
-                  {selectedChat ? `Chat with ${selectedChat}` : "Select a chat"}
+                  {selectedChannel ? `Chat with ${selectedChannel}` : "Select a chat"}
                 </div>
                 <div className="chat-content">
                     {/* AI Advisor 默认消息，每次都显示 AI 头像 */}
-                    {selectedChat === "AI Advisor" && aiAvatar && (
+                    {selectedChannel=== "AI Advisor" && aiAvatar && (
                         <div key={defaultAIMessage.id} className="chat-message">
                             <img className="avatar" src={aiAvatar} alt="AI Avatar" />
                             <div className="message-bubble">{defaultAIMessage.text}</div>
@@ -415,6 +429,8 @@ const ChatPage: React.FC = () => {
                       <div className="message-bubble">{renderMarkdown(message.text)}</div>
                     </div>
                   ))}
+                  {/* 添加一个空的 div 作为滚动目标 */}
+                  <div ref={messagesEndRef}></div>  
                 </div>
               <div className="chat-input-container">
                 <input
@@ -425,7 +441,7 @@ const ChatPage: React.FC = () => {
                   onChange={(e) => setInputValue(e.target.value)}
                 />
                 {/* Quick Reply 按钮容器 */}
-                {selectedChat === "AI Advisor" && (
+                {selectedChannel === "AI Advisor" && (
                   <div className="quick-reply-container">
                     <div
                       className="quick-reply-bubble"

@@ -9,7 +9,8 @@ export function getApiDomain(): string {
    "https://sopra-fs25-khoshimov-r-server.oa.r.appspot.com";// Production URL
   
   // For local development, we need to ensure the port is correct
-  const devUrl = "http://localhost:8080";
+  const devUrl = "https://sopra-fs25-group-38-server.oa.r.appspot.com"; // Development URL
+  // const devUrl = "http://localhost:8080"; // Uncomment this line for local development
   
   // Check if we're running in a browser and if it's development mode
   if (typeof window !== 'undefined' && !isProduction()) {
