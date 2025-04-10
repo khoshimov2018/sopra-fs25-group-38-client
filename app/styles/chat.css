@@ -1,4 +1,4 @@
-    /* 设置背景图片 */
+/* 设置背景图片 */
     body {
         background-image: url('/../Background.png'); /* 图片路径 */
         background-size: cover; /* 背景大小，保持固定尺寸 */
@@ -164,9 +164,152 @@
     font-size: 20px;
     font-weight: bold;
     color: #1d1b20;
+    display: flex;
     border-bottom: 1px solid #e0d7f3;
   }
   
+    /* Chat Header Actions */
+  .chat-header-actions {
+    display: flex;
+    gap: 12px; /* 按钮之间的间距 */
+    margin-left: auto; /* 将按钮组推到右侧 */
+    align-items: center;
+  }
+
+  /* Icon Button */
+  .icon-button {
+    width: 40px;
+    height: 40px;
+    background: #e8def8; /* 浅紫色背景 */
+    border: none;
+    border-radius: 50%; /* 圆形按钮 */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: background 0.3s;
+  }
+
+  .icon-button:hover {
+    background: #d0c4e8; /* 鼠标悬停时的背景颜色 */
+  }
+
+  /* Icon */
+  .icon {
+    width: 20px;
+    height: 20px;
+    background-color: #4a4459; /* 图标颜色 */
+    mask-size: contain;
+    mask-repeat: no-repeat;
+    mask-position: center;
+    -webkit-mask-size: contain;
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+  }
+
+  /* Example for specific icons */
+  /* Refresh Icon */
+  .icon-makingGroup {
+    mask: url('/../Icon.svg'); /* 替换为实际的刷新图标路径 */
+    -webkit-mask: url('/../Icon.svg');
+  }
+
+  /* Clear Icon */
+  .icon-clear {
+    mask: url('/../Icon_Clear.svg'); /* 替换为实际的清除图标路径 */
+    -webkit-mask: url('/../Icon_Clear.svg');
+  }
+
+    /* 列表容器 */
+  .listContainer {
+    display: flex;
+    flex-direction: column;
+    width: 360px;
+    background: #fef7ff; /* 浅紫色背景 */
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  }
+
+  /* 列表项 */
+  .listItem {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    padding: 12px 16px;
+    gap: 16px;
+    cursor: pointer;
+    transition: background 0.3s;
+    border-bottom: 1px solid #e0d7f3; /* 分隔线 */
+  }
+
+  .listItem:last-child {
+    border-bottom: none; /* 最后一项不需要分隔线 */
+  }
+
+  .listItem:hover {
+    background: #f4ebff; /* 鼠标悬停时的背景颜色 */
+  }
+
+  .selected {
+    background: #e8def8; /* 选中时的背景颜色 */
+  }
+
+  /* 列表项内容 */
+  .content {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .headline {
+    font-family: "Roboto", sans-serif;
+    font-size: 16px;
+    font-weight: 400;
+    color: #1d1b20;
+  }
+
+  .supportingText {
+    font-family: "Roboto", sans-serif;
+    font-size: 14px;
+    font-weight: 400;
+    color: #49454f;
+  }
+
+  /* 右侧图标 */
+  .trailingIcon {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .checkIcon {
+    width: 18px;
+    height: 18px;
+    background-color: #65558f; /* 选中图标的颜色 */
+    mask: url("/../Primary button.svg") no-repeat center; /* 替换为实际的图标路径 */
+    -webkit-mask: url("/..//Primary button.svg") no-repeat center;
+    mask-size: contain;
+    -webkit-mask-size: contain;
+  }
+
+    /* Cancel Icon */
+  .icon-cancel {
+    mask: url('/../Secondary button.svg'); /* 替换为实际的取消图标路径 */
+    -webkit-mask: url('/../Secondary button.svg');
+    mask-size: contain;
+    -webkit-mask-size: contain;
+    mask-repeat: no-repeat;
+    -webkit-mask-repeat: no-repeat;
+    mask-position: center;
+    -webkit-mask-position: center;
+    background-color: #4a4459; /* 图标颜色 */
+    width: 20px;
+    height: 20px;
+  }
+
   .chat-content {
     flex-grow: 1;
     padding: 16px;
@@ -301,3 +444,98 @@
     mask-size: contain;
     -webkit-mask-size: contain;
   }
+
+  /* 群聊浮层 */
+.group-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5); /* 半透明背景 */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.group-modal-content {
+  background: #ffffff;
+  width: 400px;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.group-modal-content h3 {
+  margin-bottom: 16px;
+  font-size: 18px;
+  font-weight: bold;
+  color: #1d1b20;
+}
+
+.user-list {
+  max-height: 300px;
+  overflow-y: auto;
+  margin-bottom: 16px;
+}
+
+.user-item {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  margin-bottom: 8px;
+  background: #e8def8;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.user-item:hover {
+  background: #d0c4e8;
+}
+
+.user-item.selected {
+  background: #c8b6e8; /* 选中时的背景颜色 */
+}
+
+.user-item .avatar {
+  width: 40px;
+  height: 40px;
+  background: #eaddff;
+  border-radius: 50%;
+  margin-right: 12px;
+}
+
+.group-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.cancel-button,
+.submit-button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.cancel-button {
+  background: #e0e0e0;
+  color: #333333;
+}
+
+.cancel-button:hover {
+  background: #d6d6d6;
+}
+
+.submit-button {
+  background: #625b71;
+  color: #ffffff;
+}
+
+.submit-button:hover {
+  background: #4e4659;
+}

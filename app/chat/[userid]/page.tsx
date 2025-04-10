@@ -14,17 +14,23 @@ import styles from "@/styles/main.module.css";
 import backgroundStyles from "@/styles/theme/backgrounds.module.css";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { marked } from "marked"; // 导入 marked 库
-import { getApiDomain } from "@/utils/domain";
 
 const ChatPage: React.FC = () => {
   const [userMessages, setUserMessages] = useState<{ id: number; text: string; sender: string; timeStamp: number; avatar: string| null }[]>([]);
   const [otherMessages, setOtherMessages] = useState<{ id: number; text: string; sender: string; timeStamp: number; avatar: string| null}[]>([]);
-  const [channels, setChannels] = useState<{ channelId: number; channelName: string; supportingText?: string }[]>([
+  const [channels, setChannels] = useState<{ channelId: number; channelName: string; supportingText?: string; channelType:string }[]>([
     {
       channelId: -1, // 特殊 ID 表示 AI Advisor
       channelName: "AI Advisor",
       supportingText: "Hello! How can I assist you?",
+      channelType:'individual'
     },
+    {
+      channelId: 0,
+      channelName: "Alex",
+      supportingText: "No one is talking",
+      channelType:'individual'
+    }
   ]);
   const [messages, setMessages] = useState<{ id: number; text: string; sender: string; timeStamp: number; avatar: string | null }[]>([]);
   const [inputValue, setInputValue] = useState("");
@@ -34,10 +40,17 @@ const ChatPage: React.FC = () => {
   const genAI = new GoogleGenerativeAI(Your_API_Key);
   const [userAvatar, setUserAvatar] = useState("/default-user-avatar.png"); // 默认头像
   const aiAvatar = "/AI-Icon.svg";  // 你可以使用本地或外部的头像路径
+  const [isGroupModalVisible, setIsGroupModalVisible] = useState(false); // 控制浮层显示
+  const [selectedUsers, setSelectedUsers] = useState<number[]>([]); // 存储选中的用户 ID
 
   // 引用用于滚动到最新消息
   const messagesEndRef = useRef<HTMLDivElement | null >(null);
-  const { userid } = useParams(); // 获取动态路由中的 userid
+  const { userid : rawUserId} = useParams();
+  const parsedUserId = Array.isArray(rawUserId)
+    ? parseInt(rawUserId[0], 10)
+    : rawUserId
+    ? parseInt(rawUserId, 10)
+    : undefined;
   const { message, contextHolder } = useMessage();
   const { clear: clearToken } = useLocalStorage<string>("token", "");
 
@@ -74,49 +87,109 @@ const ChatPage: React.FC = () => {
     text: "Hello! How can I assist you?",
     sender: "AI Advisor",
     timeStamp: Date.now(),
-    avatar: userAvatar
+    avatar: userAvatar,
+    channelType: 'individual' // Provide a default or appropriate value
   };
 
+// 打开创建群聊浮层
+const handleCreateGroup = () => {
+  setIsGroupModalVisible(true);
+};
+
+// 关闭创建群聊浮层
+const handleCloseGroupModal = () => {
+  setIsGroupModalVisible(false);
+  setSelectedUsers([]); // 清空选中的用户
+};
+
+// 处理用户选择
+const handleUserSelect = (userId: number) => {
+  setSelectedUsers((prevSelected) =>
+    prevSelected.includes(userId)
+      ? prevSelected.filter((id) => id !== userId) // 如果已选中则取消选择
+      : [...prevSelected, userId] // 否则添加到选中列表
+  );
+};
+
+// 提交创建群聊请求
+const handleSubmitGroup = async () => {
+  if (selectedUsers.length === 0) {
+    message.error("Please select at least one user!");
+    return;
+  }
+
+  const channelName = prompt("Please give a name to this group", "New Group");
+  if (!channelName) {
+    message.error("The name should not be null!");
+    return;
+  }
+
+  const channelData = {
+    channelName,
+    channelType: "group",
+    participantIds: selectedUsers,
+    channelProfileImage: "/default-group-avatar.png", // 默认群聊头像
+  };
+
+  try {
+    const response = await apiService.post("/chat/channels", channelData);
+    message.success("Your group is made successfully!");
+    setIsGroupModalVisible(false);
+    setSelectedUsers([]);
+    console.log("创建的群聊信息：", response);
+  } catch (error) {
+    console.error("创建群聊失败：", error);
+    message.error("Failed creating a group, please try again later.");
+  }
+};
 
   useEffect(() => {
-    const fetchMatchedUsers = async (userId: number) => {
+    const fetchMatchedUsers = async (userid: number) => {
       try {
-        const response = await apiService.get<ChatChannelGetDTO[]>(`/chat/channels/user/${userId}`);
-        console.log('Fetched chat channels:', response);
-        const data = response;
-  
-        const mappedData = data.map(channel => {
-          const latestMessage = channel.updatedAt ? `Last message at ${new Date(channel.updatedAt).toLocaleString()}` : "No messages yet";
-          if (channel.channelType === 'individual') {
-            // 找出参与者中不是自己的那一位
-            const targetUser = channel.participants.find(p => p.userId !== userId);
-            if (!targetUser) return null; // 安全校验
-  
-            return {
-              channelId: targetUser.userId,
-              channelName: targetUser.userName,
-              supportingText: latestMessage,
-            };
-          } else {
-            // 群聊逻辑：使用频道信息
-            return {
-              channelId: channel.channelId, // 用 channelId 作为唯一标识
-              channelName: channel.channelName,
-              supportingText: latestMessage,
-            };
-          }
-        }).filter(Boolean); // 过滤 null
-  
-        setChannels(mappedData as { channelId: number; channelName: string; supportingText?: string }[]);
-        console.log('Mapped matched users:', mappedData);
+        // console.log('UserId:', typeof userid)
+        if (userid) {
+          const response = await apiService.get<ChatChannelGetDTO[]>(`/chat/channels/user/${userid}`);
+          console.log('Fetched chat channels:', response);
+          const data = response;
+    
+          const mappedData = data.map(channel => {
+            const latestMessage = channel.updatedAt ? `Last message at ${new Date(channel.updatedAt).toLocaleString()}` : "No messages yet";
+            if (channel.channelType === 'individual') {
+              // 找出参与者中不是自己的那一位
+              const targetUser = channel.participants.find(p => p.userId !== userid);
+              if (!targetUser) return null; // 安全校验
+    
+              return {
+                channelId: targetUser.userId,
+                channelName: targetUser.userName,
+                supportingText: latestMessage,
+              };
+            } else {
+              // 群聊逻辑：使用频道信息
+              return {
+                channelId: channel.channelId, // 用 channelId 作为唯一标识
+                channelName: channel.channelName,
+                supportingText: latestMessage,
+              };
+            }
+          }).filter(Boolean); // 过滤 null
+    
+          setChannels(mappedData as { channelId: number; channelName: string; supportingText?: string; channelType: string }[]);
+          console.log('Mapped matched users:', mappedData);
+        } else {
+          console.error("userId is undefined!");
+        }
       } catch (error) {
         console.error("Failed to fetch chat channels:", error);
       }
     };
   
-    const intervalId = setInterval(fetchMatchedUsers, 2000000000000); // 每 200ms 获取频道列表
-    return () => clearInterval(intervalId); // 清理定时器
-  }, [userid]);
+    if (parsedUserId !== undefined) {
+      // const intervalId = setInterval(() => fetchMatchedUsers(parsedUserId), 20000000000); // 每2秒轮询
+      // return () => clearInterval(intervalId);
+      fetchMatchedUsers(parsedUserId);
+    }
+  }, [parsedUserId]);
 
   // Fetching messages for selected channel
   useEffect(() => {
@@ -140,10 +213,13 @@ const ChatPage: React.FC = () => {
         console.error("Failed to fetch messages:", error);
       }
     };
-  
-    const intervalId = setInterval(fetchMessages, 2000000000000); // 每 200ms 获取消息
-    return () => clearInterval(intervalId); // 清理定时器
+
+    fetchMessages(); // 只请求一次
   }, [selectedChannel]);
+  
+  //   const intervalId = setInterval(fetchMessages, 2000000000000); // 每 200ms 获取消息
+  //   return () => clearInterval(intervalId); // 清理定时器
+  // }, [selectedChannel]);
 
   useEffect(() => {
     if (messagesEndRef.current) {
@@ -403,7 +479,20 @@ const ChatPage: React.FC = () => {
             <div className="chat-page">
                 {/* 动态显示对方的用户名 */}
                 <div className="chat-header">
-                  {selectedChannel ? `Chat with ${selectedChannel}` : "Select a chat"}
+                {selectedChannel ? `Chat with ${selectedChannel}` : "Select a chat"}
+                  <div className="chat-header-actions">
+                    {/* 创建群聊按钮，仅在选中 individual 类型的频道时显示 */}
+                    {channels.find((channel) => channel.channelName === selectedChannel && selectedChannel !== "AI Advisor") && (
+                      <>
+                        <button className="icon-button" onClick={handleCreateGroup}>
+                          <div className="icon icon-makingGroup"></div>
+                        </button>
+                        <button className="icon-button">
+                          <div className="icon icon-clear"></div>
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </div>
                 <div className="chat-content">
                     {/* AI Advisor 默认消息，每次都显示 AI 头像 */}
@@ -464,6 +553,36 @@ const ChatPage: React.FC = () => {
               </div>
             </div>
           </div>
+          {isGroupModalVisible && (
+            <div className="group-modal">
+              <div className="group-modal-content">
+                <h3>To create a group by selecting users</h3>
+                <div className="user-list">
+                  {channels
+                    .filter((channel) => channel.channelType === "individual") // 仅显示 individual 类型的用户
+                    .map((user) => (
+                      <div
+                        key={user.channelId}
+                        className={`user-item ${selectedUsers.includes(user.channelId) ? "selected" : ""}`}
+                        onClick={() => handleUserSelect(user.channelId)}
+                      >
+                        <div className="content">
+                          <div className="headline">{user.channelName}</div>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+                <div className="group-modal-actions">
+                  <button className="cancel-button" onClick={handleCloseGroupModal}>
+                    Cancel
+                  </button>
+                  <button className="submit-button" onClick={handleSubmitGroup}>
+                    Submit
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </App>
