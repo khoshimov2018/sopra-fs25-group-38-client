@@ -81,7 +81,8 @@ reason).
 
 | **Student**        | **Date** | **Link to Commit** | **Description**                 | **Relevance**                       |
 | ------------------ | -------- | ------------------ | ------------------------------- | ----------------------------------- |
-| **[@notsofun]** | [09.04.2025]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-client/commit/17ab37368cc7d6141f4369ea286047e36cb50ce4] | [Modified logic of Chat to meet requirements of backedn that users can really chat on the page] | [To ensure that users could really chat once users could register.] |
+| **[@友寄纪明]** | [09.04.2025]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-client/commit/17ab37368cc7d6141f4369ea286047e36cb50ce4] | [Modified logic of Chat to meet requirements of backedn that users can really chat on the page] | [To ensure that users could really chat once users could register.] |
+| **[@notsofun]** | [10.04.2025]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-client/commit/2ebaaf091a7766bab05628363a2e85dc178f1cb0] | [Allowing users to create a group] | [This is a key user story in our project] |
 
 ---
 
