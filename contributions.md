@@ -78,6 +78,7 @@ reason).
 ---
 
 ## Contributions Week 3 - [Begin Date] to [End Date]
+From Zhidian: Sorry for the inconvenience. For the commit after the email, I have already changed the name, but for the previous one, it remains as 友寄纪明.
 
 | **Student**        | **Date** | **Link to Commit** | **Description**                 | **Relevance**                       |
 | ------------------ | -------- | ------------------ | ------------------------------- | ----------------------------------- |
