@@ -36,6 +36,30 @@
   /* Shadow Colors */
   --shadow-color: rgba(0, 0, 0, 0.1);
 
+  /* Spacing - can be used for margin/padding */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-xxl: 48px;
+  
+  /* Border radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  
+  /* Box shadows */
+  --shadow-sm: 0 2px 8px var(--shadow-color);
+  --shadow-md: 0 4px 12px var(--shadow-color);
+  --shadow-lg: 0 6px 16px var(--shadow-color);
+  
+  /* Container widths */
+  --container-sm: 320px;
+  --container-md: 768px;
+  --container-lg: 1024px;
+  --container-xl: 1280px;
+
   /* Legacy variables */
   --background: var(--bg-card);
   --foreground: var(--text-dark);

@@ -1,5 +1,5 @@
 /* Typography styles - Single source of truth for font styling */
-:root {
+.typography {
   /* Font Families */
   --font-primary: 'Inter', Arial, sans-serif;
   --font-secondary: Arial, Helvetica, sans-serif;

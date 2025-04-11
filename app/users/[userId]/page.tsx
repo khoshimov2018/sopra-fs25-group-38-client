@@ -4,7 +4,7 @@ import { useRouter, useParams } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import { useApi } from "@/hooks/useApi";
 import useLocalStorage from "@/hooks/useLocalStorage";
-import { User } from "@/types/user";
+import { User, UserGetDTO } from "@/types";
 import { ApplicationError } from "@/types/error";
 import { Button, Card, Typography, Descriptions, Tag, message, Breadcrumb, Spin, Form, Input, DatePicker, Space, Modal } from "antd";
 import { formatDate } from "@/utils/date";

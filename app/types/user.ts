@@ -1,26 +1,8 @@
-// Enum types to match server-side constants
-export enum UserStatus {
-  ONLINE = "ONLINE",
-  OFFLINE = "OFFLINE"
-}
+// Import enums from dto to avoid circular dependency
+import { UserStatus, UserAvailability, ProfileKnowledgeLevel, MatchStatus } from './dto';
 
-export enum UserAvailability {
-  MORNING = "MORNING",
-  AFTERNOON = "AFTERNOON",
-  EVENING = "EVENING"
-}
-
-export enum ProfileKnowledgeLevel {
-  BEGINNER = "BEGINNER",
-  INTERMEDIATE = "INTERMEDIATE", 
-  ADVANCED = "ADVANCED"
-}
-
-export enum MatchStatus {
-  PENDING = "PENDING",
-  ACCEPTED = "ACCEPTED",
-  REJECTED = "REJECTED"
-}
+// Re-export enums for backward compatibility
+export { UserStatus, UserAvailability, ProfileKnowledgeLevel, MatchStatus };
 
 // Internal User model (client-side representation)
 export interface User {
@@ -50,4 +32,4 @@ export interface UserCourse {
 }
 
 // Re-export from DTOs for backward compatibility
-export { UserCourseDTO, UserLoginDTO, UserPostDTO, UserPutDTO, UserGetDTO } from './dto';
+export type { UserCourseDTO, UserLoginDTO, UserPostDTO, UserPutDTO, UserGetDTO } from './dto';

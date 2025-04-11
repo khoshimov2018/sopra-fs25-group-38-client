@@ -1,6 +1,6 @@
 import { ApiService } from "../apiService";
-import { UserAvailability } from "@/types/user";
-import { UserGetDTO } from "@/types/dto";
+import { UserAvailability } from "@/types/dto";
+import { UserGetDTO } from "@/types";
 
 /**
  * Service for student filtering API calls

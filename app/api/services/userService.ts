@@ -1,6 +1,6 @@
 import { ApiService } from "../apiService";
 import { User } from "@/types/user";
-import { UserGetDTO, UserLoginDTO, UserPostDTO, UserPutDTO, CourseSelectionDTO } from "@/types/dto";
+import { UserGetDTO, UserLoginDTO, UserPostDTO, UserPutDTO, CourseSelectionDTO } from "@/types";
 
 /**
  * Service for user-related API calls

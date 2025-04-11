@@ -1,5 +1,5 @@
 /* Theme colors - Single source of truth for color values */
-:root {
+.colors {
   /* Primary Color Palette */
   --primary: #2C2C2C;
   --primary-dark: #222222;

@@ -1,4 +1,26 @@
-import { UserStatus, UserAvailability, ProfileKnowledgeLevel, MatchStatus } from './user';
+// Define enums here instead of importing to avoid circular dependency
+export enum UserStatus {
+  ONLINE = "ONLINE",
+  OFFLINE = "OFFLINE"
+}
+
+export enum UserAvailability {
+  MORNING = "MORNING",
+  AFTERNOON = "AFTERNOON",
+  EVENING = "EVENING"
+}
+
+export enum ProfileKnowledgeLevel {
+  BEGINNER = "BEGINNER",
+  INTERMEDIATE = "INTERMEDIATE", 
+  ADVANCED = "ADVANCED"
+}
+
+export enum MatchStatus {
+  PENDING = "PENDING",
+  ACCEPTED = "ACCEPTED",
+  REJECTED = "REJECTED"
+}
 
 /**
  * DTO types that align with server-side DTOs

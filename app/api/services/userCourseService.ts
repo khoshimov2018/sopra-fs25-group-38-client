@@ -1,6 +1,6 @@
 import { ApiService } from "../apiService";
 import { UserCourse } from "@/types/user";
-import { CourseSelectionDTO } from "@/types/dto";
+import { CourseSelectionDTO } from "@/types";
 
 /**
  * Service for user-course relationship API calls

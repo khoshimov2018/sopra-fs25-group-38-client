@@ -1,6 +1,6 @@
 import { ApiService } from "../apiService";
-import { MatchStatus } from "@/types/user";
-import { MatchGetDTO, MatchPostDTO } from "@/types/dto";
+import { MatchStatus } from "@/types/dto";
+import { MatchGetDTO, MatchPostDTO } from "@/types";
 
 /**
  * Service for match-related API calls

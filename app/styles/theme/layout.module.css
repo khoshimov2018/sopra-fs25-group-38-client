@@ -1,5 +1,5 @@
 /* Layout styles - Single source of truth for spacing, containers, and layout */
-:root {
+.root {
   /* Spacing - can be used for margin/padding */
   --space-xs: 4px;
   --space-sm: 8px;
