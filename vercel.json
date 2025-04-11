@@ -1,5 +1,4 @@
 {
-  "buildCommand": "next build",
-  "outputDirectory": "build",
-  "framework": "nextjs"
+  "cleanUrls": true,
+  "trailingSlash": false
 }

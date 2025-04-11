@@ -1,8 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // For deployment on Vercel, we need to use their expected defaults
-  output: process.env.VERCEL ? undefined : 'standalone',
-  distDir: process.env.VERCEL ? '.next' : 'build',
+  // Use default settings to ensure compatibility with Vercel
   typescript: {
     ignoreBuildErrors: true,
   },
