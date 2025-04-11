@@ -2,7 +2,8 @@
 
 import { useApi } from "@/hooks/useApi";
 import useLocalStorage from "@/hooks/useLocalStorage";
-import { User, CourseSelection } from "@/types/user";
+import { User, UserRegistration, ProfileKnowledgeLevel } from "@/types/user";
+import { CourseSelection } from "@/types/course";
 import { Form, Input, App, Select, Row, Col, Divider } from "antd";
 import { useMessage } from '@/hooks/useMessage';
 import Link from "next/link";
@@ -36,36 +37,41 @@ const Register: React.FC = () => {
   const { set: setToken } = useLocalStorage<string>("token", "");
   const { message, contextHolder } = useMessage();
   const [availableCourses, setAvailableCourses] = useState<Course[]>([]);
-  const [courseSelections, setCourseSelections] = useState<{ courseId: number | null; knowledgeLevel: string }[]>([
-    { courseId: null, knowledgeLevel: "BEGINNER" }
+  const [courseSelections, setCourseSelections] = useState<CourseSelection[]>([
+    { courseId: 0, knowledgeLevel: ProfileKnowledgeLevel.BEGINNER }
   ]);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
+    // Only fetch courses if we don't already have them
+    if (availableCourses.length > 0) return;
+    
     const fetchCourses = async () => {
       try {
-        const res = await apiService.get<Course[]>("/courses");
-        setAvailableCourses(res);
+        const res = await apiService.apiService.get<Course[]>("/courses");
+        if (res && res.length > 0) {
+          setAvailableCourses(res);
+        }
       } catch (err) {
         console.error("Failed to fetch courses", err);
         message.error("Failed to load courses. Please try again.");
       }
     };
+    
     fetchCourses();
-  }, [apiService, message]);
+    
+    // Removed dependencies to prevent infinite loop
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleRegister = async (values: FormFieldProps) => {
     try {
       setIsLoading(true);
       message.loading("Creating account...");
 
-      // Filter out any course selections with null courseId
+      // Filter out any course selections with courseId = 0 (unselected)
       const filteredSelections = courseSelections
-        .filter(sel => sel.courseId !== null)
-        .map(sel => ({
-          courseId: sel.courseId as number,
-          knowledgeLevel: sel.knowledgeLevel
-        }));
+        .filter(sel => sel.courseId !== 0);
 
       // Check if at least one course is selected
       if (filteredSelections.length === 0) {
@@ -78,22 +84,19 @@ const Register: React.FC = () => {
       // Don't join into a string as the backend probably expects an array of strings
       
       // Create a structured payload that matches backend expectations
-      const payload = {
+      const payload: UserRegistration = {
         name: values.name,
         email: values.email,
         password: values.password,
         studyLevel: values.studyLevel,
         studyGoals: values.studyGoals, // Send as array, not as string
-        courseSelections: filteredSelections.map(selection => ({
-          courseId: selection.courseId,
-          knowledgeLevel: selection.knowledgeLevel
-        }))
+        courseSelections: filteredSelections
       };
 
       console.log("Registration payload:", JSON.stringify(payload, null, 2));
 
       // Send registration request and handle possible empty response
-      const response = await apiService.post<User>("/users/register", payload);
+      const response = await apiService.apiService.post<User>("/users/register", payload);
       console.log("Registration successful:", response);
       
       // Ensure we have a valid response object
@@ -110,7 +113,7 @@ const Register: React.FC = () => {
       // Try to auto-login with the same credentials
       try {
         console.log("Auto-logging in after registration");
-        const loginResponse = await apiService.post<User>("/login", credentials);
+        const loginResponse = await apiService.apiService.post<User>("/login", credentials as UserLogin);
         
         if (loginResponse && loginResponse.token) {
           console.log("Auto-login successful, setting token");
@@ -173,8 +176,16 @@ const Register: React.FC = () => {
       console.log("Error message:", err);
       
       // Handle various error scenarios with user-friendly messages
-      if (err.includes("409")) {
-        message.error("Email already taken.");
+      if (err.includes("409") || err.includes("Conflict") || err.includes("already exists")) {
+        message.error("Email already taken. Please use a different email address.");
+        
+        // Focus the email field for better UX
+        form.setFields([
+          {
+            name: 'email',
+            errors: ['This email is already registered. Please use a different email.']
+          }
+        ]);
       } else if (err.includes("400")) {
         // For 400 Bad Request, check specific field errors
         if (err.toLowerCase().includes("email")) {
@@ -205,20 +216,20 @@ const Register: React.FC = () => {
     }
   };
 
-  const handleCourseChange = (index: number, value: number | null) => {
+  const handleCourseChange = (index: number, value: number) => {
     const updated = [...courseSelections];
     updated[index].courseId = value;
     setCourseSelections(updated);
   };
 
-  const handleKnowledgeLevelChange = (index: number, level: string) => {
+  const handleKnowledgeLevelChange = (index: number, level: ProfileKnowledgeLevel) => {
     const updated = [...courseSelections];
     updated[index].knowledgeLevel = level;
     setCourseSelections(updated);
   };
 
   const addCourseSelection = () => {
-    setCourseSelections([...courseSelections, { courseId: null, knowledgeLevel: "BEGINNER" }]);
+    setCourseSelections([...courseSelections, { courseId: 0, knowledgeLevel: ProfileKnowledgeLevel.BEGINNER }]);
   };
 
   const removeCourseSelection = (index: number) => {
@@ -283,7 +294,36 @@ const Register: React.FC = () => {
                 label="Email" 
                 rules={[
                   { required: true, message: "Please input your email!" },
-                  { type: 'email', message: "Please enter a valid email address!" }
+                  { type: 'email', message: "Please enter a valid email address!" },
+                  { 
+                    validator: async (_, value) => {
+                      if (!value || !value.includes('@')) return Promise.resolve();
+                      
+                      try {
+                        // Get the userService from the hook result
+                        const { userService } = apiService;
+                        
+                        if (!userService) {
+                          return Promise.resolve();
+                        }
+                        
+                        // Check if the email exists
+                        const exists = await userService.emailExists(value);
+                        
+                        if (exists) {
+                          return Promise.reject('This email is already registered. Please use a different email.');
+                        }
+                        
+                        return Promise.resolve();
+                      } catch (error) {
+                        // If the API call fails, we still allow the form submission
+                        // The server-side validation will catch duplicate emails
+                        console.warn("Could not validate email:", error);
+                        return Promise.resolve();
+                      }
+                    },
+                    validateTrigger: 'onBlur' // Only validate when field loses focus
+                  }
                 ]}
               >
                 <Input placeholder="Enter your email" className={componentStyles.input} />
@@ -374,14 +414,14 @@ const Register: React.FC = () => {
                     <Col span={9}>
                       <Select
                         value={entry.knowledgeLevel}
-                        onChange={(level) => handleKnowledgeLevelChange(index, level)}
+                        onChange={(level) => handleKnowledgeLevelChange(index, level as ProfileKnowledgeLevel)}
                         style={{ width: '100%' }}
                         className={componentStyles.input}
                         popupMatchSelectWidth={false}
                       >
-                        <Option value="BEGINNER">Beginner</Option>
-                        <Option value="INTERMEDIATE">Intermediate</Option>
-                        <Option value="ADVANCED">Advanced</Option>
+                        <Option value={ProfileKnowledgeLevel.BEGINNER}>Beginner</Option>
+                        <Option value={ProfileKnowledgeLevel.INTERMEDIATE}>Intermediate</Option>
+                        <Option value={ProfileKnowledgeLevel.ADVANCED}>Advanced</Option>
                       </Select>
                     </Col>
                     <Col span={4} style={{ display: 'flex', alignItems: 'center' }}>

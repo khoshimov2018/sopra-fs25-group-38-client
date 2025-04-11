@@ -41,29 +41,42 @@ const ProfileContent: React.FC<ProfileContentProps> = ({
       
       <div className={styles.profileGrid}>
         <div className={styles.profileCard}>
-          <ProfileImage 
-            currentUser={currentUser}
-            editableUser={editableUser}
-            isEditing={isEditing}
-            onImageUpload={onImageUpload}
-          />
-          
-          <div className={styles.profileDetailsSection}>
-            {isEditing && editableUser ? (
-              <EditProfile 
-                user={editableUser}
-                onInputChange={onInputChange}
-                onTagChange={onTagChange}
-                onStudyLevelChange={onStudyLevelChange}
-                onAddTag={onAddTag}
-                onRemoveTag={onRemoveTag}
-                onAddStudyLevel={onAddStudyLevel}
-                onRemoveStudyLevel={onRemoveStudyLevel}
-              />
-            ) : (
-              <ViewProfile user={currentUser} />
-            )}
-          </div>
+          {isEditing && editableUser ? (
+            <div className={styles.profileWithSidebar}>
+              <div className={styles.profileSidebar}>
+                <ProfileImage 
+                  currentUser={currentUser}
+                  editableUser={editableUser}
+                  isEditing={isEditing}
+                  onImageUpload={onImageUpload}
+                />
+              </div>
+              <div className={styles.profileContent}>
+                <EditProfile 
+                  user={editableUser}
+                  onInputChange={onInputChange}
+                  onStudyLevelChange={onStudyLevelChange}
+                  onAddStudyLevel={onAddStudyLevel}
+                  onRemoveStudyLevel={onRemoveStudyLevel}
+                  onSave={onEditToggle}
+                />
+              </div>
+            </div>
+          ) : (
+            <div className={styles.profileWithSidebar}>
+              <div className={styles.profileSidebar}>
+                <ProfileImage 
+                  currentUser={currentUser}
+                  editableUser={editableUser}
+                  isEditing={isEditing}
+                  onImageUpload={onImageUpload}
+                />
+              </div>
+              <div className={styles.profileContent}>
+                <ViewProfile user={currentUser} />
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

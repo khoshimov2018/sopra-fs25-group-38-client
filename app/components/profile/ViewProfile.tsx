@@ -25,13 +25,38 @@ const ViewProfile: React.FC<ViewProfileProps> = ({ user }) => {
         <div className={styles.detailsValue}>{user.email}</div>
       </div>
       
-      {/* Birthday section (if available) */}
-      {user.birthday && (
+      {/* Study Level section */}
+      {user.studyLevel && (
         <div className={styles.cardSection}>
-          <div className={styles.detailsLabel}>Birthday</div>
-          <div className={styles.detailsValue}>{formatDate(user.birthday)}</div>
+          <div className={styles.detailsLabel}>Study Level</div>
+          <div className={styles.detailsValue}>{user.studyLevel}</div>
         </div>
       )}
+      
+      {/* Study Goals section (if available) */}
+      {user.studyGoals && (
+        <div className={styles.cardSection}>
+          <div className={styles.detailsLabel}>Study Goals</div>
+          <div className={styles.detailsValue}>
+            {typeof user.studyGoals === 'string' 
+              ? user.studyGoals 
+              : Array.isArray(user.studyGoals) 
+                ? user.studyGoals.join(', ') 
+                : ''}
+          </div>
+        </div>
+      )}
+      
+      {/* Availability section (if available) */}
+      <div className={styles.cardSection}>
+        <div className={styles.detailsLabel}>Availability</div>
+        <div className={styles.detailsValue}>
+          {!user.availability ? 'Not specified' :
+           user.availability === 'MORNING' ? 'Morning' : 
+           user.availability === 'AFTERNOON' ? 'Afternoon' : 
+           user.availability === 'EVENING' ? 'Evening' : user.availability}
+        </div>
+      </div>
       
       {/* Bio section (if available) */}
       {user.bio && (
@@ -41,45 +66,16 @@ const ViewProfile: React.FC<ViewProfileProps> = ({ user }) => {
         </div>
       )}
       
-      {/* Study Style section (if available) */}
-      {user.studyStyle && (
+      {/* Courses section (if available) */}
+      {user.userCourses && user.userCourses.length > 0 && (
         <div className={styles.cardSection}>
-          <div className={styles.detailsLabel}>Study Style</div>
-          <div className={styles.detailsValue}>{user.studyStyle}</div>
-        </div>
-      )}
-      
-      {/* Goal section (if available) */}
-      {user.goal && (
-        <div className={styles.cardSection}>
-          <div className={styles.detailsLabel}>Goal</div>
-          <div className={styles.detailsValue}>{user.goal}</div>
-        </div>
-      )}
-      
-      {/* Tags section (if available) */}
-      {user.tags && user.tags.length > 0 && (
-        <div className={styles.cardSection}>
-          <div className={styles.detailsLabel}>Tags</div>
-          <div className={styles.tagContainer}>
-            {user.tags.map((tag, index) => (
-              <span key={`tag-${index}`} className={styles.tag}>{tag}</span>
-            ))}
-          </div>
-        </div>
-      )}
-      
-      {/* Study Levels section (if available) */}
-      {user.studyLevels && user.studyLevels.length > 0 && (
-        <div className={styles.cardSection}>
-          <div className={styles.detailsLabel}>Study Levels</div>
+          <div className={styles.detailsLabel}>Courses</div>
           <div className={styles.studyLevelContainer}>
-            {user.studyLevels.map((level, index) => (
-              <div key={`level-${index}`} className={styles.studyLevelRow}>
+            {user.userCourses.map((course, index) => (
+              <div key={`course-${index}`} className={styles.studyLevelRow}>
                 <div className={styles.studyLevelLeft}>
-                  <span className={styles.studyLevelGrade}>{level.grade}</span>
-                  <span className={styles.studyLevelSubject}>{level.subject}</span>
-                  <span className={styles.studyLevelRight}> ({level.level})</span>
+                  <span className={styles.studyLevelSubject}>{course.courseName}</span>
+                  <span className={styles.studyLevelRight}> ({course.knowledgeLevel})</span>
                 </div>
               </div>
             ))}

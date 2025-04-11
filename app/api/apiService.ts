@@ -19,6 +19,7 @@ export class ApiService {
   /**
    * Get the current headers, including any auth token
    * This ensures we always use the latest token from localStorage
+   * Aligns with the security setup in the server (JWT token in Authorization header)
    */
   private getHeaders(): HeadersInit {
     // Create a new headers object starting with the default headers
@@ -35,19 +36,34 @@ export class ApiService {
             const parsed = JSON.parse(tokenStr);
             if (typeof parsed === 'string') {
               token = parsed;
+            } else if (parsed && typeof parsed.token === 'string') {
+              // Handle the case where we stored the whole user object
+              token = parsed.token;
             }
           } catch {
             // Not JSON, use as is
           }
           
-          // Don't log the full token for security reasons
-          const displayToken = token.substring(0, 8) + '...';
-          console.log("Using token for API request:", displayToken);
-          headers["Authorization"] = `Bearer ${token}`;
+          // Ensure the token is properly formatted for the server's Authorization header
+          // The server expects: Authorization: Bearer <jwt-token>
+          // If token already starts with Bearer, don't add it again
+          const finalToken = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
+          
+          // Only log token in development environment
+          if (process.env.NODE_ENV === 'development') {
+            // Don't log the full token for security reasons
+            const displayToken = finalToken.substring(0, 20) + '...';
+            console.log("Using token for API request:", displayToken);
+          }
+          
+          // Set the Authorization header
+          headers["Authorization"] = finalToken;
         } catch (error) {
           console.error("Error processing token:", error);
-          // Fallback to using token directly
-          headers["Authorization"] = `Bearer ${tokenStr}`;
+          // Fallback to using token directly with Bearer prefix
+          const fallbackToken = tokenStr.startsWith('Bearer ') ? tokenStr : `Bearer ${tokenStr}`;
+          headers["Authorization"] = fallbackToken;
+          console.log("Using fallback token format:", fallbackToken.substring(0, 20) + '...');
         }
       } else {
         console.log("No token found in localStorage");

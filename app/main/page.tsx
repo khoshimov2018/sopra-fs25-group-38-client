@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { useApi } from "@/hooks/useApi";
 import useLocalStorage from "@/hooks/useLocalStorage";
 import { useMessage } from '@/hooks/useMessage';
-import { User } from "@/types/user";
+import { User, ProfileKnowledgeLevel } from "@/types/user";
+import { MatchPost, MatchGet } from "@/types/match";
 import { App, Button as AntButton } from "antd";
 import Link from "next/link";
 import Image from "next/image";
@@ -14,6 +15,7 @@ import { UserOutlined, MessageOutlined, FilterOutlined, LogoutOutlined } from "@
 import styles from "@/styles/main.module.css";
 import backgroundStyles from "@/styles/theme/backgrounds.module.css";
 import Button from "@/components/Button";
+import FilterModal from "@/components/FilterModal";
 
 
 // Mocked user profile data for now
@@ -38,6 +40,14 @@ const MainPage: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [profiles, setProfiles] = useState<UserProfile[]>([]);
   const [currentProfileIndex, setCurrentProfileIndex] = useState(0);
+  const [filterModalVisible, setFilterModalVisible] = useState(false);
+  const [filters, setFilters] = useState<{
+    selectedCourses: number[];
+    knowledgeLevel: ProfileKnowledgeLevel | null;
+  }>({
+    selectedCourses: [],
+    knowledgeLevel: null
+  });
 
   // Mock data - would come from API in production
   const mockProfiles: UserProfile[] = [
@@ -131,10 +141,55 @@ const MainPage: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleLogout = () => {
-    // For demonstration purposes, we're just going to show a filter menu
-    // This is what appears to happen in the sample image when clicking the filter icon
-    message.info("Filter options would be shown here");
+  const handleFilterClick = () => {
+    setFilterModalVisible(true);
+  };
+  
+  const handleFilterSave = async (selectedCourses: number[], knowledgeLevel: ProfileKnowledgeLevel | null) => {
+    setFilters({
+      selectedCourses,
+      knowledgeLevel
+    });
+    
+    try {
+      message.loading("Applying filters...");
+      
+      // Use the specialized studentFilterService
+      const { studentFilterService } = apiService;
+      
+      // Prepare an availability filter if knowledgeLevel is selected
+      // This is just for demo - in a real app, availability would be a separate filter
+      const availability = knowledgeLevel ? [UserAvailability.MORNING] : undefined;
+      
+      // Get filtered students using the service
+      const filteredStudents = await studentFilterService.getFilteredStudents(
+        selectedCourses.length > 0 ? selectedCourses : undefined,
+        availability
+      );
+      
+      // Update the profiles with the filtered students
+      if (filteredStudents && filteredStudents.length > 0) {
+        // In a real app, you would convert the filtered students to profiles
+        // For demo purposes, we'll just keep using the mock profiles
+        message.success(`Found ${filteredStudents.length} matching students`);
+      } else {
+        message.info("No students match the selected filters");
+      }
+      
+      // Display what filters were applied
+      let filterMessage = 'Filters applied: ';
+      if (selectedCourses.length > 0) {
+        filterMessage += `${selectedCourses.length} courses selected`;
+      }
+      if (knowledgeLevel) {
+        filterMessage += selectedCourses.length > 0 ? `, ${knowledgeLevel} level` : `${knowledgeLevel} level`;
+      }
+      
+      message.success(filterMessage);
+    } catch (error) {
+      console.error("Error applying filters:", error);
+      message.error("Could not apply filters. Please try again.");
+    }
   };
   
   const actualLogout = async () => {
@@ -143,7 +198,13 @@ const MainPage: React.FC = () => {
       // In production, call the logout endpoint
       if (currentUser && currentUser.id) {
         try {
-          await apiService.post(`/users/${currentUser.id}/logout`, {});
+          // Use the userService from the hooks result
+          const { userService } = apiService;
+          if (userService) {
+            await userService.logoutUser(Number(currentUser.id));
+          } else {
+            console.warn("User service not available");
+          }
         } catch (error) {
           console.warn("Logout API call failed, but proceeding with local logout", error);
         }
@@ -163,14 +224,67 @@ const MainPage: React.FC = () => {
     }
   };
 
-  const handleLike = () => {
-    message.success(`You liked ${profiles[currentProfileIndex].name}`);
-    showNextProfile();
+  const handleLike = async () => {
+    try {
+      if (!currentUser?.id || !profiles[currentProfileIndex]?.id) {
+        message.error("User data is missing");
+        return;
+      }
+
+      const matchData: MatchPost = {
+        userId: Number(currentUser.id),
+        targetUserId: Number(profiles[currentProfileIndex].id)
+      };
+
+      message.loading("Processing like...");
+      
+      // Use the specialized matchService
+      const { matchService } = apiService;
+      const response = await matchService.processLike(matchData);
+      
+      if (response && response.status === "ACCEPTED") {
+        message.success(`Match with ${profiles[currentProfileIndex].name}! You both liked each other.`);
+      } else {
+        message.success(`You liked ${profiles[currentProfileIndex].name}`);
+      }
+      
+      showNextProfile();
+    } catch (error) {
+      console.error("Error processing like:", error);
+      message.error("Could not process like. Please try again.");
+      
+      // For demo, still show next profile
+      showNextProfile();
+    }
   };
 
-  const handleDislike = () => {
-    message.info(`You disliked ${profiles[currentProfileIndex].name}`);
-    showNextProfile();
+  const handleDislike = async () => {
+    try {
+      if (!currentUser?.id || !profiles[currentProfileIndex]?.id) {
+        message.error("User data is missing");
+        return;
+      }
+
+      const matchData: MatchPost = {
+        userId: Number(currentUser.id),
+        targetUserId: Number(profiles[currentProfileIndex].id)
+      };
+
+      message.loading("Processing dislike...");
+      
+      // Use the specialized matchService
+      const { matchService } = apiService;
+      await matchService.processDislike(matchData);
+      
+      message.info(`You disliked ${profiles[currentProfileIndex].name}`);
+      showNextProfile();
+    } catch (error) {
+      console.error("Error processing dislike:", error);
+      message.error("Could not process dislike. Please try again.");
+      
+      // For demo, still show next profile
+      showNextProfile();
+    }
   };
 
   const showNextProfile = () => {
@@ -216,7 +330,7 @@ const MainPage: React.FC = () => {
               <Link href="/chat">
                 <button className={styles.iconButton}><MessageOutlined /></button>
               </Link>
-              <button className={styles.iconButton} onClick={handleLogout}><FilterOutlined /></button>
+              <button className={styles.iconButton} onClick={handleFilterClick}><FilterOutlined /></button>
               <button
                 className={styles.iconButton}
                 onClick={actualLogout}
@@ -308,6 +422,13 @@ const MainPage: React.FC = () => {
           </div>
         </div>
       </div>
+      
+      {/* Filter Modal */}
+      <FilterModal 
+        visible={filterModalVisible}
+        onClose={() => setFilterModalVisible(false)}
+        onSave={handleFilterSave}
+      />
     </App>
   );
 };
