@@ -1,86 +1,75 @@
 import React from 'react';
 import styles from '@/styles/profile.module.css';
 import { UserProfile } from '@/types/profile';
-import { Tag } from 'antd';
 
 interface ViewProfileProps {
-  user: UserProfile | null;
+  user: UserProfile;
 }
 
 const ViewProfile: React.FC<ViewProfileProps> = ({ user }) => {
-  const formatDate = (dateString: string | null | undefined): string => {
-    if (!dateString) return 'Not specified';
-    try {
-      return new Date(dateString).toLocaleDateString();
-    } catch (error) {
-      return 'Invalid date';
-    }
+  const formatDate = (dateString: string): string => {
+    return new Date(dateString).toLocaleDateString();
   };
-
-  if (!user) {
-    return (
-      <div className={styles.profileCard} style={{ border: 'none' }}>
-        <div className={styles.cardSection}>
-          <div className={styles.detailsLabel}>Loading profile...</div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className={styles.profileCard} style={{ border: 'none' }}>
       {/* Name section */}
       <div className={styles.cardSection}>
         <div className={styles.detailsLabel}>Name</div>
-        <div className={styles.detailsValue}>{user.name || 'Not specified'}</div>
+        <div className={styles.detailsValue}>{user.name}</div>
       </div>
       
       {/* Email section */}
       <div className={styles.cardSection}>
         <div className={styles.detailsLabel}>Email</div>
-        <div className={styles.detailsValue}>{user.email || 'Not specified'}</div>
-      </div>
-      
-      {/* Birthday section */}
-      <div className={styles.cardSection}>
-        <div className={styles.detailsLabel}>Birthday</div>
-        <div className={styles.detailsValue}>{user.birthday ? formatDate(user.birthday) : 'Not specified'}</div>
+        <div className={styles.detailsValue}>{user.email}</div>
       </div>
       
       {/* Study Level section */}
-      <div className={styles.cardSection}>
-        <div className={styles.detailsLabel}>Study Level</div>
-        <div className={styles.detailsValue}>{user.studyLevel || 'Not specified'}</div>
-      </div>
-
-      {/* Study Style section */}
-      <div className={styles.cardSection}>
-        <div className={styles.detailsLabel}>Study Style</div>
-        <div className={styles.detailsValue}>{user.studyStyle || 'Not specified'}</div>
-      </div>
+      {user.studyLevel && (
+        <div className={styles.cardSection}>
+          <div className={styles.detailsLabel}>Study Level</div>
+          <div className={styles.detailsValue}>{user.studyLevel}</div>
+        </div>
+      )}
       
-      {/* Study Goals section */}
+      {/* Study Goals section (if available) */}
+      {user.studyGoals && (
+        <div className={styles.cardSection}>
+          <div className={styles.detailsLabel}>Study Goals</div>
+          <div className={styles.detailsValue}>
+            {typeof user.studyGoals === 'string' 
+              ? user.studyGoals 
+              : Array.isArray(user.studyGoals) 
+                ? user.studyGoals.join(', ') 
+                : ''}
+          </div>
+        </div>
+      )}
+      
+      {/* Availability section (if available) */}
       <div className={styles.cardSection}>
-        <div className={styles.detailsLabel}>Study Goals</div>
+        <div className={styles.detailsLabel}>Availability</div>
         <div className={styles.detailsValue}>
-          {user.formattedStudyGoals && user.formattedStudyGoals.length > 0 ? (
-            <div className={styles.tagContainer}>
-              {user.formattedStudyGoals.map((goal, index) => (
-                <Tag key={`goal-${index}`} color="blue" style={{ margin: '2px' }}>{goal}</Tag>
-              ))}
-            </div>
-          ) : (
-            user.studyGoals || 'Not specified'
-          )}
+          {!user.availability ? 'Not specified' :
+           user.availability === 'MORNING' ? 'Morning' : 
+           user.availability === 'AFTERNOON' ? 'Afternoon' : 
+           user.availability === 'EVENING' ? 'Evening' : user.availability}
         </div>
       </div>
       
-{/* Bio section removed as requested */}
+      {/* Bio section (if available) */}
+      {user.bio && (
+        <div className={styles.cardSection}>
+          <div className={styles.detailsLabel}>Bio</div>
+          <div className={styles.detailsValue}>{user.bio}</div>
+        </div>
+      )}
       
-      {/* Courses section */}
-      <div className={styles.cardSection}>
-        <div className={styles.detailsLabel}>Courses</div>
-        {user.userCourses && user.userCourses.length > 0 ? (
+      {/* Courses section (if available) */}
+      {user.userCourses && user.userCourses.length > 0 && (
+        <div className={styles.cardSection}>
+          <div className={styles.detailsLabel}>Courses</div>
           <div className={styles.studyLevelContainer}>
             {user.userCourses.map((course, index) => (
               <div key={`course-${index}`} className={styles.studyLevelRow}>
@@ -91,10 +80,8 @@ const ViewProfile: React.FC<ViewProfileProps> = ({ user }) => {
               </div>
             ))}
           </div>
-        ) : (
-          <div className={styles.detailsValue}>No courses added</div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };

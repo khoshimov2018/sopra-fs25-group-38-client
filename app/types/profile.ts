@@ -1,37 +1,37 @@
-import { User, UserCourse } from './user';
+import { User, UserAvailability, ProfileKnowledgeLevel } from './user';
+import { CourseSelection } from './course';
 
-/**
- * UserProfile interface represents the client-side model of a user profile
- * Extends the base User interface with profile-specific fields
- * Aligns with backend User entity structure and handles data format differences between client/server
- */
+// Matches Profile.java entity
+export interface Profile {
+  id?: number;
+  userId: number;
+  knowledgeLevel?: ProfileKnowledgeLevel;
+  studyGoals?: string;
+  bio?: string;
+}
+
+// Extended profile for the UI
 export interface UserProfile extends User {
-  // Study-related fields
-  studyLevel?: string;
-  /** 
-   * Server stores study goals as a comma-separated string
-   * But client uses array representation for UI components
-   */
-  studyGoals?: string; 
-  knowledgeLevel?: string;
-  userCourses?: UserCourse[];
-  
-  // Added study style field
-  studyStyle?: string;
+  goal?: string; 
+  tags?: string[];
+  // Legacy profile structure
+  studyLevels?: {
+    subject: string;
+    grade: string;
+    level: string;
+  }[];
+  // Align with server-side structure
+  courseSelections?: CourseSelection[];
+  profileImage?: string;
+}
 
-  // Profile fields
+// Aligned with UserPutDTO
+export interface ProfileUpdate {
+  name?: string;
   bio?: string;
   profilePicture?: string;
-  availability?: string;
-  /** 
-   * Birthday in ISO format (YYYY-MM-DD) 
-   */
-  birthday?: string;
-
-  /**
-   * Client-side representation of studyGoals as string array
-   * Used for UI components (Select with multiple mode)
-   * When sending to server, we join this array with commas
-   */
-  formattedStudyGoals?: string[];
+  availability?: UserAvailability;
+  studyLevel?: string;
+  studyGoals?: string[];
+  courses: CourseSelection[];
 }

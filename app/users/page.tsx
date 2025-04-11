@@ -65,7 +65,7 @@ const UsersList: React.FC = () => {
         if (currentUser && currentUser.id) {
           try {
           // Call logout endpoint
-          await apiService.post(`/users/${currentUser.id}/logout`, {});
+          await apiService.apiService.post(`/users/${currentUser.id}/logout`, {});
           message.success("Logged out successfully!");
         } catch (error) {
           console.warn("Logout API call failed, but proceeding with local logout", error);
@@ -115,7 +115,7 @@ const UsersList: React.FC = () => {
         // Log before making the API call
         console.log("Making GET request to /users with token:", effectiveToken);
         
-        const users: User[] = await apiService.get<User[]>("/users");
+        const users: User[] = await apiService.apiService.get<User[]>("/users");
         console.log("Successfully fetched users data:", users);
         setUsers(users);
       } catch (error) {

@@ -2,7 +2,7 @@
 
 import { useApi } from "@/hooks/useApi";
 import useLocalStorage from "@/hooks/useLocalStorage";
-import { User } from "@/types/user";
+import { User, UserLogin } from "@/types/user";
 import { Form, Input, App, message as antMessage } from "antd";
 import { useMessage } from '@/hooks/useMessage';
 import Link from "next/link";
@@ -11,14 +11,6 @@ import backgroundStyles from "@/styles/theme/backgrounds.module.css";
 import componentStyles from "@/styles/theme/components.module.css";
 import Logo from "@/components/Logo";
 import Button from "@/components/Button";
-
-/**
- * Interface for login form fields
- */
-interface LoginFormFields {
-  email: string;
-  password: string;
-}
 
 /**
  * Login page component
@@ -34,12 +26,16 @@ const Login: React.FC = () => {
    * Handles the login form submission
    * @param values - The form values (email and password)
    */
-  const handleLogin = async (values: LoginFormFields) => {
+  const handleLogin = async (values: UserLogin) => {
     try {
       message.loading("Connecting to server...");
       
       // Call the API service to login
-      const response = await apiService.post<User>("/login", values);
+      const { userService } = apiService;
+      if (!userService) {
+        throw new Error("User service not available");
+      }
+      const response = await userService.loginUser(values);
 
       // Store token and redirect
       if (response && response.token) {

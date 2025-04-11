@@ -1,261 +1,466 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import styles from '@/styles/profile.module.css';
+import componentStyles from '@/styles/theme/components.module.css';
+import { Form, Input, Select, Row, Col, Divider } from 'antd';
+import { MinusCircleOutlined, PlusOutlined } from '@ant-design/icons';
 import { UserProfile } from '@/types/profile';
-import { Form, Input, DatePicker, Select, Button, Row, Col, Divider } from 'antd';
-import { PlusOutlined, MinusCircleOutlined } from '@ant-design/icons';
-import moment from 'moment';
+import { ProfileKnowledgeLevel, UserAvailability } from '@/types/user';
+import Button from '@/components/Button';
+import { useApi } from '@/hooks/useApi';
 
 const { Option } = Select;
-const { TextArea } = Input;
 
 interface EditProfileProps {
   user: UserProfile;
-  availableCourses?: Array<{id: number, courseName: string}>;
   onInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
-  onSelectChange: (name: string, value: string | string[]) => void;
-  onCourseChange: (index: number, field: 'courseId' | 'knowledgeLevel', value: any) => void;
-  onAddCourse: () => void;
-  onRemoveCourse: (index: number) => void;
+  onStudyLevelChange: (index: number, field: 'subject' | 'grade' | 'level', value: string) => void;
+  onAddStudyLevel: () => void;
+  onRemoveStudyLevel: (index: number) => void;
+  onSave: () => void;
 }
 
 const EditProfile: React.FC<EditProfileProps> = ({ 
   user,
-  availableCourses = [],
   onInputChange,
-  onSelectChange,
-  onCourseChange,
-  onAddCourse,
-  onRemoveCourse
+  onStudyLevelChange,
+  onAddStudyLevel,
+  onRemoveStudyLevel,
+  onSave
 }) => {
-  // Study goals options based on registration form
-  const studyGoalsOptions = [
-    { value: 'Pass exams', label: 'Pass exams' },
-    { value: 'Maintain GPA', label: 'Maintain GPA' },
-    { value: 'Complete assignments', label: 'Complete assignments' },
-    { value: 'Deep understanding', label: 'Deep understanding' },
-    { value: 'Career preparation', label: 'Career preparation' },
-  ];
+  const apiService = useApi();
+  const [availableCourses, setAvailableCourses] = useState<{id: number, courseName: string}[]>([]);
+  const [form] = Form.useForm();
+  
+  // Fetch available courses
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        // Use courseService to fetch courses if available
+        const { courseService } = apiService;
+        if (courseService) {
+          const courses = await courseService.getCourses();
+          if (courses && courses.length > 0) {
+            setAvailableCourses(courses);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch courses for profile editing", err);
+      }
+    };
+    
+    fetchCourses();
+  }, [apiService]);
 
-  // Study level options based on registration form
-  const studyLevelOptions = [
-    { value: 'Bachelor', label: 'Bachelor' },
-    { value: 'Master', label: 'Master' },
-    { value: 'PhD', label: 'PhD' },
-    { value: 'Self-Study', label: 'Self-Study' },
-  ];
+  // Apply form values from user object
+  useEffect(() => {
+    if (user) {
+      form.setFieldsValue({
+        name: user.name,
+        email: user.email,
+        bio: user.bio,
+        studyLevel: user.studyLevel,
+        studyGoals: Array.isArray(user.studyGoals) 
+          ? user.studyGoals 
+          : typeof user.studyGoals === 'string' 
+            ? user.studyGoals.split(',').map(g => g.trim()) 
+            : [],
+        availability: user.availability,
+        // No need to set courses as they are handled separately
+      });
+    }
+  }, [user, form]);
 
-  // Knowledge level options
-  const knowledgeLevelOptions = [
-    { value: 'BEGINNER', label: 'Beginner' },
-    { value: 'INTERMEDIATE', label: 'Intermediate' },
-    { value: 'ADVANCED', label: 'Advanced' },
-  ];
+  // Prepare course selections for display
+  const getCourseSelections = () => {
+    // Prefer userCourses if available, otherwise use studyLevels
+    if (user.userCourses && user.userCourses.length > 0) {
+      return user.userCourses.map(course => ({
+        courseId: course.courseId,
+        knowledgeLevel: course.knowledgeLevel
+      }));
+    } else if (user.studyLevels && user.studyLevels.length > 0) {
+      return user.studyLevels.map(level => {
+        // Try to find matching course by name
+        const courseId = availableCourses.find(c => 
+          c.courseName.toLowerCase() === level.subject.toLowerCase()
+        )?.id || 0;
+        
+        // Convert level string to enum value
+        let knowledgeLevel = ProfileKnowledgeLevel.BEGINNER;
+        switch (level.level.toLowerCase()) {
+          case 'intermediate':
+            knowledgeLevel = ProfileKnowledgeLevel.INTERMEDIATE;
+            break;
+          case 'advanced':
+          case 'expert':
+            knowledgeLevel = ProfileKnowledgeLevel.ADVANCED;
+            break;
+        }
+        
+        return {
+          courseId,
+          knowledgeLevel
+        };
+      });
+    }
+    return [];
+  };
+
+  // Handle study goals change
+  const handleStudyGoalsChange = (values: string[]) => {
+    // Create a synthetic event to use with onInputChange
+    const fakeEvent = {
+      target: {
+        name: 'studyGoals',
+        value: values.join(', ')
+      }
+    } as React.ChangeEvent<HTMLInputElement>;
+    
+    onInputChange(fakeEvent);
+  };
+
+  // Handle study level change
+  const handleStudyLevelSelectChange = (value: string) => {
+    // Create a synthetic event to use with onInputChange
+    const fakeEvent = {
+      target: {
+        name: 'studyLevel',
+        value
+      }
+    } as React.ChangeEvent<HTMLInputElement>;
+    
+    onInputChange(fakeEvent);
+  };
+
+  // Handle availability change
+  const handleAvailabilityChange = (value: UserAvailability) => {
+    // Create a synthetic event to use with onInputChange
+    const fakeEvent = {
+      target: {
+        name: 'availability',
+        value
+      }
+    } as React.ChangeEvent<HTMLInputElement>;
+    
+    onInputChange(fakeEvent);
+  };
+
+  // Handle course selection change
+  const handleCourseChange = (index: number, value: number) => {
+    // Find course name for the selected ID
+    const selectedCourse = availableCourses.find(c => c.id === value);
+    const courseName = selectedCourse?.courseName || '';
+    
+    // First update the study level (for backward compatibility)
+    onStudyLevelChange(index, 'subject', courseName);
+    
+    // Then directly update the userCourses array if it exists
+    if (user.userCourses && user.userCourses[index]) {
+      // Create a synthetic event to set both courseId and courseName
+      const fakeEvent = {
+        target: {
+          name: `userCourses[${index}]`,
+          value: {
+            ...user.userCourses[index],
+            courseId: value,
+            courseName: courseName
+          }
+        }
+      } as any;
+      
+      onInputChange(fakeEvent);
+    }
+  };
+
+  // Handle knowledge level change
+  const handleKnowledgeLevelChange = (index: number, value: ProfileKnowledgeLevel) => {
+    // Convert enum value to string for studyLevels (backward compatibility)
+    let levelString = 'Beginner';
+    switch (value) {
+      case ProfileKnowledgeLevel.INTERMEDIATE:
+        levelString = 'Intermediate';
+        break;
+      case ProfileKnowledgeLevel.ADVANCED:
+        levelString = 'Advanced';
+        break;
+    }
+    
+    // Update the studyLevel
+    onStudyLevelChange(index, 'level', levelString);
+    
+    // Also update the userCourses array directly if it exists
+    if (user.userCourses && user.userCourses[index]) {
+      // Create a synthetic event to update knowledge level
+      const fakeEvent = {
+        target: {
+          name: `userCourses[${index}]`,
+          value: {
+            ...user.userCourses[index],
+            knowledgeLevel: value
+          }
+        }
+      } as any;
+      
+      onInputChange(fakeEvent);
+    }
+  };
 
   return (
-    <div className={styles.profileCard}>
-      <Form layout="vertical" className={styles.editForm}>
+    <div className={styles.profileFormContainer}>
+      {/* Fixed header (not sticky) */}
+      <div style={{
+        position: 'relative',
+        background: 'white',
+        padding: '15px 0',
+        borderBottom: '1px solid #eee',
+        marginBottom: '20px',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center'
+      }}>
+        <h2 style={{ margin: 0, color: '#333' }}>Edit Profile</h2>
+      </div>
+      <Form
+        form={form}
+        layout="vertical"
+        style={{ width: '100%' }}
+        onFinish={onSave}
+        autoComplete="off"
+        requiredMark={false} // Cleaner look without asterisks
+        scrollToFirstError // Auto-scroll to first validation error
+      >
         {/* Name input */}
         <Form.Item 
-          label="Name *" 
-          required
-          className={styles.formItem}
+          name="name" 
+          label={<span style={{ fontWeight: 'bold' }}>Name</span>}
+          rules={[{ required: true, message: "Please input your name!" }]}
+          help="Your full name will be visible to other students"
         >
-          <Input
+          <Input 
+            placeholder="Enter your name" 
+            className={componentStyles.input}
+            onChange={onInputChange}
             name="name"
             value={user.name || ''}
-            onChange={onInputChange}
-            placeholder="Your name"
-            className={styles.input}
+            size="large"
           />
         </Form.Item>
         
-        {/* Email input - Read only as it can't be changed */}
+        {/* Email input */}
         <Form.Item 
-          label="Email *" 
-          required
-          className={styles.formItem}
-          help="Email cannot be changed"
+          name="email" 
+          label={<span style={{ fontWeight: 'bold' }}>Email</span>}
+          rules={[
+            { required: true, message: "Please input your email!" },
+            { type: 'email', message: "Please enter a valid email address!" }
+          ]}
+          help={<span style={{ color: '#777' }}>Email cannot be changed after registration</span>}
         >
-          <Input
+          <Input 
+            placeholder="Enter your email" 
+            className={componentStyles.input}
+            onChange={onInputChange}
             name="email"
-            type="email"
             value={user.email || ''}
-            disabled={true}
-            readOnly={true}
-            placeholder="Your email"
-            className={`${styles.input} ${styles.disabledInput}`}
+            disabled // Email shouldn't be changeable
+            size="large"
+            style={{ backgroundColor: '#f5f5f5' }}
           />
         </Form.Item>
         
-        {/* Birthday input with proper date format */}
-        <Form.Item 
-          label="Birthday" 
-          className={styles.formItem}
-          help="Format: YYYY-MM-DD"
+        {/* Study Level dropdown */}
+        <Form.Item
+          name="studyLevel"
+          label={<span style={{ fontWeight: 'bold' }}>Study Level</span>}
+          rules={[{ required: true, message: "Please select your study level!" }]}
+          help="Your current academic or study level"
         >
-          <Input
-            name="birthday"
-            type="date"
-            value={user.birthday || ''}
-            onChange={onInputChange}
-            className={styles.input}
-            placeholder="YYYY-MM-DD"
-            max={new Date().toISOString().split('T')[0]} // Prevents future dates
-          />
-        </Form.Item>
-        
-        {/* Study Level section */}
-        <Form.Item 
-          label="Study Level *" 
-          required
-          className={styles.formItem}
-        >
-          <Select
+          <Select 
+            placeholder="Select your study level" 
+            className={componentStyles.input}
+            onChange={handleStudyLevelSelectChange}
+            popupMatchSelectWidth={false}
             value={user.studyLevel || undefined}
-            onChange={(value) => onSelectChange('studyLevel', value)}
-            placeholder="Select your study level"
-            className={styles.select}
+            size="large"
           >
-            {studyLevelOptions.map(option => (
-              <Option key={option.value} value={option.value}>{option.label}</Option>
-            ))}
+            <Option value="Bachelor">Bachelor</Option>
+            <Option value="Master">Master</Option>
+            <Option value="PhD">PhD</Option>
+            <Option value="Self-Study">Self-Study</Option>
           </Select>
         </Form.Item>
         
-        {/* Study Style section */}
-        <Form.Item 
-          label="Study Style" 
-          className={styles.formItem}
-        >
-          <Input
-            name="studyStyle"
-            value={user.studyStyle || ''}
-            onChange={onInputChange}
-            placeholder="Describe your study style (e.g., 'Visual learner, group study')"
-            className={styles.input}
-          />
-        </Form.Item>
-
-        {/* Study Goals section */}
-        <Form.Item 
-          label="Study Goals *" 
-          required
-          className={styles.formItem}
+        {/* Study Goals multi-select */}
+        <Form.Item
+          name="studyGoals"
+          label={<span style={{ fontWeight: 'bold' }}>Study Goals</span>}
+          rules={[{ required: true, message: "Please select at least one study goal!" }]}
+          help="What do you want to achieve with your studies?"
         >
           <Select
             mode="multiple"
-            value={user.formattedStudyGoals || []}
-            onChange={(value) => onSelectChange('studyGoals', value)}
             placeholder="Select your goals"
-            className={styles.select}
-            maxTagCount={3}
+            allowClear
+            className={componentStyles.input}
+            style={{ width: '100%' }}
+            onChange={handleStudyGoalsChange}
+            maxTagCount={2}
+            maxTagTextLength={10}
+            maxTagPlaceholder={(omittedValues) => `+ ${omittedValues.length} more`}
+            popupMatchSelectWidth={false}
+            value={Array.isArray(user.studyGoals) 
+              ? user.studyGoals 
+              : typeof user.studyGoals === 'string' 
+                ? user.studyGoals.split(',').map(g => g.trim()) 
+                : []}
+            size="large"
           >
-            {studyGoalsOptions.map(option => (
-              <Option key={option.value} value={option.value}>{option.label}</Option>
-            ))}
+            <Option value="Pass exams">Pass exams</Option>
+            <Option value="Maintain GPA">Maintain GPA</Option>
+            <Option value="Complete assignments">Complete assignments</Option>
+            <Option value="Deep understanding">Deep understanding</Option>
+            <Option value="Career preparation">Career preparation</Option>
           </Select>
         </Form.Item>
         
-        {/* Availability section - Required by server */}
-        <Form.Item 
-          label="Availability *"
-          required
-          className={styles.formItem}
+        {/* Availability dropdown */}
+        <Form.Item
+          name="availability"
+          label={<span style={{ fontWeight: 'bold' }}>Availability</span>}
+          help="When are you typically available to study with partners?"
         >
           <Select
-            value={user.availability || 'WEEKDAYS'}
-            onChange={(value) => onSelectChange('availability', value)}
-            placeholder="Select your availability"
-            className={styles.select}
+            placeholder="When are you available to study?"
+            className={componentStyles.input}
+            onChange={handleAvailabilityChange}
+            value={user.availability || undefined}
+            size="large"
           >
-            <Option value="WEEKDAYS">Weekdays</Option>
-            <Option value="WEEKENDS">Weekends</Option>
-            <Option value="EVENINGS">Evenings</Option>
-            <Option value="ANYTIME">Anytime</Option>
+            <Option value={UserAvailability.MORNING}>Morning</Option>
+            <Option value={UserAvailability.AFTERNOON}>Afternoon</Option>
+            <Option value={UserAvailability.EVENING}>Evening</Option>
           </Select>
         </Form.Item>
         
-        {/* Knowledge Level - Required by server but hidden as requested */}
-        <Form.Item 
-          style={{ display: 'none' }}
-          label="Overall Knowledge Level *"
-          required
-          className={styles.formItem}
+        {/* Bio textarea */}
+        <Form.Item
+          name="bio"
+          label={<span style={{ fontWeight: 'bold' }}>Bio</span>}
+          help="Tell other students about yourself, your interests and strengths"
         >
-          <Select
-            value={user.knowledgeLevel || 'INTERMEDIATE'}
-            onChange={(value) => onSelectChange('knowledgeLevel', value)}
-            placeholder="Select your knowledge level"
-            className={styles.select}
-          >
-            <Option value="BEGINNER">Beginner</Option>
-            <Option value="INTERMEDIATE">Intermediate</Option>
-            <Option value="ADVANCED">Advanced</Option>
-          </Select>
+          <Input.TextArea
+            placeholder="Tell us a bit about yourself..."
+            className={componentStyles.input}
+            onChange={onInputChange}
+            name="bio"
+            value={user.bio || ''}
+            autoSize={{ minRows: 3, maxRows: 6 }}
+            style={{ 
+              padding: '12px', 
+              fontSize: '15px',
+              borderRadius: '8px',
+              resize: 'vertical'
+            }}
+          />
         </Form.Item>
-
-        {/* Bio section removed as requested */}
-
-        {/* Courses section */}
+        
+        {/* Course Selection Section - Matching registration form */}
         <Form.Item 
-          label="Courses *" 
-          required
-          className={styles.formItem}
-          help="At least one course with a valid selection is required"
+          label={<span style={{ fontWeight: 'bold' }}>Courses</span>}
+          required 
+          style={{ marginBottom: 0 }}
+          help="Select courses that you're interested in studying"
         >
-          <div className={styles.coursesContainer}>
-            {(user.userCourses || []).map((course, index) => (
-              <Row key={`course-${index}`} gutter={8} className={styles.courseRow}>
-                <Col span={12}>
+          <div style={{ 
+            color: 'rgba(0, 0, 0, 0.45)', 
+            fontSize: '14px', 
+            marginBottom: '16px'
+          }}>
+            Please select courses and your knowledge level
+          </div>
+          
+          {user.studyLevels && user.studyLevels.map((level, index) => {
+            // Find course ID if available
+            const courseId = user.userCourses && user.userCourses[index] 
+              ? user.userCourses[index].courseId 
+              : availableCourses.find(c => c.courseName.toLowerCase() === level.subject.toLowerCase())?.id || 0;
+              
+            // Map level string to enum value
+            let knowledgeLevel = ProfileKnowledgeLevel.BEGINNER;
+            if (level.level.toLowerCase().includes('intermediate')) {
+              knowledgeLevel = ProfileKnowledgeLevel.INTERMEDIATE;
+            } else if (level.level.toLowerCase().includes('advanced') || level.level.toLowerCase().includes('expert')) {
+              knowledgeLevel = ProfileKnowledgeLevel.ADVANCED;
+            } else if (user.userCourses && user.userCourses[index]) {
+              knowledgeLevel = user.userCourses[index].knowledgeLevel as ProfileKnowledgeLevel;
+            }
+              
+            return (
+              <Row 
+                key={index} 
+                gutter={[8, 16]} 
+                style={{ marginBottom: 16 }}
+                align="middle"
+              >
+                <Col span={11}>
                   <Select
-                    value={course.courseId}
-                    onChange={(value) => onCourseChange(index, 'courseId', value)}
-                    placeholder="Select a course"
-                    className={styles.courseSelect}
-                    status={!course.courseId ? 'error' : undefined}
-                    required
+                    placeholder="Select Course"
+                    value={courseId || undefined}
+                    onChange={(value) => handleCourseChange(index, value)}
+                    style={{ width: '100%' }}
+                    className={componentStyles.input}
+                    popupMatchSelectWidth={false}
+                    showSearch
+                    optionFilterProp="children"
+                    filterOption={(input, option) =>
+                      option?.children?.toString().toLowerCase().includes(input.toLowerCase())
+                    }
                   >
-                    {availableCourses.map(c => (
-                      <Option key={c.id} value={c.id}>{c.courseName}</Option>
+                    {availableCourses.map(course => (
+                      <Option key={course.id} value={course.id}>{course.courseName}</Option>
                     ))}
                   </Select>
                 </Col>
-                <Col span={10}>
+                <Col span={9}>
                   <Select
-                    value={course.knowledgeLevel}
-                    onChange={(value) => onCourseChange(index, 'knowledgeLevel', value)}
-                    placeholder="Select level"
-                    className={styles.courseSelect}
-                    required
+                    value={knowledgeLevel}
+                    onChange={(level) => handleKnowledgeLevelChange(index, level as ProfileKnowledgeLevel)}
+                    style={{ width: '100%' }}
+                    className={componentStyles.input}
+                    popupMatchSelectWidth={false}
                   >
-                    {knowledgeLevelOptions.map(option => (
-                      <Option key={option.value} value={option.value}>{option.label}</Option>
-                    ))}
+                    <Option value={ProfileKnowledgeLevel.BEGINNER}>Beginner</Option>
+                    <Option value={ProfileKnowledgeLevel.INTERMEDIATE}>Intermediate</Option>
+                    <Option value={ProfileKnowledgeLevel.ADVANCED}>Advanced</Option>
                   </Select>
                 </Col>
-                <Col span={2}>
-                  {(user.userCourses || []).length > 1 && (
+                <Col span={4} style={{ display: 'flex', alignItems: 'center' }}>
+                  {user.studyLevels.length > 1 && (
                     <Button 
-                      type="text" 
-                      danger
-                      icon={<MinusCircleOutlined />} 
-                      onClick={() => onRemoveCourse(index)}
-                    />
+                      type="button" 
+                      onClick={() => onRemoveStudyLevel(index)}
+                      style={{ minWidth: 'auto', padding: '0 8px' }}
+                    >
+                      <MinusCircleOutlined />
+                    </Button>
                   )}
                 </Col>
               </Row>
-            ))}
-            
+            );
+          })}
+          
+          <Form.Item style={{ marginTop: 16, marginBottom: 24 }}>
             <Button 
-              type="dashed" 
-              onClick={onAddCourse} 
-              className={styles.addButton}
-              icon={<PlusOutlined />}
+              type="button" 
+              onClick={onAddStudyLevel}
+              style={{ display: 'flex', alignItems: 'center' }}
             >
-              Add Course
+              <PlusOutlined style={{ marginRight: 8 }} /> Add Course
             </Button>
-          </div>
+          </Form.Item>
         </Form.Item>
+        
+        <Divider style={{ margin: '24px 0' }} />
       </Form>
     </div>
   );

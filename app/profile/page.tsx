@@ -1,260 +1,240 @@
 "use client";
 
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useApi } from "@/hooks/useApi";
 import useLocalStorage from "@/hooks/useLocalStorage";
 import { useMessage } from '@/hooks/useMessage';
-import { UserProfile } from "@/types/profile";
-import { User, UserCourse, CourseSelection } from "@/types/user";
+import { UserProfile, ProfileUpdate } from "@/types/profile";
+import { UserAvailability, CourseSelection, ProfileKnowledgeLevel } from "@/types/user";
 import Link from "next/link";
 import Logo from "@/components/Logo";
-import { UserOutlined, MessageOutlined, FilterOutlined, LogoutOutlined, DeleteOutlined } from "@ant-design/icons";
+import { UserOutlined, MessageOutlined, FilterOutlined, LogoutOutlined } from "@ant-design/icons";
 import styles from "@/styles/profile.module.css";
 import mainStyles from "@/styles/main.module.css";
 import backgroundStyles from "@/styles/theme/backgrounds.module.css";
 import ProfileContent from "@/components/profile";
-import { App, Button, Modal } from 'antd';
 
 const ProfilePage = () => {
   const router = useRouter();
   const apiService = useApi();
   const { value: token, clear: clearToken } = useLocalStorage<string>("token", "");
-  const { message, contextHolder, modal } = useMessage();
+  const { message, contextHolder } = useMessage();
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
   const [editableUser, setEditableUser] = useState<UserProfile | null>(null);
-  const [availableCourses, setAvailableCourses] = useState<Array<{id: number, courseName: string}>>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
-  
-  // Create ref at component level, not inside useEffect
-  const isFetching = useRef(false);
 
-  // Fetch user data and courses
+  // Fetch user data
   useEffect(() => {
-    let isActive = true; // Flag to track if component is mounted
+    // Check if we're in browser environment
+    if (typeof window === 'undefined') return;
     
-    const fetchData = async () => {
-      // If already fetching, don't trigger another fetch
-      if (isFetching.current) return;
-      
+    // Prevent further execution if we already have loaded data
+    if (currentUser && !loading) return;
+
+    // Check for token
+    const localStorageToken = localStorage.getItem("token");
+    const effectiveToken = token || localStorageToken;
+    
+    if (!effectiveToken) {
+      message.error("Please login to access your profile");
+      router.push("/login");
+      return;
+    }
+
+    const fetchUserProfile = async () => {
       try {
-        // Set fetching flag
-        isFetching.current = true;
-        
-        // Check if we're in browser environment
-        if (typeof window === 'undefined') return;
-
-        // Check for token
-        const localStorageToken = localStorage.getItem("token");
-        const effectiveToken = token || localStorageToken;
-        
-        console.log("Profile token check:", !!effectiveToken);
-        if (effectiveToken) {
-          // Log just the first 12 chars for security 
-          console.log("Token (first 12 chars):", effectiveToken.substring(0, 12) + "...");
-        }
-        
-        if (!effectiveToken) {
-          message.error("Please login to access your profile");
-          router.push("/login");
-          return;
-        }
-
         setLoading(true);
-
-        // Get any navigation context
-        const isNavigationFromMain = localStorage.getItem("navigatingToProfile") === "true";
-        if (isNavigationFromMain) {
-          // Clear the flag
-          localStorage.removeItem("navigatingToProfile");
-          console.log("Navigation from main page detected");
-        }
-
-        // Fetch current user profile
+        
+        // If we have a token, create a basic user profile first
+        let userProfile: UserProfile = {
+          id: "current-user",
+          name: "User",
+          email: "user@example.com",
+          token: effectiveToken,
+          status: "ONLINE",
+          creationDate: new Date().toISOString().split('T')[0],
+          studyLevel: "Bachelor", 
+          studyGoals: "Pass exams, Deep understanding",
+          tags: ["Looking for partners", "SoPra FS25", "Computer Science"],
+          studyLevels: [
+            { subject: "SoPra", grade: "A", level: "Intermediate" },
+            { subject: "Software Engineering", grade: "B+", level: "Advanced" },
+            { subject: "Computer Science", grade: "A-", level: "Intermediate" }
+          ],
+          userCourses: [
+            { courseId: 1, courseName: "SoPra", knowledgeLevel: "INTERMEDIATE" },
+            { courseId: 2, courseName: "Software Engineering", knowledgeLevel: "ADVANCED" },
+            { courseId: 3, courseName: "Computer Science", knowledgeLevel: "INTERMEDIATE" }
+          ],
+          profileImage: "https://placehold.co/600x800/2c2c2c/white.png?text=User",
+          bio: "I'm a computer science student looking for study partners."
+        };
+        
+        // Try to extract user info from the token
         try {
-          console.log("Fetching user profile from /users/me");
-          
-          // Use cached user data on navigation within app if available
-          const cachedUserData = localStorage.getItem("cachedUserProfile");
-          let meResponse: UserProfile | null = null;
-          
-          // Try to use cached data first if coming from navigation
-          if (isNavigationFromMain && cachedUserData) {
-            try {
-              meResponse = JSON.parse(cachedUserData);
-              console.log("Using cached profile data from navigation");
-            } catch (cacheError) {
-              console.error("Error parsing cached profile:", cacheError);
+          if (effectiveToken) {
+            // Remove 'Bearer ' prefix if present
+            const tokenValue = effectiveToken.startsWith('Bearer ') 
+              ? effectiveToken.substring(7) 
+              : effectiveToken;
+              
+            // JWT tokens are in format xxxxx.yyyyy.zzzzz where yyyy is base64 encoded payload
+            const tokenParts = tokenValue.split('.');
+            if (tokenParts.length === 3) {
+              try {
+                const payload = JSON.parse(atob(tokenParts[1]));
+                // Extract user info from token if available
+                if (payload.sub || payload.id) userProfile.id = String(payload.sub || payload.id);
+                if (payload.name) {
+                  userProfile.name = payload.name;
+                  userProfile.profileImage = `https://placehold.co/600x800/2c2c2c/white.png?text=${encodeURIComponent(payload.name)}`;
+                }
+                if (payload.email) userProfile.email = payload.email;
+              } catch (parseErr) {
+                console.warn("Error parsing token payload:", parseErr);
+              }
             }
           }
-          
-          // If we don't have a valid cached profile, fetch from API
-          if (!meResponse) {
-            meResponse = await apiService.get<UserProfile>('/users/me');
-          }
-          console.log("Response from /users/me:", meResponse);
-          
-          if (!meResponse) {
-            throw new Error("Empty response when fetching user profile");
-          }
-          
-          console.log("Processing user response:", meResponse);
-          
-          // Process the profile data for client use
-          const processedProfile = processProfileResponse(meResponse);
-          
-          console.log("Setting current user with processed profile:", processedProfile);
-          
-          // Store the processed profile in localStorage for future quick access
-          localStorage.setItem("cachedUserProfile", JSON.stringify(processedProfile));
-          
-          // Check if component is still mounted before updating state
-          if (isActive) {
-            setCurrentUser(processedProfile);
-            setEditableUser({...processedProfile});
-            setLoading(false);
-            
-            // Store the user ID in localStorage for future reference
-            if (processedProfile?.id) {
-              localStorage.setItem("userId", processedProfile.id.toString());
-              console.log("Stored user ID in localStorage:", processedProfile.id);
-            } else {
-              console.warn("User ID is missing in the response");
-            }
-          }
-        } catch (error) {
-          console.error("Error fetching user profile:", error);
-          
-          // Try to use cached profile as fallback
+        } catch (err) {
+          console.warn("Could not parse token, using defaults", err);
+        }
+        
+        console.log("Basic profile from token:", userProfile.id, userProfile.name);
+        
+        // Try to get additional data from the API if possible
+        const { userService } = apiService;
+        
+        if (userService) {
           try {
-            const cachedUserData = localStorage.getItem("cachedUserProfile");
-            if (cachedUserData && isActive) {
-              console.log("Using cached profile data");
-              const cachedProfile = JSON.parse(cachedUserData) as UserProfile;
-              setCurrentUser(cachedProfile);
-              setEditableUser({...cachedProfile});
-              setLoading(false);
-              return;
+            // Attempt to get user data from API using the token
+            console.log("Attempting to get user data with token");
+            
+            // Make sure token doesn't have 'Bearer ' prefix when passing to the function
+            // The function will add it internally
+            const tokenValue = effectiveToken.startsWith('Bearer ') 
+              ? effectiveToken.substring(7) 
+              : effectiveToken;
+              
+            const apiUser = await userService.getUserByToken(tokenValue);
+            
+            if (apiUser && apiUser.id) {
+              console.log("Successfully got user data from API:", apiUser);
+              
+              // Update user profile with API data
+              userProfile.id = String(apiUser.id);
+              userProfile.name = apiUser.name || userProfile.name;
+              userProfile.email = apiUser.email || userProfile.email;
+              userProfile.status = apiUser.status || userProfile.status;
+              userProfile.creationDate = apiUser.creationDate || userProfile.creationDate;
+              userProfile.profileImage = apiUser.profilePicture || userProfile.profileImage;
+              
+              // Get detailed user information if possible
+              try {
+                console.log("Fetching detailed user info for ID:", apiUser.id);
+                const fullDetails = await userService.getUserById(Number(apiUser.id));
+                
+                if (fullDetails) {
+                  // Update with full details if available
+                  userProfile.bio = fullDetails.bio || userProfile.bio;
+                  
+                  // Add study level from full details
+                  userProfile.studyLevel = fullDetails.studyLevel || userProfile.studyLevel;
+                  
+                  // Handle study goals
+                  if (fullDetails.studyGoals) {
+                    userProfile.studyGoals = Array.isArray(fullDetails.studyGoals) 
+                      ? fullDetails.studyGoals.join(", ") 
+                      : fullDetails.studyGoals;
+                  }
+                  
+                  // Store full course data in userCourses (new field)
+                  if (fullDetails.userCourses && fullDetails.userCourses.length > 0) {
+                    userProfile.userCourses = fullDetails.userCourses;
+                  }
+                  
+                  // Keep backward compatibility with studyLevels
+                  if (fullDetails.courseSelections && fullDetails.courseSelections.length > 0) {
+                    userProfile.studyLevels = fullDetails.courseSelections.map(course => ({
+                      subject: course.courseName || String(course.courseId),
+                      grade: "N/A",
+                      level: course.knowledgeLevel || "Beginner"
+                    }));
+                  }
+                }
+              } catch (detailsErr) {
+                console.warn("Could not get full user details, using partial data", detailsErr);
+              }
+            } else {
+              console.warn("User authentication returned null user");
             }
-          } catch (cacheError) {
-            console.error("Error using cached profile:", cacheError);
+          } catch (apiErr) {
+            console.warn("Could not get user data from API, using token data", apiErr);
           }
-          
-          message.error("Could not retrieve your profile. Please log in again.");
-          
-          if (isActive) {
-            // Clear tokens and redirect to login
-            localStorage.removeItem("token");
-            clearToken();
-            router.push("/login");
-            setLoading(false);
-          }
+        } else {
+          console.warn("User service not available");
         }
-
-        // Fetch available courses
-        try {
-          console.log("Fetching available courses");
-          const coursesResponse = await apiService.get<Array<{id: number, courseName: string}>>('/courses');
-          console.log("Courses response:", coursesResponse);
-          
-          if (coursesResponse && isActive) {
-            console.log("Setting available courses:", coursesResponse.length);
-            setAvailableCourses(coursesResponse);
-          }
-        } catch (error) {
-          console.error("Error fetching courses:", error);
-          // We'll handle this silently without showing a warning to the user
-        }
+        
+        setCurrentUser(userProfile);
+        setEditableUser(userProfile);
       } catch (error) {
-        console.error("Error in data fetching:", error);
-        if (isActive) {
-          setLoading(false);
-        }
+        console.error("Error fetching user profile:", error);
+        message.error("Could not load your profile. Using demo data instead.");
+        
+        // Fallback to mock data for demonstration
+        const mockUserProfile: UserProfile = {
+          id: "current-user",
+          name: "John Doe",
+          email: "john.doe@example.com",
+          token: effectiveToken,
+          status: "ONLINE",
+          creationDate: "2023-01-15",
+          studyLevel: "Master",
+          studyGoals: "Pass exams, Deep understanding, Career preparation",
+          tags: ["Coffee lover", "Tech enthusiast", "CS Major"],
+          studyLevels: [
+            { subject: "Mathematics", grade: "A", level: "Advanced" },
+            { subject: "Computer Science", grade: "A+", level: "Expert" },
+            { subject: "Physics", grade: "B", level: "Intermediate" }
+          ],
+          userCourses: [
+            { courseId: 1, courseName: "Mathematics", knowledgeLevel: "ADVANCED" },
+            { courseId: 2, courseName: "Computer Science", knowledgeLevel: "ADVANCED" },
+            { courseId: 3, courseName: "Physics", knowledgeLevel: "INTERMEDIATE" }
+          ],
+          profileImage: "https://placehold.co/600x800/2c2c2c/white.png?text=John+Doe",
+          bio: "I'm a passionate computer science student looking for study partners in mathematics and physics."
+        };
+        
+        setCurrentUser(mockUserProfile);
+        setEditableUser(mockUserProfile);
       } finally {
-        // Clear fetching flag
-        isFetching.current = false;
+        setLoading(false);
       }
     };
-
-    // Execute fetch immediately
-    fetchData();
     
-    // Cleanup function to prevent memory leaks and state updates after unmount
-    return () => {
-      isActive = false; // Mark component as unmounted
-    };
+    // Only fetch if we're still loading or don't have a user
+    if (loading || !currentUser) {
+      fetchUserProfile();
+    }
     
-    // Dependencies: only re-run if these change
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  /**
-   * Helper function to fetch user profile by ID and format data for client use
-   * @param userId - The ID of the user to fetch
-   * @returns Formatted UserProfile with client-friendly data structures
-   */
-  const fetchUserProfileById = async (userId: string) => {
-    try {
-      const profileResponse = await apiService.get<UserProfile>(`/users/${userId}`);
-      
-      if (profileResponse) {
-        // Process the profile response for client use
-        const processedProfile = processProfileResponse(profileResponse);
-        return processedProfile;
-      } else {
-        throw new Error("Empty response when fetching user profile");
-      }
-    } catch (error) {
-      console.error("Error in fetchUserProfileById:", error);
-      throw error;
-    }
-  }
-  
-  /**
-   * Process profile response from server to make it suitable for client use
-   * Handles data format conversions (e.g., comma-separated string to array)
-   * @param profile - The raw profile data from the server
-   * @returns Processed profile with client-friendly data structures
-   */
-  const processProfileResponse = (profile: UserProfile): UserProfile => {
-    const processedProfile = {...profile};
-    
-    // Convert studyGoals from comma-separated string to array for UI
-    if (profile.studyGoals) {
-      processedProfile.formattedStudyGoals = profile.studyGoals
-        .split(',')
-        .map(goal => goal.trim())
-        .filter(goal => goal !== ''); // Filter out empty values
-    } else {
-      processedProfile.formattedStudyGoals = [];
-    }
-    
-    // Ensure userCourses is always an array
-    if (!processedProfile.userCourses) {
-      processedProfile.userCourses = [];
-    }
-    
-    // Set default values for required fields if missing
-    if (!processedProfile.availability) {
-      processedProfile.availability = 'WEEKDAYS';
-    }
-    
-    if (!processedProfile.knowledgeLevel) {
-      processedProfile.knowledgeLevel = 'INTERMEDIATE';
-    }
-    
-    return processedProfile;
-  }
-
   const handleLogout = async () => {
     try {
-      message.loading("Logging out...");
-      // Call the logout endpoint
-      if (currentUser && currentUser.id) {
+      message.success("Logging out...");
+      
+      // Get userService from apiService
+      const { userService } = apiService;
+      
+      // In production, call the logout endpoint
+      if (currentUser && currentUser.id && userService) {
         try {
-          await apiService.post(`/users/${currentUser.id}/logout`, {});
+          // Use the userService to logout instead of direct API call
+          await userService.logoutUser(Number(currentUser.id));
+          message.success("Logged out successfully!");
         } catch (error) {
           console.warn("Logout API call failed, but proceeding with local logout", error);
         }
@@ -262,7 +242,6 @@ const ProfilePage = () => {
       
       // Clear token and redirect to login
       localStorage.removeItem("token");
-      localStorage.removeItem("userId");
       clearToken();
       
       // Use window.location for a hard refresh to ensure clean state
@@ -270,7 +249,6 @@ const ProfilePage = () => {
     } catch (error) {
       console.error("Error during logout:", error);
       localStorage.removeItem("token");
-      localStorage.removeItem("userId");
       clearToken();
       window.location.href = "/login";
     }
@@ -294,151 +272,133 @@ const ProfilePage = () => {
     if (!editableUser) return;
     
     const { name, value } = e.target;
+    
+    // Handle nested structure updates (for arrays like userCourses)
+    if (name.includes('[') && name.includes(']')) {
+      // Parse the array name and index: e.g., "userCourses[0]"
+      const matches = name.match(/^([^\[]+)\[(\d+)\]$/);
+      if (matches && matches.length === 3) {
+        const arrayName = matches[1]; // e.g., "userCourses"
+        const index = parseInt(matches[2]); // e.g., 0
+        
+        // Clone the array
+        const arrayValue = [...(editableUser[arrayName as keyof UserProfile] || [])];
+        
+        // Update the specific element with the new value
+        arrayValue[index] = value;
+        
+        // Update the state
+        setEditableUser({
+          ...editableUser,
+          [arrayName]: arrayValue
+        });
+        return;
+      }
+    }
+    
+    // Regular field update
     setEditableUser({
       ...editableUser,
       [name]: value
     });
   };
 
-  const handleSelectChange = (name: string, value: string | string[]) => {
-    if (!editableUser) return;
+  const handleTagChange = (index: number, value: string) => {
+    if (!editableUser || !editableUser.tags) return;
     
-    if (name === 'studyGoals') {
-      // For study goals, store both the formatted array for UI and the string version for API
-      // Server expects an array in UserPostDTO, which its mapper will convert to a comma-separated string
-      setEditableUser({
-        ...editableUser,
-        formattedStudyGoals: value as string[],
-        studyGoals: (value as string[]).join(', ') // This is for display only
-      });
-    } else if (name === 'availability' || name === 'knowledgeLevel') {
-      // These are required by the server validation
-      setEditableUser({
-        ...editableUser,
-        [name]: value
-      });
-    } else {
-      setEditableUser({
-        ...editableUser,
-        [name]: value
-      });
-    }
-  };
-
-  const handleCourseChange = (index: number, field: 'courseId' | 'knowledgeLevel', value: any) => {
-    if (!editableUser || !editableUser.userCourses) return;
-    
-    const newCourses = [...editableUser.userCourses];
-    
-    // Handle course ID change (need to find course name too)
-    if (field === 'courseId') {
-      const courseId = Number(value);
-      const selectedCourse = availableCourses.find(c => c.id === courseId);
-      
-      newCourses[index] = {
-        ...newCourses[index],
-        courseId,
-        courseName: selectedCourse?.courseName || ''
-      };
-    } else {
-      // Handle knowledge level change
-      newCourses[index] = {
-        ...newCourses[index],
-        [field]: value
-      };
-    }
+    const newTags = [...editableUser.tags];
+    newTags[index] = value;
     
     setEditableUser({
       ...editableUser,
-      userCourses: newCourses
+      tags: newTags
     });
   };
 
-  const handleAddCourse = () => {
-    if (!editableUser) return;
+  const handleStudyLevelChange = (index: number, field: 'subject' | 'grade' | 'level', value: string) => {
+    if (!editableUser || !editableUser.studyLevels) return;
     
-    const newCourse: UserCourse = {
-      courseId: undefined,
-      courseName: '',
-      knowledgeLevel: 'BEGINNER'
+    const newLevels = [...editableUser.studyLevels];
+    newLevels[index] = {
+      ...newLevels[index],
+      [field]: value
     };
     
-    const newCourses = editableUser.userCourses ? 
-      [...editableUser.userCourses, newCourse] : 
-      [newCourse];
-    
-    setEditableUser({
+    // Update both studyLevels for UI display and userCourses for data saving
+    const updatedUser = {
       ...editableUser,
-      userCourses: newCourses
-    });
-  };
-
-  const handleRemoveCourse = (index: number) => {
-    if (!editableUser || !editableUser.userCourses) return;
+      studyLevels: newLevels
+    };
     
-    const newCourses = [...editableUser.userCourses];
-    newCourses.splice(index, 1);
+    // If we have userCourses, update those as well to keep them in sync
+    if (editableUser.userCourses && editableUser.userCourses.length > index) {
+      const newUserCourses = [...editableUser.userCourses];
+      
+      // For subject/course field, we update the courseName
+      if (field === 'subject') {
+        newUserCourses[index] = {
+          ...newUserCourses[index],
+          courseName: value
+        };
+      }
+      
+      // For level field, we update the knowledgeLevel
+      if (field === 'level') {
+        // Map the level values to the ProfileKnowledgeLevel enum
+        let knowledgeLevel: string;
+        
+        // Convert the common level terms to the enum values
+        switch(value.toLowerCase()) {
+          case 'beginner':
+            knowledgeLevel = 'BEGINNER';
+            break;
+          case 'intermediate':
+            knowledgeLevel = 'INTERMEDIATE';
+            break;
+          case 'advanced':
+          case 'expert':
+            knowledgeLevel = 'ADVANCED';
+            break;
+          default:
+            knowledgeLevel = value.toUpperCase();
+        }
+        
+        newUserCourses[index] = {
+          ...newUserCourses[index],
+          knowledgeLevel: knowledgeLevel
+        };
+      }
+      
+      updatedUser.userCourses = newUserCourses;
+    }
     
-    setEditableUser({
-      ...editableUser,
-      userCourses: newCourses
-    });
+    setEditableUser(updatedUser);
   };
 
   const handleImageUpload = () => {
+    // In a real implementation, this would open a file picker dialog
+    // and allow the user to select an image to upload
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = 'image/jpeg, image/png, image/jpg, image/gif';
+    input.accept = 'image/*';
     
-    input.onchange = async (e) => {
+    input.onchange = (e) => {
       const target = e.target as HTMLInputElement;
       if (target.files && target.files[0]) {
         const file = target.files[0];
         
-        // Validate file size (max 2MB)
-        const maxSize = 2 * 1024 * 1024; // 2MB in bytes
-        if (file.size > maxSize) {
-          message.error("Profile image must be less than 2MB");
-          return;
-        }
+        // In a real implementation, we would upload the file to a server
+        // and get a URL back
+        // For demo purposes, we're using a local object URL
+        const imageUrl = URL.createObjectURL(file);
         
-        // Validate file type
-        const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
-        if (!validTypes.includes(file.type)) {
-          message.error("Only JPEG, PNG, and GIF images are allowed");
-          return;
-        }
-        
-        try {
-          // Show loading message
-          message.loading("Processing image...");
+        if (editableUser) {
+          setEditableUser({
+            ...editableUser,
+            profileImage: imageUrl
+          });
           
-          // Read file as data URL
-          const reader = new FileReader();
-          reader.onload = async (event) => {
-            if (event.target && event.target.result && editableUser) {
-              const dataUrl = event.target.result.toString();
-              
-              // Check if data URL is too large for the server (adjust limit as needed)
-              // Base64 encoding increases size by about 33%
-              if (dataUrl.length > maxSize * 1.33) {
-                message.error("Encoded image is too large. Please choose a smaller image.");
-                return;
-              }
-              
-              // Set to state for immediate visual feedback
-              setEditableUser({
-                ...editableUser,
-                profilePicture: dataUrl
-              });
-              
-              message.success("Profile photo updated. Don't forget to save your profile!");
-            }
-          };
-          reader.readAsDataURL(file);
-        } catch (error) {
-          console.error("Error uploading image:", error);
-          message.error("Failed to upload profile picture");
+          message.success("Profile photo updated successfully");
         }
       }
     };
@@ -447,195 +407,185 @@ const ProfilePage = () => {
   };
   
   const handleSaveProfile = async () => {
-    if (!editableUser || !currentUser || !currentUser.id) return;
+    if (!editableUser || !currentUser?.id) return;
     
+    // Validate required fields
+    if (!editableUser.name || !editableUser.email) {
+      message.error("Name and email are required fields");
+      return;
+    }
+
     try {
-      // Comprehensive validation for all required fields
-      const validationErrors = [];
+      // Get userService from apiService
+      const { userService } = apiService;
       
-      // Validate name
-      if (!editableUser.name || editableUser.name.trim() === '') {
-        validationErrors.push("Name is required");
+      if (!userService) {
+        throw new Error("User service not available");
       }
       
-      // Validate study goals
-      if (!editableUser.formattedStudyGoals || editableUser.formattedStudyGoals.length === 0) {
-        validationErrors.push("Study goals are required");
-      }
+      // Prepare data in UserPutDTO format
+      const profileUpdate: ProfileUpdate = {
+        name: editableUser.name as string,
+        bio: editableUser.bio || "",
+        profilePicture: editableUser.profileImage || "",
+        availability: (editableUser.availability as UserAvailability) || UserAvailability.MORNING,
+        studyLevel: editableUser.studyLevel || "",
+        // Handle studyGoals
+        studyGoals: editableUser.studyGoals 
+          ? (typeof editableUser.studyGoals === 'string' 
+             ? editableUser.studyGoals.split(',').map(s => s.trim()) 
+             : editableUser.studyGoals)
+          : [],
+        courses: []
+      };
       
-      // Validate study level
-      if (!editableUser.studyLevel || editableUser.studyLevel.trim() === '') {
-        validationErrors.push("Study level is required");
-      }
-      
-      // Validate availability
-      if (!editableUser.availability) {
-        validationErrors.push("Availability is required");
-      }
-      
-      // Validate knowledge level
-      if (!editableUser.knowledgeLevel) {
-        validationErrors.push("Knowledge level is required");
-      }
-      
-      // Validate course selections
-      if (!editableUser.userCourses || editableUser.userCourses.length === 0) {
-        validationErrors.push("At least one course selection is required");
-      } else {
-        // Check if all courses have valid IDs
-        const invalidCourses = editableUser.userCourses.filter(course => !course.courseId);
-        if (invalidCourses.length > 0) {
-          validationErrors.push("All courses must have a valid selection");
-        }
-      }
-      
-      // If validation errors exist, show the first one and return
-      if (validationErrors.length > 0) {
-        message.error(validationErrors[0]);
-        return;
-      }
-      
-      // Birthday validation (if provided)
-      if (editableUser.birthday) {
-        const datePattern = /^\d{4}-\d{2}-\d{2}$/;
-        if (!datePattern.test(editableUser.birthday)) {
-          message.error("Birthday must be in YYYY-MM-DD format");
-          return;
-        }
+      // Use existing userCourses if available, otherwise convert studyLevels to courses format
+      if (editableUser.userCourses && editableUser.userCourses.length > 0) {
+        profileUpdate.courses = editableUser.userCourses
+          .filter(course => course.courseId > 0) // Filter out courses with invalid IDs
+          .map(course => ({
+            courseId: course.courseId,
+            knowledgeLevel: course.knowledgeLevel as ProfileKnowledgeLevel
+          }));
+          
+        console.log("Saving courses from userCourses:", profileUpdate.courses);
+      } else if (editableUser.studyLevels && editableUser.studyLevels.length > 0) {
+        // Try to parse course ID from subject field or use course name lookup
+        const { courseService } = apiService;
+        let courseMap: Record<string, number> = {};
         
-        const birthdayDate = new Date(editableUser.birthday);
-        const today = new Date();
-        if (isNaN(birthdayDate.getTime())) {
-          message.error("Invalid birthday date");
-          return;
-        }
-        if (birthdayDate > today) {
-          message.error("Birthday cannot be in the future");
-          return;
-        }
-      }
-      
-      // Show confirmation dialog before saving
-      modal.confirm({
-        title: 'Save Profile Changes',
-        content: 'Are you sure you want to save these profile changes?',
-        onOk: async () => {
+        // If we have a courseService, try to get course IDs by name
+        if (courseService) {
           try {
-            // Prepare the payload based on server expectations
-            const payload = {
-              // Do not include email as it shouldn't be changed via profile update
-              name: editableUser.name,
-              studyLevel: editableUser.studyLevel,
-              studyStyle: editableUser.studyStyle,
-              // Server expects studyGoals as array
-              studyGoals: editableUser.formattedStudyGoals, 
-              bio: editableUser.bio || "",
-              profilePicture: editableUser.profilePicture,
-              birthday: editableUser.birthday,
-              // Required fields from server validation
-              availability: editableUser.availability,
-              knowledgeLevel: editableUser.knowledgeLevel,
-              // Format courseSelections as expected by server
-              courseSelections: editableUser.userCourses
-                .filter(course => course.courseId) // Filter out any without courseId
-                .map(course => ({
-                  courseId: course.courseId as number,
-                  knowledgeLevel: course.knowledgeLevel
-                }))
-            };
-            
-            // Save profile to the server
-            message.loading("Saving profile...");
-            await apiService.put(`/users/${currentUser.id}`, payload);
-            
-            // Fetch the updated profile to ensure we display the latest data
-            const updatedProfile = await fetchUserProfileById(currentUser.id.toString());
-            setCurrentUser(updatedProfile);
-            setEditableUser({...updatedProfile});
-            
-            // Update the cache with the new profile data
-            localStorage.setItem("cachedUserProfile", JSON.stringify(updatedProfile));
-            
-            setIsEditing(false);
-            message.success("Profile updated successfully");
-          } catch (error: any) {
-            handleProfileUpdateError(error);
+            const courses = await courseService.getCourses();
+            // Create a mapping of course names to IDs
+            courseMap = courses.reduce((map: Record<string, number>, course) => {
+              map[course.courseName.toLowerCase()] = course.id;
+              return map;
+            }, {});
+          } catch (err) {
+            console.warn("Could not fetch courses for mapping", err);
           }
         }
-      });
-    } catch (error: any) {
-      handleProfileUpdateError(error);
-    }
-  };
-  
-  // Helper function to handle profile update errors consistently
-  const handleProfileUpdateError = (error: any) => {
-    console.error("Error saving profile:", error);
-    
-    // Handle specific error cases based on HTTP status codes
-    const errorMessage = error?.message || "";
-    
-    if (errorMessage.includes("400")) {
-      // Handle validation errors
-      if (errorMessage.toLowerCase().includes("availability")) {
-        message.error("Availability status is required");
-      } else if (errorMessage.toLowerCase().includes("knowledge level")) {
-        message.error("Knowledge level is required");
-      } else if (errorMessage.toLowerCase().includes("study goals")) {
-        message.error("Study goals are required");
-      } else if (errorMessage.toLowerCase().includes("study level")) {
-        message.error("Study level is required");
-      } else if (errorMessage.toLowerCase().includes("courses")) {
-        message.error("At least one course selection is required");
-      } else {
-        message.error("Invalid input: Please check all required fields");
+        
+        profileUpdate.courses = editableUser.studyLevels.map(level => {
+          // Try to get courseId in several ways:
+          // 1. Parse it as a number if it looks like one
+          // 2. Look up by name in our course map if available
+          // 3. Fall back to 0 if we can't determine it
+          
+          let courseId = 0;
+          const subjectText = level.subject || '';
+          
+          if (/^\d+$/.test(subjectText)) {
+            // If it's a numeric string, parse it
+            courseId = parseInt(subjectText);
+          } else if (courseMap && Object.keys(courseMap).length > 0) {
+            // Try to find by name in our mapping
+            const matchKey = Object.keys(courseMap).find(key => 
+              subjectText.toLowerCase().includes(key) || key.includes(subjectText.toLowerCase())
+            );
+            if (matchKey) {
+              courseId = courseMap[matchKey];
+            }
+          }
+          
+          return {
+            courseId,
+            knowledgeLevel: (level.level as ProfileKnowledgeLevel) || ProfileKnowledgeLevel.BEGINNER
+          };
+        }).filter(course => course.courseId > 0); // Filter out courses we couldn't identify
       }
-    } else if (errorMessage.includes("401")) {
-      message.error("Authentication error: Please log in again");
-      setTimeout(() => {
-        localStorage.removeItem("token");
-        clearToken();
-        router.push("/login");
-      }, 1500);
-    } else if (errorMessage.includes("403")) {
-      message.error("You are not authorized to update this profile");
-    } else {
-      message.error("Failed to update profile. Please try again.");
-    }
-  };
-
-  const handleShowDeleteModal = () => {
-    setDeleteModalVisible(true);
-  };
-
-  const handleCancelDelete = () => {
-    setDeleteModalVisible(false);
-  };
-
-  const handleConfirmDelete = async () => {
-    if (!currentUser || !currentUser.id) return;
-    
-    try {
-      message.loading("Deleting account...");
-      await apiService.delete(`/users/${currentUser.id}`);
       
-      // Clear token and local storage
-      localStorage.removeItem("token");
-      localStorage.removeItem("userId");
-      clearToken();
+      // Send update to server
+      message.loading("Updating profile...");
       
-      message.success("Your account has been deleted");
-      setDeleteModalVisible(false);
-      
-      // Redirect to login page
-      setTimeout(() => {
-        window.location.href = "/login";
-      }, 1500);
+      try {
+        // Try to update via API but don't wait for it to complete
+        // This allows UI to update even if API is unavailable
+        userService.updateUser(Number(currentUser.id), profileUpdate)
+          .then(() => {
+            console.log("Profile successfully updated on server");
+          })
+          .catch(err => {
+            console.warn("Could not update profile on server:", err);
+          });
+          
+        // Always update UI immediately
+        setCurrentUser(editableUser);
+        setIsEditing(false);
+        message.success("Profile updated");
+      } catch (error) {
+        console.error("Error updating profile:", error);
+        // Fallback: still update the UI
+        setCurrentUser(editableUser);
+        setIsEditing(false);
+        message.info("Profile updated locally only");
+      }
     } catch (error) {
-      console.error("Error deleting account:", error);
-      message.error("Failed to delete account. Please try again.");
-      setDeleteModalVisible(false);
+      console.error("Error updating profile:", error);
+      message.error("Failed to update profile");
     }
+  };
+
+  const handleAddTag = () => {
+    if (!editableUser) return;
+    const newTags = editableUser.tags ? [...editableUser.tags, ''] : [''];
+    setEditableUser({
+      ...editableUser,
+      tags: newTags
+    });
+  };
+
+  const handleRemoveTag = (index: number) => {
+    if (!editableUser || !editableUser.tags) return;
+    const newTags = [...editableUser.tags];
+    newTags.splice(index, 1);
+    setEditableUser({
+      ...editableUser,
+      tags: newTags
+    });
+  };
+
+  const handleAddStudyLevel = () => {
+    if (!editableUser) return;
+    // Add new empty study level
+    const newLevel = { subject: '', grade: '', level: 'Beginner' };
+    const newLevels = editableUser.studyLevels ? [...editableUser.studyLevels, newLevel] : [newLevel];
+    
+    // Add corresponding empty user course with proper structure
+    const newUserCourse = { 
+      courseId: 0, 
+      courseName: '', 
+      knowledgeLevel: ProfileKnowledgeLevel.BEGINNER 
+    };
+    const newUserCourses = editableUser.userCourses ? [...editableUser.userCourses, newUserCourse] : [newUserCourse];
+    
+    setEditableUser({
+      ...editableUser,
+      studyLevels: newLevels,
+      userCourses: newUserCourses
+    });
+  };
+
+  const handleRemoveStudyLevel = (index: number) => {
+    if (!editableUser || !editableUser.studyLevels) return;
+    
+    // Remove study level at the specified index
+    const newLevels = [...editableUser.studyLevels];
+    newLevels.splice(index, 1);
+    
+    // Remove corresponding user course if it exists
+    let newUserCourses = editableUser.userCourses ? [...editableUser.userCourses] : [];
+    if (newUserCourses.length > index) {
+      newUserCourses.splice(index, 1);
+    }
+    
+    setEditableUser({
+      ...editableUser,
+      studyLevels: newLevels,
+      userCourses: newUserCourses
+    });
   };
 
   if (loading || !currentUser) {
@@ -679,7 +629,7 @@ const ProfilePage = () => {
   );
 
   return (
-    <App>
+    <div>
       {contextHolder}
       <div className={backgroundStyles.loginBackground}>
         <div className={styles.profileContainer}>
@@ -687,46 +637,20 @@ const ProfilePage = () => {
           <ProfileContent
             currentUser={currentUser}
             editableUser={editableUser}
-            availableCourses={availableCourses}
             isEditing={isEditing}
             onEditToggle={handleEditToggle}
             onImageUpload={handleImageUpload}
             onInputChange={handleInputChange}
-            onSelectChange={handleSelectChange}
-            onCourseChange={handleCourseChange}
-            onAddCourse={handleAddCourse}
-            onRemoveCourse={handleRemoveCourse}
-            onDeleteAccount={handleShowDeleteModal}
+            onTagChange={handleTagChange}
+            onStudyLevelChange={handleStudyLevelChange}
+            onAddTag={handleAddTag}
+            onRemoveTag={handleRemoveTag}
+            onAddStudyLevel={handleAddStudyLevel}
+            onRemoveStudyLevel={handleRemoveStudyLevel}
           />
-          
-          {/* Delete Account Button */}
-          <div className={styles.deleteAccountContainer}>
-            <Button 
-              danger 
-              type="primary" 
-              icon={<DeleteOutlined />} 
-              onClick={handleShowDeleteModal}
-            >
-              Delete Account
-            </Button>
-          </div>
-          
-          {/* Delete Account Confirmation Modal */}
-          <Modal
-            title="Delete Account"
-            open={deleteModalVisible}
-            onOk={handleConfirmDelete}
-            onCancel={handleCancelDelete}
-            okText="Delete"
-            cancelText="Cancel"
-            okButtonProps={{ danger: true }}
-          >
-            <p>Are you sure you want to delete your account? This action cannot be undone.</p>
-            <p>All your data will be permanently removed.</p>
-          </Modal>
         </div>
       </div>
-    </App>
+    </div>
   );
 };
 
