@@ -434,7 +434,7 @@ const EditProfile: React.FC<EditProfileProps> = ({
                     showSearch
                     optionFilterProp="children"
                     filterOption={(input, option) =>
-                      option?.children?.toString().toLowerCase().includes(input.toLowerCase())
+                      option?.children ? option.children.toString().toLowerCase().includes(input.toLowerCase()) : false
                     }
                   >
                     {availableCourses.map(course => (
@@ -456,11 +456,10 @@ const EditProfile: React.FC<EditProfileProps> = ({
                   </Select>
                 </Col>
                 <Col span={4} style={{ display: 'flex', alignItems: 'center' }}>
-                  {user.studyLevels.length > 1 && (
+                  {user.studyLevels && user.studyLevels.length > 1 && (
                     <Button 
                       type="button" 
                       onClick={() => onRemoveStudyLevel(index)}
-                      style={{ minWidth: 'auto', padding: '0 8px' }}
                     >
                       <MinusCircleOutlined />
                     </Button>
@@ -474,7 +473,6 @@ const EditProfile: React.FC<EditProfileProps> = ({
             <Button 
               type="button" 
               onClick={onAddStudyLevel}
-              style={{ display: 'flex', alignItems: 'center' }}
             >
               <PlusOutlined style={{ marginRight: 8 }} /> Add Course
             </Button>

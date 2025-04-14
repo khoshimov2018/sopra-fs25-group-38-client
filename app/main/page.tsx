@@ -52,10 +52,10 @@ const MainPage: React.FC = () => {
   const [filterModalVisible, setFilterModalVisible] = useState(false);
   const [filters, setFilters] = useState<{
     selectedCourses: number[];
-    knowledgeLevel: ProfileKnowledgeLevel | null;
+    availability: UserAvailability | null;
   }>({
     selectedCourses: [],
-    knowledgeLevel: null
+    availability: null
   });
 
   // This will be populated from API when fetchUsers is called
@@ -66,12 +66,34 @@ const MainPage: React.FC = () => {
     try {
       message.loading("Loading profiles...");
       
+      if (!currentUser || currentUser.id === null) {
+        console.error("Current user is not available - cannot filter properly");
+        message.error("Failed to load user information");
+        return;
+      }
+      
+      console.log("Current user:", currentUser);
+      
       // Get all available users using the studentFilterService
       const users = await studentFilterService.getFilteredStudents();
+      console.log("All fetched users:", users.map(u => ({ id: u.id, name: u.name })));
       
       if (users && users.length > 0) {
+        // Convert all user IDs to numbers for comparison
+        const currentUserId = Number(currentUser.id);
+        
+        // Filter out the current user from the list
+        const filteredUsers = users.filter(user => Number(user.id) !== currentUserId);
+        console.log("After filtering current user:", filteredUsers.map(u => ({ id: u.id, name: u.name })));
+        
+        if (filteredUsers.length === 0) {
+          message.info("No other users available");
+          setProfiles([]);
+          return;
+        }
+        
         // Convert UserGetDTO to UserProfile format
-        const fetchedProfiles: UserProfile[] = users.map(user => {
+        const fetchedProfiles: UserProfile[] = filteredUsers.map(user => {
           // Extract study goals as tags (splitting by comma if it's a string)
           const tags = user.studyGoals ? 
             typeof user.studyGoals === 'string' ? 
@@ -172,37 +194,57 @@ const MainPage: React.FC = () => {
       return;
     }
 
-    // Fetch the current user and available profiles
+    // Fetch the current user first
     fetchCurrentUser();
-    fetchUsers();
     
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  
+  // This useEffect runs when currentUser changes
+  useEffect(() => {
+    // Only fetch users after we have the current user
+    if (currentUser) {
+      console.log("Current user loaded, now fetching other users");
+      fetchUsers();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser]);
 
   const handleFilterClick = () => {
     setFilterModalVisible(true);
   };
   
-  const handleFilterSave = async (selectedCourses: number[], knowledgeLevel: ProfileKnowledgeLevel | null) => {
+  const handleFilterSave = async (selectedCourses: number[], availability: UserAvailability | null) => {
     setFilters({
       selectedCourses,
-      knowledgeLevel
+      availability
     });
     
     try {
+      if (!currentUser || currentUser.id === null) {
+        console.error("Current user is not available - cannot filter properly");
+        message.error("Failed to load user information");
+        return;
+      }
+      
       message.loading("Applying filters...");
       
       // Get filtered students using the service
       const filteredStudents = await studentFilterService.getFilteredStudents(
         selectedCourses.length > 0 ? selectedCourses : undefined,
-        undefined, // Availability - not using in this version
-        knowledgeLevel ? knowledgeLevel.toString() : undefined
+        availability ? [availability] : undefined
       );
       
+      // Filter out the current user - ensure we use number comparison
+      const currentUserId = Number(currentUser.id);
+      const withoutCurrentUser = filteredStudents.filter(user => Number(user.id) !== currentUserId);
+      console.log("Filter - current user ID:", currentUserId);
+      console.log("Filter - filtered users:", withoutCurrentUser.map(u => ({ id: u.id, name: u.name })));
+      
       // Update the profiles with the filtered students
-      if (filteredStudents && filteredStudents.length > 0) {
+      if (withoutCurrentUser && withoutCurrentUser.length > 0) {
         // Convert filtered students to profiles
-        const filteredProfiles: UserProfile[] = filteredStudents.map(user => {
+        const filteredProfiles: UserProfile[] = withoutCurrentUser.map(user => {
           // Extract study goals as tags
           const tags = user.studyGoals ? 
             typeof user.studyGoals === 'string' ? 
@@ -265,17 +307,27 @@ const MainPage: React.FC = () => {
         
         message.success(`Found ${filteredProfiles.length} matching students`);
       } else {
-        message.info("No students match the selected filters");
+        message.info("No students match the selected filters. Try different criteria.");
         setProfiles([]);
+        setCurrentProfileIndex(-1); // Ensure we show the "no matches" view
       }
       
       // Display what filters were applied
       let filterMessage = 'Filters applied: ';
+      const filterParts = [];
+      
       if (selectedCourses.length > 0) {
-        filterMessage += `${selectedCourses.length} courses selected`;
+        filterParts.push(`${selectedCourses.length} courses`);
       }
-      if (knowledgeLevel) {
-        filterMessage += selectedCourses.length > 0 ? `, ${knowledgeLevel} level` : `${knowledgeLevel} level`;
+      
+      if (availability) {
+        filterParts.push(`${availability.toLowerCase()} availability`);
+      }
+      
+      if (filterParts.length > 0) {
+        filterMessage += filterParts.join(', ');
+      } else {
+        filterMessage += 'None';
       }
       
       message.success(filterMessage);
@@ -379,10 +431,25 @@ const MainPage: React.FC = () => {
   const currentProfile = profiles[currentProfileIndex] || null;
 
   if (!currentProfile) {
-    // Differentiate between initial loading and no more profiles
-    const message = profiles.length > 0 && currentProfileIndex === -1
-      ? "You've seen all potential matches! Change your filters or wait for new users to join."
-      : "Loading profiles...";
+    // Determine what message to show based on the situation
+    let message;
+    let showActions = false;
+    
+    if (profiles.length === 0) {
+      // No profiles found (either initial load or after filtering)
+      if (filters.selectedCourses.length > 0 || filters.availability) {
+        // Show this message when filters returned no results
+        message = "No students match your filters. Try different filter criteria.";
+        showActions = true;
+      } else {
+        // Initial loading or no users in the system
+        message = "Loading profiles...";
+      }
+    } else if (currentProfileIndex === -1) {
+      // User has seen all available profiles
+      message = "You've seen all potential matches! Change your filters or wait for new users to join.";
+      showActions = true;
+    }
       
     return (
       <App>
@@ -422,7 +489,7 @@ const MainPage: React.FC = () => {
             }}>
               <div style={{ fontSize: '1.2rem', marginBottom: '20px' }}>{message}</div>
               
-              {profiles.length > 0 && currentProfileIndex === -1 && (
+              {showActions && (
                 <div>
                   <button 
                     className={styles.actionButton}
@@ -434,6 +501,11 @@ const MainPage: React.FC = () => {
                   <button 
                     className={styles.actionButton}
                     onClick={() => {
+                      // Reset filters
+                      setFilters({
+                        selectedCourses: [],
+                        availability: null
+                      });
                       fetchUsers();
                       setCurrentProfileIndex(0);
                     }}
@@ -445,6 +517,13 @@ const MainPage: React.FC = () => {
             </div>
           </div>
         </div>
+        
+        {/* Filter Modal */}
+        <FilterModal 
+          visible={filterModalVisible}
+          onClose={() => setFilterModalVisible(false)}
+          onSave={handleFilterSave}
+        />
       </App>
     );
   }

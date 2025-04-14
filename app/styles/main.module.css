@@ -118,6 +118,29 @@
   background-color: #F7F2FA;
   position: relative;
   border-radius: 28px 28px 0px 0px;
+  max-height: 500px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #c0c0c0 #f5f5f5;
+}
+
+.profileCard::-webkit-scrollbar {
+  width: 8px;
+}
+
+.profileCard::-webkit-scrollbar-track {
+  background: #f5f5f5;
+  border-radius: 4px;
+}
+
+.profileCard::-webkit-scrollbar-thumb {
+  background-color: #c0c0c0;
+  border-radius: 4px;
+  border: 2px solid #f5f5f5;
+}
+
+.profileCard::-webkit-scrollbar-thumb:hover {
+  background-color: #a0a0a0;
 }
 
 /* Card header with drag handle from Figma */
@@ -273,7 +296,33 @@
   justify-content: center;
   position: relative;
 }
+/* Study level container */
+.studyLevelContainer {
+  max-height: 150px;
+  overflow-y: auto;
+  margin-top: 8px;
+  padding-right: 8px;
+  scrollbar-width: thin;
+  scrollbar-color: #c0c0c0 #f5f5f5;
+}
 
+.studyLevelContainer::-webkit-scrollbar {
+  width: 6px;
+}
+
+.studyLevelContainer::-webkit-scrollbar-track {
+  background: #f5f5f5;
+  border-radius: 3px;
+}
+
+.studyLevelContainer::-webkit-scrollbar-thumb {
+  background-color: #c0c0c0;
+  border-radius: 3px;
+}
+
+.studyLevelContainer::-webkit-scrollbar-thumb:hover {
+  background-color: #a0a0a0;
+}
 .dislikeButton .buttonIcon {
   color: #1E1E1E;
   font-size: 20px;

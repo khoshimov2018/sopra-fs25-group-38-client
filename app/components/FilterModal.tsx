@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Checkbox, Radio, Button, List, Typography, Space, Divider } from 'antd';
 import { useApi } from '@/hooks/useApi';
-import { ProfileKnowledgeLevel } from '@/types/user';
 import { Course } from '@/types/course';
+import { UserAvailability } from '@/types/dto';
 import styles from '@/styles/theme/components.module.css';
 
 const { Text, Title } = Typography;
@@ -16,13 +16,13 @@ interface CourseDisplay extends Course {
 interface FilterModalProps {
   visible: boolean;
   onClose: () => void;
-  onSave: (selectedCourses: number[], knowledgeLevel: ProfileKnowledgeLevel | null) => void;
+  onSave: (selectedCourses: number[], availability: UserAvailability | null) => void;
 }
 
 const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose, onSave }) => {
   const [courses, setCourses] = useState<CourseDisplay[]>([]);
   const [selectedCourses, setSelectedCourses] = useState<number[]>([]);
-  const [knowledgeLevel, setKnowledgeLevel] = useState<ProfileKnowledgeLevel | null>(null);
+  const [availability, setAvailability] = useState<UserAvailability | null>(null);
   const [loading, setLoading] = useState(false);
   
   const apiService = useApi();
@@ -77,20 +77,20 @@ const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose, onSave }) =
     });
   };
 
-  const handleKnowledgeLevelChange = (level: ProfileKnowledgeLevel) => {
-    setKnowledgeLevel(level);
+  const handleAvailabilityChange = (value: UserAvailability) => {
+    setAvailability(value);
   };
 
   const handleSave = () => {
     // Convert filters to the format expected by the StudentFilterController
-    onSave(selectedCourses, knowledgeLevel);
+    onSave(selectedCourses, availability);
     onClose();
   };
 
   const handleCancel = () => {
     // Reset selections
     setSelectedCourses([]);
-    setKnowledgeLevel(null);
+    setAvailability(null);
     onClose();
   };
 
@@ -104,15 +104,15 @@ const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose, onSave }) =
     >
       <div style={{ maxHeight: '60vh', overflowY: 'auto', paddingRight: 10 }}>
         <div style={{ marginBottom: 24 }}>
-          <Title level={5}>Knowledge Level</Title>
+          <Title level={5}>Availability</Title>
           <Radio.Group 
-            onChange={(e) => handleKnowledgeLevelChange(e.target.value)} 
-            value={knowledgeLevel}
+            onChange={(e) => handleAvailabilityChange(e.target.value)} 
+            value={availability}
           >
             <Space direction="vertical">
-              <Radio value={ProfileKnowledgeLevel.BEGINNER}>Beginner</Radio>
-              <Radio value={ProfileKnowledgeLevel.INTERMEDIATE}>Intermediate</Radio>
-              <Radio value={ProfileKnowledgeLevel.ADVANCED}>Advanced</Radio>
+              <Radio value={UserAvailability.MORNING}>Morning</Radio>
+              <Radio value={UserAvailability.AFTERNOON}>Afternoon</Radio>
+              <Radio value={UserAvailability.EVENING}>Evening</Radio>
             </Space>
           </Radio.Group>
         </div>

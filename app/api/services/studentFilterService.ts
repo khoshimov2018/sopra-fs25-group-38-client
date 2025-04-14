@@ -17,13 +17,11 @@ export class StudentFilterService {
    * Get filtered students based on course IDs and availability
    * @param courseIds Optional list of course IDs
    * @param availability Optional list of availability options
-   * @param knowledgeLevel Optional knowledge level filter
    * @returns List of filtered users
    */
   async getFilteredStudents(
     courseIds?: number[],
-    availability?: UserAvailability[],
-    knowledgeLevel?: string
+    availability?: UserAvailability[]
   ): Promise<UserGetDTO[]> {
     // Build query parameters
     const params = new URLSearchParams();
@@ -33,19 +31,16 @@ export class StudentFilterService {
       courseIds.forEach(id => params.append('courseIds', id.toString()));
     }
     
-    //currently not provided
-    // if (availability && availability.length > 0) {
-    //   availability.forEach(avail => params.append('availability', avail.toString()));
-    // }
-    
-    // Add knowledge level if provided
-    if (knowledgeLevel) {
-      params.append('knowledgeLevel', knowledgeLevel);
+    // Add availability if provided
+    if (availability && availability.length > 0) {
+      availability.forEach(avail => params.append('availability', avail.toString()));
     }
+
+    params.append('requireCourses', 'true');
     
     // Construct URL with query parameters
     const url = `/students${params.toString() ? '?' + params.toString() : ''}`;
-    
+    console.log("Fetching filtered students with URL:", url);
     return this.apiService.get<UserGetDTO[]>(url);
   }
 

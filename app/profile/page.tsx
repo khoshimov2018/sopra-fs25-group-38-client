@@ -435,149 +435,265 @@ const ProfilePage = () => {
     input.click();
   };
   
-  const handleSaveProfile = async () => {
-    if (!editableUser || !currentUser?.id) return;
+  // const handleSaveProfile = async () => {
+  //   if (!editableUser || !currentUser?.id) return;
     
+  //   // Validate required fields
+  //   if (!editableUser.name || !editableUser.email) {
+  //     message.error("Name and email are required fields");
+  //     return;
+  //   }
+
+  //   try {
+  //     // Get userService from apiService
+  //     const { userService } = apiService;
+      
+  //     if (!userService) {
+  //       throw new Error("User service not available");
+  //     }
+      
+  //     // Log user data before saving
+  //     console.log("Current user availability:", editableUser.availability);
+  //     console.log("User data before save:", editableUser);
+      
+  //     // Prepare data in UserPutDTO format
+  //     const profileUpdate: ProfileUpdate = {
+  //       name: editableUser.name as string,
+  //       bio: editableUser.bio || "",
+  //       profilePicture: editableUser.profileImage || "",
+  //       availability: editableUser.availability || undefined,
+  //       studyLevel: editableUser.studyLevel || "",
+  //       // Handle studyGoals
+  //       studyGoals: editableUser.studyGoals 
+  //         ? (typeof editableUser.studyGoals === 'string' 
+  //            ? editableUser.studyGoals.split(',').map(s => s.trim()) 
+  //            : editableUser.studyGoals)
+  //         : [],
+  //       courses: []
+  //     };
+      
+  //     // Log the profile update object
+  //     console.log("Profile update to be sent:", profileUpdate);
+      
+  //     // Use existing userCourses if available, otherwise convert studyLevels to courses format
+  //     if (editableUser.userCourses && editableUser.userCourses.length > 0) {
+  //       profileUpdate.courses = editableUser.userCourses
+  //         .filter(course => course.courseId > 0) // Filter out courses with invalid IDs
+  //         .map(course => ({
+  //           courseId: course.courseId,
+  //           knowledgeLevel: course.knowledgeLevel as ProfileKnowledgeLevel
+  //         }));
+          
+  //       console.log("Saving courses from userCourses:", profileUpdate.courses);
+  //     } else if (editableUser.studyLevels && editableUser.studyLevels.length > 0) {
+  //       // Try to parse course ID from subject field or use course name lookup
+  //       const { courseService } = apiService;
+  //       let courseMap: Record<string, number> = {};
+        
+  //       // If we have a courseService, try to get course IDs by name
+  //       if (courseService) {
+  //         try {
+  //           const courses = await courseService.getCourses();
+  //           // Create a mapping of course names to IDs
+  //           courseMap = courses.reduce((map: Record<string, number>, course) => {
+  //             map[course.courseName.toLowerCase()] = course.id;
+  //             return map;
+  //           }, {});
+  //         } catch (err) {
+  //           console.warn("Could not fetch courses for mapping", err);
+  //         }
+  //       }
+        
+  //       profileUpdate.courses = editableUser.studyLevels.map(level => {
+  //         // Try to get courseId in several ways:
+  //         // 1. Parse it as a number if it looks like one
+  //         // 2. Look up by name in our course map if available
+  //         // 3. Fall back to 0 if we can't determine it
+          
+  //         let courseId = 0;
+  //         const subjectText = level.subject || '';
+          
+  //         if (/^\d+$/.test(subjectText)) {
+  //           // If it's a numeric string, parse it
+  //           courseId = parseInt(subjectText);
+  //         } else if (courseMap && Object.keys(courseMap).length > 0) {
+  //           // Try to find by name in our mapping
+  //           const matchKey = Object.keys(courseMap).find(key => 
+  //             subjectText.toLowerCase().includes(key) || key.includes(subjectText.toLowerCase())
+  //           );
+  //           if (matchKey) {
+  //             courseId = courseMap[matchKey];
+  //           }
+  //         }
+          
+  //         return {
+  //           courseId,
+  //           knowledgeLevel: (level.level as ProfileKnowledgeLevel) || ProfileKnowledgeLevel.BEGINNER
+  //         };
+  //       }).filter(course => course.courseId > 0); // Filter out courses we couldn't identify
+  //     }
+      
+  //     // Send update to server
+  //     try {
+  //       // Show loading state
+  //       message.loading("Updating profile...");
+        
+  //       // Wait for the API response
+  //       await userService.updateUser(Number(currentUser.id), profileUpdate)
+  //         .then(() => {
+  //           console.log("Profile successfully updated on server");
+            
+  //           // Update UI on success
+  //           setCurrentUser(editableUser);
+  //           setIsEditing(false);
+  //           message.success("Profile updated successfully");
+            
+  //           // Verify that the data was saved - fetch again from server
+  //           userService.getUserById(Number(currentUser.id))
+  //             .then(updatedUser => {
+  //               console.log("Retrieved user after update:", updatedUser);
+  //               console.log("User availability after save:", updatedUser.availability);
+  //             })
+  //             .catch(err => {
+  //               console.warn("Could not verify update:", err);
+  //             });
+  //         })
+  //         .catch(err => {
+  //           console.error("Error updating profile on server:", err);
+  //           message.error("Failed to update profile on server. Check console for details.");
+            
+  //           // Still update UI to avoid losing user edits
+  //           setCurrentUser(editableUser);
+  //           setIsEditing(false);
+  //         });
+  //     } catch (error) {
+  //       console.error("Fatal error updating profile:", error);
+  //       // Fallback: still update the UI
+  //       setCurrentUser(editableUser);
+  //       setIsEditing(false);
+  //       message.info("Profile updated locally only, server update failed");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error updating profile:", error);
+  //     message.error("Failed to update profile");
+  //   }
+  // };
+
+  const handleSaveProfile = async () => { 
+    if (!editableUser || !currentUser?.id) return;
+  
     // Validate required fields
     if (!editableUser.name || !editableUser.email) {
       message.error("Name and email are required fields");
       return;
     }
-
-    try {
-      // Get userService from apiService
-      const { userService } = apiService;
-      
-      if (!userService) {
-        throw new Error("User service not available");
+  
+    // Get userService from apiService
+    const { userService, courseService } = apiService;
+    if (!userService) {
+      message.error("User service not available");
+      return;
+    }
+  
+    // Log user data before saving
+    console.log("Current user availability:", editableUser.availability);
+    console.log("User data before save:", editableUser);
+  
+    // Prepare data in UserPutDTO format
+    const profileUpdate: ProfileUpdate = {
+      name: editableUser.name,
+      bio: editableUser.bio || "",
+      profilePicture: editableUser.profileImage || "",
+      availability: editableUser.availability || undefined,
+      studyLevel: editableUser.studyLevel || "",
+      studyGoals: editableUser.studyGoals 
+        ? (typeof editableUser.studyGoals === 'string' 
+           ? editableUser.studyGoals.split(',').map(s => s.trim()) 
+           : editableUser.studyGoals)
+        : [],
+      courses: []
+    };
+  
+    // Use existing userCourses if available, otherwise convert studyLevels to courses format
+    if (editableUser.userCourses && editableUser.userCourses.length > 0) {
+      profileUpdate.courses = editableUser.userCourses
+        .filter(course => course.courseId > 0) // Filter out courses with invalid IDs
+        .map(course => ({
+          courseId: course.courseId,
+          knowledgeLevel: course.knowledgeLevel as ProfileKnowledgeLevel
+        }));
+  
+      console.log("Saving courses from userCourses:", profileUpdate.courses);
+    } else if (editableUser.studyLevels && editableUser.studyLevels.length > 0) {
+      let courseMap: Record<string, number> = {};
+  
+      // If we have a courseService, try to get course IDs by name
+      if (courseService) {
+        try {
+          const courses = await courseService.getCourses();
+          // Create a mapping of course names to IDs
+          courseMap = courses.reduce((map: Record<string, number>, course) => {
+            map[course.courseName.toLowerCase()] = course.id;
+            return map;
+          }, {});
+        } catch (err) {
+          console.warn("Could not fetch courses for mapping", err);
+        }
       }
-      
-      // Log user data before saving
-      console.log("Current user availability:", editableUser.availability);
-      console.log("User data before save:", editableUser);
-      
-      // Prepare data in UserPutDTO format
-      const profileUpdate: ProfileUpdate = {
-        name: editableUser.name as string,
-        bio: editableUser.bio || "",
-        profilePicture: editableUser.profileImage || "",
-        availability: editableUser.availability || undefined,
-        studyLevel: editableUser.studyLevel || "",
-        // Handle studyGoals
-        studyGoals: editableUser.studyGoals 
-          ? (typeof editableUser.studyGoals === 'string' 
-             ? editableUser.studyGoals.split(',').map(s => s.trim()) 
-             : editableUser.studyGoals)
-          : [],
-        courses: []
-      };
-      
-      // Log the profile update object
-      console.log("Profile update to be sent:", profileUpdate);
-      
-      // Use existing userCourses if available, otherwise convert studyLevels to courses format
-      if (editableUser.userCourses && editableUser.userCourses.length > 0) {
-        profileUpdate.courses = editableUser.userCourses
-          .filter(course => course.courseId > 0) // Filter out courses with invalid IDs
-          .map(course => ({
-            courseId: course.courseId,
-            knowledgeLevel: course.knowledgeLevel as ProfileKnowledgeLevel
-          }));
-          
-        console.log("Saving courses from userCourses:", profileUpdate.courses);
-      } else if (editableUser.studyLevels && editableUser.studyLevels.length > 0) {
-        // Try to parse course ID from subject field or use course name lookup
-        const { courseService } = apiService;
-        let courseMap: Record<string, number> = {};
-        
-        // If we have a courseService, try to get course IDs by name
-        if (courseService) {
-          try {
-            const courses = await courseService.getCourses();
-            // Create a mapping of course names to IDs
-            courseMap = courses.reduce((map: Record<string, number>, course) => {
-              map[course.courseName.toLowerCase()] = course.id;
-              return map;
-            }, {});
-          } catch (err) {
-            console.warn("Could not fetch courses for mapping", err);
+  
+      profileUpdate.courses = editableUser.studyLevels.map(level => {
+        let courseId = 0;
+        const subjectText = level.subject || '';
+  
+        if (/^\d+$/.test(subjectText)) {
+          courseId = parseInt(subjectText);
+        } else if (courseMap && Object.keys(courseMap).length > 0) {
+          const matchKey = Object.keys(courseMap).find(key => 
+            subjectText.toLowerCase().includes(key) || key.includes(subjectText.toLowerCase())
+          );
+          if (matchKey) {
+            courseId = courseMap[matchKey];
           }
         }
-        
-        profileUpdate.courses = editableUser.studyLevels.map(level => {
-          // Try to get courseId in several ways:
-          // 1. Parse it as a number if it looks like one
-          // 2. Look up by name in our course map if available
-          // 3. Fall back to 0 if we can't determine it
-          
-          let courseId = 0;
-          const subjectText = level.subject || '';
-          
-          if (/^\d+$/.test(subjectText)) {
-            // If it's a numeric string, parse it
-            courseId = parseInt(subjectText);
-          } else if (courseMap && Object.keys(courseMap).length > 0) {
-            // Try to find by name in our mapping
-            const matchKey = Object.keys(courseMap).find(key => 
-              subjectText.toLowerCase().includes(key) || key.includes(subjectText.toLowerCase())
-            );
-            if (matchKey) {
-              courseId = courseMap[matchKey];
-            }
-          }
-          
-          return {
-            courseId,
-            knowledgeLevel: (level.level as ProfileKnowledgeLevel) || ProfileKnowledgeLevel.BEGINNER
-          };
-        }).filter(course => course.courseId > 0); // Filter out courses we couldn't identify
-      }
-      
-      // Send update to server
-      try {
-        // Show loading state
-        message.loading("Updating profile...");
-        
-        // Wait for the API response
-        await userService.updateUser(Number(currentUser.id), profileUpdate)
-          .then(() => {
-            console.log("Profile successfully updated on server");
-            
-            // Update UI on success
-            setCurrentUser(editableUser);
-            setIsEditing(false);
-            message.success("Profile updated successfully");
-            
-            // Verify that the data was saved - fetch again from server
-            userService.getUserById(Number(currentUser.id))
-              .then(updatedUser => {
-                console.log("Retrieved user after update:", updatedUser);
-                console.log("User availability after save:", updatedUser.availability);
-              })
-              .catch(err => {
-                console.warn("Could not verify update:", err);
-              });
-          })
-          .catch(err => {
-            console.error("Error updating profile on server:", err);
-            message.error("Failed to update profile on server. Check console for details.");
-            
-            // Still update UI to avoid losing user edits
-            setCurrentUser(editableUser);
-            setIsEditing(false);
-          });
-      } catch (error) {
-        console.error("Fatal error updating profile:", error);
-        // Fallback: still update the UI
-        setCurrentUser(editableUser);
-        setIsEditing(false);
-        message.info("Profile updated locally only, server update failed");
-      }
-    } catch (error) {
-      console.error("Error updating profile:", error);
-      message.error("Failed to update profile");
+  
+        return {
+          courseId,
+          knowledgeLevel: (level.level as ProfileKnowledgeLevel) || ProfileKnowledgeLevel.BEGINNER
+        };
+      }).filter(course => course.courseId > 0); // Filter out courses we couldn't identify
+    }
+  
+    // Log the profile update object
+    console.log("Profile update to be sent:", profileUpdate);
+  
+    try {
+      // Show loading state (duration set to 0 means it remains until closed)
+      message.loading("Updating profile...", 0);
+  
+      // Send the update to the backend and await confirmation
+      await userService.updateUser(Number(currentUser.id), profileUpdate);
+      console.log("Profile successfully updated on server");
+  
+      // Now refetch the updated user data
+      const updatedUser = await userService.getUserById(Number(currentUser.id));
+      console.log("Retrieved user after update:", updatedUser);
+      console.log("User availability after save:", updatedUser.availability);
+  
+      // Update UI with the re-fetched data
+      setCurrentUser(updatedUser);
+      setEditableUser(updatedUser);
+      setIsEditing(false);
+      message.success("Profile updated successfully");
+    } catch (err) {
+      console.error("Error updating profile on server:", err);
+      message.error("Failed to update profile on server. Check console for details.");
+  
+      // Optionally update UI locally if server update fails
+      setCurrentUser(editableUser);
+      setIsEditing(false);
     }
   };
+  
 
   const handleAddTag = () => {
     if (!editableUser) return;
