@@ -227,4 +227,19 @@ export class UserService {
       throw error;
     }
   }
+  
+  /**
+   * Get the current authenticated user using the token from storage
+   * @returns The current user or null if not authenticated
+   */
+  async getCurrentUser(): Promise<UserGetDTO | null> {
+    try {
+      // Get the current user using the /users/me endpoint
+      // The token will be automatically included in headers by apiService
+      return await this.apiService.get<UserGetDTO>('/users/me');
+    } catch (error) {
+      console.error("Error getting current user:", error);
+      return null;
+    }
+  }
 }

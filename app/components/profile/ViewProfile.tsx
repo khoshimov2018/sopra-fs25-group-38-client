@@ -25,13 +25,13 @@ const ViewProfile: React.FC<ViewProfileProps> = ({ user }) => {
         <div className={styles.detailsValue}>{user.email}</div>
       </div>
       
-      {/* Study Level section */}
-      {user.studyLevel && (
-        <div className={styles.cardSection}>
-          <div className={styles.detailsLabel}>Study Level</div>
-          <div className={styles.detailsValue}>{user.studyLevel}</div>
+      {/* Study Level section - always shown */}
+      <div className={styles.cardSection}>
+        <div className={styles.detailsLabel}>Study Level</div>
+        <div className={styles.detailsValue}>
+          {user.studyLevel || "Not specified"}
         </div>
-      )}
+      </div>
       
       {/* Study Goals section (if available) */}
       {user.studyGoals && (
@@ -66,22 +66,36 @@ const ViewProfile: React.FC<ViewProfileProps> = ({ user }) => {
         </div>
       )}
       
-      {/* Courses section (if available) */}
-      {user.userCourses && user.userCourses.length > 0 && (
-        <div className={styles.cardSection}>
-          <div className={styles.detailsLabel}>Courses</div>
-          <div className={styles.studyLevelContainer}>
-            {user.userCourses.map((course, index) => (
+      {/* Courses section - handles both userCourses and studyLevels */}
+      <div className={styles.cardSection}>
+        <div className={styles.detailsLabel}>Courses</div>
+        <div className={styles.studyLevelContainer}>
+          {user.userCourses && user.userCourses.length > 0 ? (
+            // If userCourses exists, display from there
+            user.userCourses.map((course, index) => (
               <div key={`course-${index}`} className={styles.studyLevelRow}>
                 <div className={styles.studyLevelLeft}>
                   <span className={styles.studyLevelSubject}>{course.courseName}</span>
                   <span className={styles.studyLevelRight}> ({course.knowledgeLevel})</span>
                 </div>
               </div>
-            ))}
-          </div>
+            ))
+          ) : user.studyLevels && user.studyLevels.length > 0 ? (
+            // If only studyLevels exists, display from there
+            user.studyLevels.map((level, index) => (
+              <div key={`level-${index}`} className={styles.studyLevelRow}>
+                <div className={styles.studyLevelLeft}>
+                  <span className={styles.studyLevelSubject}>{level.subject}</span>
+                  <span className={styles.studyLevelRight}> ({level.level})</span>
+                </div>
+              </div>
+            ))
+          ) : (
+            // If neither exists, show a message
+            <div>No courses specified</div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 };

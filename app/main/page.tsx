@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useApi } from "@/hooks/useApi";
 import useLocalStorage from "@/hooks/useLocalStorage";
 import { useMessage } from '@/hooks/useMessage';
-import { User, ProfileKnowledgeLevel } from "@/types/user";
+import { User, ProfileKnowledgeLevel, UserAvailability } from "@/types/user";
 import { MatchPost, MatchGet } from "@/types/match";
 import { App, Button as AntButton } from "antd";
 import Link from "next/link";
@@ -16,6 +16,10 @@ import styles from "@/styles/main.module.css";
 import backgroundStyles from "@/styles/theme/backgrounds.module.css";
 import Button from "@/components/Button";
 import FilterModal from "@/components/FilterModal";
+import { MatchService } from "@/api/services/matchService";
+import {StudentFilterService} from "@/api/services/studentFilterService";
+import {UserService} from "@/api/services/userService";
+
 
 
 // Mocked user profile data for now
@@ -23,6 +27,8 @@ import FilterModal from "@/components/FilterModal";
 interface UserProfile extends User {
   studyStyle?: string;
   goal?: string;
+  bio?: string;
+  studyLevel?: string;
   tags?: string[];
   studyLevels?: {
     subject: string;
@@ -35,6 +41,9 @@ interface UserProfile extends User {
 const MainPage: React.FC = () => {
   const router = useRouter();
   const apiService = useApi();
+  const matchService = new MatchService(apiService.apiService);
+  const studentFilterService = new StudentFilterService(apiService.apiService);
+  const userService = new UserService(apiService.apiService);
   const { value: token, clear: clearToken } = useLocalStorage<string>("token", "");
   const { message, contextHolder } = useMessage();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -49,57 +58,102 @@ const MainPage: React.FC = () => {
     knowledgeLevel: null
   });
 
-  // Mock data - would come from API in production
-  const mockProfiles: UserProfile[] = [
-    {
-      id: "1",
-      name: "Sakura Noriaki",
-      email: "sakura@example.com",
-      token: null,
-      status: "ONLINE",
-      studyStyle: "Casual, Just Feel Free",
-      goal: "To pass whole exams in this semester",
-      tags: ["Life recorder", "Firefighter", "Semester Freshwoman"],
-      studyLevels: [
-        { subject: "Mathematics", grade: "A", level: "Expert" },
-        { subject: "SoPra", grade: "A", level: "Beginner" },
-        { subject: "Informatics", grade: "A", level: "Beginner" }
-      ],
-      profileImage: "https://placehold.co/600x800/5f9ea0/white.png?text=Sakura"
-    },
-    {
-      id: "2",
-      name: "Takashi Yamamoto",
-      email: "takashi@example.com",
-      token: null,
-      status: "ONLINE",
-      studyStyle: "Focused, Collaborative",
-      goal: "Maintain 4.0 GPA and understand core concepts",
-      tags: ["Night owl", "Coffee lover", "CS Major"],
-      studyLevels: [
-        { subject: "Computer Science", grade: "A", level: "Expert" },
-        { subject: "Physics", grade: "B", level: "Intermediate" },
-        { subject: "English", grade: "A", level: "Advanced" }
-      ],
-      profileImage: "https://placehold.co/600x800/9370db/white.png?text=Takashi"
-    },
-    {
-      id: "3",
-      name: "Emma Wilson",
-      email: "emma@example.com",
-      token: null,
-      status: "ONLINE",
-      studyStyle: "Structured, Morning Person",
-      goal: "Complete all assignments one week before deadline",
-      tags: ["Early bird", "Organized", "Biology Focus"],
-      studyLevels: [
-        { subject: "Biology", grade: "A", level: "Expert" },
-        { subject: "Chemistry", grade: "A", level: "Advanced" },
-        { subject: "Statistics", grade: "B", level: "Intermediate" }
-      ],
-      profileImage: "https://placehold.co/600x800/ff6347/white.png?text=Emma"
+  // This will be populated from API when fetchUsers is called
+  const [mockProfiles, setMockProfiles] = useState<UserProfile[]>([]);
+
+  // Function to fetch users from the backend
+  const fetchUsers = async () => {
+    try {
+      message.loading("Loading profiles...");
+      
+      // Get all available users using the studentFilterService
+      const users = await studentFilterService.getFilteredStudents();
+      
+      if (users && users.length > 0) {
+        // Convert UserGetDTO to UserProfile format
+        const fetchedProfiles: UserProfile[] = users.map(user => {
+          // Extract study goals as tags (splitting by comma if it's a string)
+          const tags = user.studyGoals ? 
+            typeof user.studyGoals === 'string' ? 
+              user.studyGoals.split(',').map(tag => tag.trim()) : 
+              [user.studyGoals] : 
+            [];
+            
+          // Convert userCourses to studyLevels format
+          let studyLevels = [];
+          if (user.userCourses && user.userCourses.length > 0) {
+            studyLevels = user.userCourses.map(course => ({
+              subject: course.courseName || "Unknown Course",
+              grade: "N/A", // Grade information isn't available in the DTO
+              level: course.knowledgeLevel || "BEGINNER"
+            }));
+            console.log("Mapped study levels from userCourses:", studyLevels);
+          } else {
+            console.log("No userCourses found for user:", user.id);
+            studyLevels = [];
+          }
+          
+          // Format availability properly
+          let formattedAvailability = "Not specified";
+          if (user.availability) {
+            switch(user.availability) {
+              case "MORNING":
+                formattedAvailability = "Morning";
+                break;
+              case "AFTERNOON":
+                formattedAvailability = "Afternoon";
+                break;
+              case "EVENING":
+                formattedAvailability = "Evening";
+                break;
+              default:
+                formattedAvailability = user.availability;
+            }
+          }
+          
+          return {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            token: user.token,
+            status: user.status,
+            studyStyle: formattedAvailability,
+            goal: user.studyGoals || "Not specified",
+            bio: user.bio || "",
+            studyLevel: user.studyLevel || "",
+            tags: tags,
+            studyLevels: studyLevels,
+            profileImage: user.profilePicture || `https://placehold.co/600x800/random/white.png?text=${user.name}`
+          };
+        });
+        
+        console.log("Fetched profiles:", fetchedProfiles);
+        setProfiles(fetchedProfiles);
+        message.success(`Loaded ${fetchedProfiles.length} profiles`);
+      } else {
+        message.info("No profiles available");
+        // If no profiles are returned, set some default profile to avoid breaking UI
+        setProfiles([]);
+      }
+    } catch (error) {
+      console.error("Error fetching profiles:", error);
+      message.error("Failed to load profiles");
+      setProfiles([]);
     }
-  ];
+  };
+
+  // Function to fetch current user info
+  const fetchCurrentUser = async () => {
+    try {
+      const user = await userService.getCurrentUser();
+      if (user) {
+        setCurrentUser(user);
+      }
+    } catch (error) {
+      console.error("Error fetching current user:", error);
+      message.error("Failed to load your profile");
+    }
+  };
 
   useEffect(() => {
     // First check if we're in a browser environment (needed for Next.js)
@@ -118,25 +172,9 @@ const MainPage: React.FC = () => {
       return;
     }
 
-    // Load mock profiles for now - only do this once
-    if (profiles.length === 0) {
-      console.log("Setting mock profiles");
-      setProfiles(mockProfiles);
-    }
-
-    // For this demo, we'll skip the API call and use a mock current user
-    if (!currentUser) {
-      console.log("Setting mock current user");
-      // Create a mock current user
-      const mockCurrentUser: User = {
-        id: "current-user",
-        name: "Current User",
-        email: "current@example.com",
-        token: effectiveToken,
-        status: "ONLINE"
-      };
-      setCurrentUser(mockCurrentUser);
-    }
+    // Fetch the current user and available profiles
+    fetchCurrentUser();
+    fetchUsers();
     
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -154,26 +192,81 @@ const MainPage: React.FC = () => {
     try {
       message.loading("Applying filters...");
       
-      // Use the specialized studentFilterService
-      const { studentFilterService } = apiService;
-      
-      // Prepare an availability filter if knowledgeLevel is selected
-      // This is just for demo - in a real app, availability would be a separate filter
-      const availability = knowledgeLevel ? [UserAvailability.MORNING] : undefined;
-      
       // Get filtered students using the service
       const filteredStudents = await studentFilterService.getFilteredStudents(
         selectedCourses.length > 0 ? selectedCourses : undefined,
-        availability
+        undefined, // Availability - not using in this version
+        knowledgeLevel ? knowledgeLevel.toString() : undefined
       );
       
       // Update the profiles with the filtered students
       if (filteredStudents && filteredStudents.length > 0) {
-        // In a real app, you would convert the filtered students to profiles
-        // For demo purposes, we'll just keep using the mock profiles
-        message.success(`Found ${filteredStudents.length} matching students`);
+        // Convert filtered students to profiles
+        const filteredProfiles: UserProfile[] = filteredStudents.map(user => {
+          // Extract study goals as tags
+          const tags = user.studyGoals ? 
+            typeof user.studyGoals === 'string' ? 
+              user.studyGoals.split(',').map(tag => tag.trim()) : 
+              [user.studyGoals] : 
+            [];
+            
+          // Convert userCourses to studyLevels format  
+          let studyLevels = [];
+          if (user.userCourses && user.userCourses.length > 0) {
+            studyLevels = user.userCourses.map(course => ({
+              subject: course.courseName || "Unknown Course",
+              grade: "N/A", // Grade information isn't available in the DTO
+              level: course.knowledgeLevel || "BEGINNER"
+            }));
+            console.log("Mapped study levels from userCourses for filtered user:", studyLevels);
+          } else {
+            console.log("No userCourses found for filtered user:", user.id);
+            studyLevels = [];
+          }
+          
+          // Format availability properly
+          let formattedAvailability = "Not specified";
+          if (user.availability) {
+            switch(user.availability) {
+              case "MORNING":
+                formattedAvailability = "Morning";
+                break;
+              case "AFTERNOON":
+                formattedAvailability = "Afternoon";
+                break;
+              case "EVENING":
+                formattedAvailability = "Evening";
+                break;
+              default:
+                formattedAvailability = user.availability;
+            }
+          }
+          
+          return {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            token: user.token,
+            status: user.status,
+            studyStyle: formattedAvailability,
+            goal: user.studyGoals || "Not specified",
+            bio: user.bio || "",
+            studyLevel: user.studyLevel || "",
+            tags: tags,
+            studyLevels: studyLevels,
+            profileImage: user.profilePicture || `https://placehold.co/600x800/random/white.png?text=${user.name}`
+          };
+        });
+        
+        // Update profiles state with filtered results
+        setProfiles(filteredProfiles);
+        // Reset index to show the first filtered profile
+        setCurrentProfileIndex(0);
+        
+        message.success(`Found ${filteredProfiles.length} matching students`);
       } else {
         message.info("No students match the selected filters");
+        setProfiles([]);
       }
       
       // Display what filters were applied
@@ -225,76 +318,60 @@ const MainPage: React.FC = () => {
   };
 
   const handleLike = async () => {
+    if (!currentUser || !currentProfile) return;
+    
+    const targetUserId = Number(currentProfile.id);
+    if (isNaN(targetUserId)) {
+      console.error("Invalid target user ID");
+      message.error("Cannot like this user. Invalid ID.");
+      return;
+    }
+    
+    const matchData = { userId: Number(currentUser.id), targetUserId };
     try {
-      if (!currentUser?.id || !profiles[currentProfileIndex]?.id) {
-        message.error("User data is missing");
-        return;
-      }
-
-      const matchData: MatchPost = {
-        userId: Number(currentUser.id),
-        targetUserId: Number(profiles[currentProfileIndex].id)
-      };
-
-      message.loading("Processing like...");
+      const result = await matchService.processLike(matchData);
+      message.success("Successfully liked the user!");
+      console.log("Match result:", result);
       
-      // Use the specialized matchService
-      const { matchService } = apiService;
-      const response = await matchService.processLike(matchData);
-      
-      if (response && response.status === "ACCEPTED") {
-        message.success(`Match with ${profiles[currentProfileIndex].name}! You both liked each other.`);
-      } else {
-        message.success(`You liked ${profiles[currentProfileIndex].name}`);
-      }
-      
+      // Move to the next profile
       showNextProfile();
     } catch (error) {
       console.error("Error processing like:", error);
-      message.error("Could not process like. Please try again.");
-      
-      // For demo, still show next profile
-      showNextProfile();
+      message.error("Failed to process like.");
     }
   };
-
+  
   const handleDislike = async () => {
+    if (!currentUser || !currentProfile) return;
+    
+    const targetUserId = Number(currentProfile.id);
+    if (isNaN(targetUserId)) {
+      console.error("Invalid target user ID");
+      message.error("Cannot dislike this user. Invalid ID.");
+      return;
+    }
+    
+    const matchData = { userId: Number(currentUser.id), targetUserId };
     try {
-      if (!currentUser?.id || !profiles[currentProfileIndex]?.id) {
-        message.error("User data is missing");
-        return;
-      }
-
-      const matchData: MatchPost = {
-        userId: Number(currentUser.id),
-        targetUserId: Number(profiles[currentProfileIndex].id)
-      };
-
-      message.loading("Processing dislike...");
-      
-      // Use the specialized matchService
-      const { matchService } = apiService;
       await matchService.processDislike(matchData);
+      message.success("Successfully disliked the user!");
       
-      message.info(`You disliked ${profiles[currentProfileIndex].name}`);
+      // Move to the next profile
       showNextProfile();
     } catch (error) {
       console.error("Error processing dislike:", error);
-      message.error("Could not process dislike. Please try again.");
-      
-      // For demo, still show next profile
-      showNextProfile();
+      message.error("Failed to process dislike.");
     }
   };
+  
 
   const showNextProfile = () => {
     if (currentProfileIndex < profiles.length - 1) {
       setCurrentProfileIndex(currentProfileIndex + 1);
     } else {
-      // When we've shown all profiles, loop back to the first one
-      // In production, you'd fetch more profiles from the API
-      message.info("You've seen all available profiles. Starting again!");
-      setCurrentProfileIndex(0);
+      // When we've shown all profiles, display a message that no more profiles are available
+      setCurrentProfileIndex(-1); // Set to -1 to indicate no profiles to show
+      message.info("You've seen all available matches!");
     }
   };
 
@@ -302,12 +379,70 @@ const MainPage: React.FC = () => {
   const currentProfile = profiles[currentProfileIndex] || null;
 
   if (!currentProfile) {
+    // Differentiate between initial loading and no more profiles
+    const message = profiles.length > 0 && currentProfileIndex === -1
+      ? "You've seen all potential matches! Change your filters or wait for new users to join."
+      : "Loading profiles...";
+      
     return (
       <App>
         {contextHolder}
         <div className={`${backgroundStyles.loginBackground}`}>
-          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-            <div>Loading profiles...</div>
+          <div className={styles.mainContainer}>
+            {/* Header */}
+            <div className={styles.header}>
+              <Link href="/main" className={styles.logoLink}>
+                <Logo className={styles.headerLogo} />
+              </Link>
+              <div className={styles.headerRight}>
+                <Link href="/profile">
+                  <button className={styles.iconButton}><UserOutlined /></button>
+                </Link>
+                <Link href="/chat">
+                  <button className={styles.iconButton}><MessageOutlined /></button>
+                </Link>
+                <button className={styles.iconButton} onClick={handleFilterClick}><FilterOutlined /></button>
+                <button
+                  className={styles.iconButton}
+                  onClick={actualLogout}
+                >
+                  <LogoutOutlined />
+                </button>
+              </div>
+            </div>
+            
+            <div style={{ 
+              display: 'flex', 
+              flexDirection: 'column',
+              justifyContent: 'center', 
+              alignItems: 'center', 
+              height: 'calc(100vh - 80px)',
+              padding: '20px',
+              textAlign: 'center'
+            }}>
+              <div style={{ fontSize: '1.2rem', marginBottom: '20px' }}>{message}</div>
+              
+              {profiles.length > 0 && currentProfileIndex === -1 && (
+                <div>
+                  <button 
+                    className={styles.actionButton}
+                    style={{ marginRight: '10px' }}
+                    onClick={handleFilterClick}
+                  >
+                    Change Filters
+                  </button>
+                  <button 
+                    className={styles.actionButton}
+                    onClick={() => {
+                      fetchUsers();
+                      setCurrentProfileIndex(0);
+                    }}
+                  >
+                    Refresh Users
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </App>
@@ -365,9 +500,15 @@ const MainPage: React.FC = () => {
                   <div className={styles.detailsValue}>{currentProfile.name}</div>
                 </div>
 
-                {/* Study Style */}
+                {/* Study Level */}
                 <div className={styles.cardSection}>
-                  <div className={styles.detailsLabel}>Study Style</div>
+                  <div className={styles.detailsLabel}>Study Level</div>
+                  <div className={styles.detailsValue}>{currentProfile.studyLevel || "Not specified"}</div>
+                </div>
+
+                {/* Availability */}
+                <div className={styles.cardSection}>
+                  <div className={styles.detailsLabel}>Availability</div>
                   <div className={styles.detailsValue}>{currentProfile.studyStyle}</div>
                 </div>
 
@@ -376,6 +517,14 @@ const MainPage: React.FC = () => {
                   <div className={styles.detailsLabel}>Goal</div>
                   <div className={styles.detailsValue}>{currentProfile.goal}</div>
                 </div>
+                
+                {/* Bio */}
+                {currentProfile.bio && (
+                  <div className={styles.cardSection}>
+                    <div className={styles.detailsLabel}>Bio</div>
+                    <div className={styles.detailsValue}>{currentProfile.bio}</div>
+                  </div>
+                )}
 
                 {/* Tags */}
                 <div className={styles.cardSection}>
@@ -405,14 +554,14 @@ const MainPage: React.FC = () => {
               <div className={styles.actionButtons}>
                 <button
                   className={`${styles.actionButton} ${styles.dislikeButton}`}
-                  onClick={handleDislike}
+                  onClick={() => handleDislike()}
                 >
                   <span className={styles.buttonIcon}>✕</span>
                   <span>Dislike</span>
                 </button>
                 <button
                   className={`${styles.actionButton} ${styles.likeButton}`}
-                  onClick={handleLike}
+                  onClick={() => handleLike()}
                 >
                   <span className={styles.buttonIcon}>★</span>
                   <span>Like</span>

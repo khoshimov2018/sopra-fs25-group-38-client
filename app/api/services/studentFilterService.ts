@@ -33,10 +33,10 @@ export class StudentFilterService {
       courseIds.forEach(id => params.append('courseIds', id.toString()));
     }
     
-    // Add availability if provided
-    if (availability && availability.length > 0) {
-      availability.forEach(avail => params.append('availability', avail.toString()));
-    }
+    //currently not provided
+    // if (availability && availability.length > 0) {
+    //   availability.forEach(avail => params.append('availability', avail.toString()));
+    // }
     
     // Add knowledge level if provided
     if (knowledgeLevel) {

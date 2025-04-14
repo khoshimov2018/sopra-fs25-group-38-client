@@ -133,15 +133,36 @@ const EditProfile: React.FC<EditProfileProps> = ({
   };
 
   // Handle availability change
-  const handleAvailabilityChange = (value: UserAvailability) => {
+  const handleAvailabilityChange = (value: string) => {
+    // Log the actual value for debugging
+    console.log("Selected availability:", value);
+    
+    // Make sure the value is one of the enum values
+    let availabilityValue: UserAvailability;
+    switch(value) {
+      case "MORNING":
+        availabilityValue = UserAvailability.MORNING;
+        break;
+      case "AFTERNOON":
+        availabilityValue = UserAvailability.AFTERNOON;
+        break;
+      case "EVENING":
+        availabilityValue = UserAvailability.EVENING;
+        break;
+      default:
+        console.warn("Unknown availability value:", value);
+        availabilityValue = value as UserAvailability;
+    }
+    
     // Create a synthetic event to use with onInputChange
     const fakeEvent = {
       target: {
         name: 'availability',
-        value
+        value: availabilityValue
       }
     } as React.ChangeEvent<HTMLInputElement>;
     
+    console.log("Setting availability to:", availabilityValue);
     onInputChange(fakeEvent);
   };
 
@@ -336,9 +357,9 @@ const EditProfile: React.FC<EditProfileProps> = ({
             value={user.availability || undefined}
             size="large"
           >
-            <Option value={UserAvailability.MORNING}>Morning</Option>
-            <Option value={UserAvailability.AFTERNOON}>Afternoon</Option>
-            <Option value={UserAvailability.EVENING}>Evening</Option>
+            <Option value="MORNING">Morning</Option>
+            <Option value="AFTERNOON">Afternoon</Option>
+            <Option value="EVENING">Evening</Option>
           </Select>
         </Form.Item>
         

@@ -7,7 +7,7 @@ import useLocalStorage from "@/hooks/useLocalStorage";
 import { useMessage } from '@/hooks/useMessage';
 import { UserProfile, ProfileUpdate } from "@/types/profile";
 import { UserAvailability, ProfileKnowledgeLevel } from "@/types/dto";
-import { CourseSelection } from "@/types";
+// import { CourseSelection } from "@/types";
 import Link from "next/link";
 import Logo from "@/components/Logo";
 import { UserOutlined, MessageOutlined, FilterOutlined, LogoutOutlined } from "@ant-design/icons";
@@ -137,10 +137,14 @@ const ProfilePage = () => {
                 const fullDetails = await userService.getUserById(Number(apiUser.id));
                 
                 if (fullDetails) {
+                  // Log the full user details from the server for debugging
+                  console.log("Full user details received:", fullDetails);
+                  
                   // Update with full details if available
                   userProfile.bio = fullDetails.bio || userProfile.bio;
                   
                   // Add study level from full details
+                  console.log("Study level from server:", fullDetails.studyLevel);
                   userProfile.studyLevel = fullDetails.studyLevel || userProfile.studyLevel;
                   
                   // Handle study goals
@@ -151,17 +155,33 @@ const ProfilePage = () => {
                   }
                   
                   // Store full course data in userCourses (new field)
+                  console.log("User courses from server:", fullDetails.userCourses);
                   if (fullDetails.userCourses && fullDetails.userCourses.length > 0) {
                     userProfile.userCourses = fullDetails.userCourses;
+                    console.log("Set userCourses to:", userProfile.userCourses);
+                  } else {
+                    console.log("No userCourses found in API response");
                   }
                   
                   // Keep backward compatibility with studyLevels
+                  console.log("Course selections from server:", fullDetails.courseSelections);
                   if (fullDetails.courseSelections && fullDetails.courseSelections.length > 0) {
                     userProfile.studyLevels = fullDetails.courseSelections.map(course => ({
                       subject: course.courseName || String(course.courseId),
                       grade: "N/A",
                       level: course.knowledgeLevel || "Beginner"
                     }));
+                    console.log("Set studyLevels to:", userProfile.studyLevels);
+                    
+                    // If userCourses is not set but courseSelections exists, create userCourses from courseSelections
+                    if (!userProfile.userCourses || userProfile.userCourses.length === 0) {
+                      userProfile.userCourses = fullDetails.courseSelections.map(course => ({
+                        courseId: course.courseId,
+                        courseName: course.courseName || String(course.courseId),
+                        knowledgeLevel: course.knowledgeLevel
+                      }));
+                      console.log("Created userCourses from courseSelections:", userProfile.userCourses);
+                    }
                   }
                 }
               } catch (detailsErr) {
@@ -185,7 +205,7 @@ const ProfilePage = () => {
         
         // Fallback to mock data for demonstration
         const mockUserProfile: UserProfile = {
-          id: "current-user",
+          id: 1234,
           name: "John Doe",
           email: "john.doe@example.com",
           token: effectiveToken,
@@ -273,6 +293,14 @@ const ProfilePage = () => {
     if (!editableUser) return;
     
     const { name, value } = e.target;
+    
+    // Log all changes for debugging
+    console.log(`Input change - Field: ${name}, Value:`, value);
+    
+    // Special handling for availability field
+    if (name === 'availability') {
+      console.log(`Setting availability to:`, value);
+    }
     
     // Handle nested structure updates (for arrays like userCourses)
     if (name.includes('[') && name.includes(']')) {
@@ -424,12 +452,16 @@ const ProfilePage = () => {
         throw new Error("User service not available");
       }
       
+      // Log user data before saving
+      console.log("Current user availability:", editableUser.availability);
+      console.log("User data before save:", editableUser);
+      
       // Prepare data in UserPutDTO format
       const profileUpdate: ProfileUpdate = {
         name: editableUser.name as string,
         bio: editableUser.bio || "",
         profilePicture: editableUser.profileImage || "",
-        availability: (editableUser.availability as UserAvailability) || UserAvailability.MORNING,
+        availability: editableUser.availability || undefined,
         studyLevel: editableUser.studyLevel || "",
         // Handle studyGoals
         studyGoals: editableUser.studyGoals 
@@ -439,6 +471,9 @@ const ProfilePage = () => {
           : [],
         courses: []
       };
+      
+      // Log the profile update object
+      console.log("Profile update to be sent:", profileUpdate);
       
       // Use existing userCourses if available, otherwise convert studyLevels to courses format
       if (editableUser.userCourses && editableUser.userCourses.length > 0) {
@@ -499,29 +534,44 @@ const ProfilePage = () => {
       }
       
       // Send update to server
-      message.loading("Updating profile...");
-      
       try {
-        // Try to update via API but don't wait for it to complete
-        // This allows UI to update even if API is unavailable
-        userService.updateUser(Number(currentUser.id), profileUpdate)
+        // Show loading state
+        message.loading("Updating profile...");
+        
+        // Wait for the API response
+        await userService.updateUser(Number(currentUser.id), profileUpdate)
           .then(() => {
             console.log("Profile successfully updated on server");
+            
+            // Update UI on success
+            setCurrentUser(editableUser);
+            setIsEditing(false);
+            message.success("Profile updated successfully");
+            
+            // Verify that the data was saved - fetch again from server
+            userService.getUserById(Number(currentUser.id))
+              .then(updatedUser => {
+                console.log("Retrieved user after update:", updatedUser);
+                console.log("User availability after save:", updatedUser.availability);
+              })
+              .catch(err => {
+                console.warn("Could not verify update:", err);
+              });
           })
           .catch(err => {
-            console.warn("Could not update profile on server:", err);
+            console.error("Error updating profile on server:", err);
+            message.error("Failed to update profile on server. Check console for details.");
+            
+            // Still update UI to avoid losing user edits
+            setCurrentUser(editableUser);
+            setIsEditing(false);
           });
-          
-        // Always update UI immediately
-        setCurrentUser(editableUser);
-        setIsEditing(false);
-        message.success("Profile updated");
       } catch (error) {
-        console.error("Error updating profile:", error);
+        console.error("Fatal error updating profile:", error);
         // Fallback: still update the UI
         setCurrentUser(editableUser);
         setIsEditing(false);
-        message.info("Profile updated locally only");
+        message.info("Profile updated locally only, server update failed");
       }
     } catch (error) {
       console.error("Error updating profile:", error);
