@@ -25,6 +25,9 @@ const ProfilePage = () => {
   const [editableUser, setEditableUser] = useState<UserProfile | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const isAdmin = (email: string | undefined): boolean => {
+    return email === "admin@example.com";
+  };
 
   // Fetch user data
   useEffect(() => {
@@ -131,61 +134,71 @@ const ProfilePage = () => {
               userProfile.creationDate = apiUser.creationDate || userProfile.creationDate;
               userProfile.profileImage = apiUser.profilePicture || userProfile.profileImage;
               
-              // Get detailed user information if possible
-              try {
-                console.log("Fetching detailed user info for ID:", apiUser.id);
-                const fullDetails = await userService.getUserById(Number(apiUser.id));
-                
+              if (!isAdmin(apiUser.email)) {
+                // Get detailed user information if possible
+                try {
+                  console.log("Fetching detailed user info for ID:", apiUser.id);
+                  const fullDetails = await userService.getUserById(Number(apiUser.id));
+                  
                 if (fullDetails) {
-                  // Log the full user details from the server for debugging
-                  console.log("Full user details received:", fullDetails);
-                  
-                  // Update with full details if available
-                  userProfile.bio = fullDetails.bio || userProfile.bio;
-                  
-                  // Add study level from full details
-                  console.log("Study level from server:", fullDetails.studyLevel);
-                  userProfile.studyLevel = fullDetails.studyLevel || userProfile.studyLevel;
-                  
-                  // Handle study goals
-                  if (fullDetails.studyGoals) {
-                    userProfile.studyGoals = Array.isArray(fullDetails.studyGoals) 
-                      ? fullDetails.studyGoals.join(", ") 
-                      : fullDetails.studyGoals;
-                  }
-                  
-                  // Store full course data in userCourses (new field)
-                  console.log("User courses from server:", fullDetails.userCourses);
-                  if (fullDetails.userCourses && fullDetails.userCourses.length > 0) {
-                    userProfile.userCourses = fullDetails.userCourses;
-                    console.log("Set userCourses to:", userProfile.userCourses);
-                  } else {
-                    console.log("No userCourses found in API response");
-                  }
-                  
-                  // Keep backward compatibility with studyLevels
-                  console.log("Course selections from server:", fullDetails.courseSelections);
-                  if (fullDetails.courseSelections && fullDetails.courseSelections.length > 0) {
-                    userProfile.studyLevels = fullDetails.courseSelections.map(course => ({
-                      subject: course.courseName || String(course.courseId),
-                      grade: "N/A",
-                      level: course.knowledgeLevel || "Beginner"
-                    }));
-                    console.log("Set studyLevels to:", userProfile.studyLevels);
+                    // Log the full user details from the server for debugging
+                    console.log("Full user details received:", fullDetails);
                     
-                    // If userCourses is not set but courseSelections exists, create userCourses from courseSelections
-                    if (!userProfile.userCourses || userProfile.userCourses.length === 0) {
-                      userProfile.userCourses = fullDetails.courseSelections.map(course => ({
-                        courseId: course.courseId,
-                        courseName: course.courseName || String(course.courseId),
-                        knowledgeLevel: course.knowledgeLevel
-                      }));
-                      console.log("Created userCourses from courseSelections:", userProfile.userCourses);
+                    // Update with full details if available
+                    userProfile.bio = fullDetails.bio || userProfile.bio;
+                    
+                    // Add study level from full details
+                    console.log("Study level from server:", fullDetails.studyLevel);
+                    userProfile.studyLevel = fullDetails.studyLevel || userProfile.studyLevel;
+                    
+                    // Handle study goals
+                    if (fullDetails.studyGoals) {
+                      userProfile.studyGoals = Array.isArray(fullDetails.studyGoals) 
+                        ? fullDetails.studyGoals.join(", ") 
+                        : fullDetails.studyGoals;
                     }
-                  }
+                    
+                    // Store full course data in userCourses (new field)
+                    console.log("User courses from server:", fullDetails.userCourses);
+                    if (fullDetails.userCourses && fullDetails.userCourses.length > 0) {
+                      userProfile.userCourses = fullDetails.userCourses;
+                      console.log("Set userCourses to:", userProfile.userCourses);
+                    } else {
+                      console.log("No userCourses found in API response");
+                    }
+                    
+                    // Keep backward compatibility with studyLevels
+                    console.log("Course selections from server:", fullDetails.courseSelections);
+                    if (fullDetails.courseSelections && fullDetails.courseSelections.length > 0) {
+                      userProfile.studyLevels = fullDetails.courseSelections.map(course => ({
+                        subject: course.courseName || String(course.courseId),
+                        grade: "N/A",
+                        level: course.knowledgeLevel || "Beginner"
+                      }));
+                      console.log("Set studyLevels to:", userProfile.studyLevels);
+                      
+                      // If userCourses is not set but courseSelections exists, create userCourses from courseSelections
+                      if (!userProfile.userCourses || userProfile.userCourses.length === 0) {
+                        userProfile.userCourses = fullDetails.courseSelections.map(course => ({
+                          courseId: course.courseId,
+                          courseName: course.courseName || String(course.courseId),
+                          knowledgeLevel: course.knowledgeLevel
+                        }));
+                        console.log("Created userCourses from courseSelections:", userProfile.userCourses);
+                      }
+                    } 
+                  }  
+                } catch (detailsErr) {
+                  console.warn("Could not get full user details", detailsErr);
                 }
-              } catch (detailsErr) {
-                console.warn("Could not get full user details, using partial data", detailsErr);
+              } else {
+                console.log("Admin user detected. Skipping fullDetails fetch.");
+                          
+                userProfile.userCourses = [];
+                userProfile.studyLevels = [];
+                userProfile.bio = "This is admin profile";
+                userProfile.studyGoals = "System control";
+                userProfile.studyLevel = "None";
               }
             } else {
               console.warn("User authentication returned null user");
