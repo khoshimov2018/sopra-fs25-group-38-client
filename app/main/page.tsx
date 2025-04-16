@@ -170,6 +170,7 @@ const MainPage: React.FC = () => {
       const user = await userService.getCurrentUser();
       if (user) {
         setCurrentUser(user);
+        localStorage.setItem("currentUserId", user.id.toString()); // 存储 currentUserId
       }
     } catch (error) {
       console.error("Error fetching current user:", error);
@@ -465,8 +466,18 @@ const MainPage: React.FC = () => {
                 <Link href="/profile">
                   <button className={styles.iconButton}><UserOutlined /></button>
                 </Link>
-                <Link href="/chat">
-                  <button className={styles.iconButton}><MessageOutlined /></button>
+                <Link
+                  href={
+                    currentUser
+                      ? `/chat/${currentUser.id}`
+                      : localStorage.getItem("currentUserId")
+                      ? `/chat/${localStorage.getItem("currentUserId")}`
+                      : "#"
+                  }
+                >
+                  <button className={styles.iconButton} disabled={!currentUser && !localStorage.getItem("currentUserId")}>
+                    <MessageOutlined />
+                  </button>
                 </Link>
                 <button className={styles.iconButton} onClick={handleFilterClick}><FilterOutlined /></button>
                 <button
@@ -541,8 +552,18 @@ const MainPage: React.FC = () => {
               <Link href="/profile">
                 <button className={styles.iconButton}><UserOutlined /></button>
               </Link>
-              <Link href="/chat">
-                <button className={styles.iconButton}><MessageOutlined /></button>
+              <Link
+                href={
+                  currentUser
+                    ? `/chat/${currentUser.id}`
+                    : localStorage.getItem("currentUserId")
+                    ? `/chat/${localStorage.getItem("currentUserId")}`
+                    : "#"
+                }
+              >
+                <button className={styles.iconButton} disabled={!currentUser && !localStorage.getItem("currentUserId")}>
+                  <MessageOutlined />
+                </button>
               </Link>
               <button className={styles.iconButton} onClick={handleFilterClick}><FilterOutlined /></button>
               <button
