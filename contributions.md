@@ -109,6 +109,8 @@ From Zhidian: Sorry for the inconvenience. For the commit after the email, I hav
 
 ## Contributions Week 4 - [Begin Date] to [End Date]
 
+| **[@notsofun]** | [16.04.2025]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-client/commit/85e3ff0eae9119e597dfcca124077b5aaff4dc7f] | [Fixed bugs in chatting and creating groups] | [This is a key user story in our project] |
+
 _Continue with the same table format as above._
 
 ---
