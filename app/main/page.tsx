@@ -223,7 +223,9 @@ const MainPage: React.FC = () => {
                   <button className={styles.iconButton}><UserOutlined /></button>
                 </Link>
                 <Link href="#" id="chat-link">
-                  <button className={styles.iconButton} disabled id="chat-button"><MessageOutlined /></button>
+                  <button className={styles.iconButton} disabled id="chat-button">
+                    <MessageOutlined />
+                  </button>
                 </Link>
                 <button className={styles.iconButton} onClick={() => setFilterModalVisible(true)}><FilterOutlined /></button>
                 <button className={styles.iconButton} onClick={() => { localStorage.removeItem("token"); clearToken(); router.push("/login"); }}><LogoutOutlined /></button>
@@ -261,7 +263,9 @@ const MainPage: React.FC = () => {
                 <button className={styles.iconButton}><UserOutlined /></button>
               </Link>
               <Link href="#" id="chat-link-main">
-                <button className={styles.iconButton} disabled id="chat-button-main"><MessageOutlined /></button>
+                <button className={styles.iconButton} disabled id="chat-button-main">
+                  <MessageOutlined />
+                </button>
               </Link>
               <button className={styles.iconButton} onClick={() => setFilterModalVisible(true)}><FilterOutlined /></button>
               <button className={styles.iconButton} onClick={() => { localStorage.removeItem("token"); clearToken(); router.push("/login"); }}><LogoutOutlined /></button>
