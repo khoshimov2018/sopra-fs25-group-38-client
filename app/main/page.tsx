@@ -619,7 +619,7 @@ const MainPage: React.FC = () => {
                 <Link href="/profile">
                   <button className={styles.iconButton}><UserOutlined /></button>
                 </Link>
-                <Link href="#" id="chat-link">
+                <Link href={`/chat/${currentUser?.id}`}>
                   <button className={styles.iconButton} disabled id="chat-button">
                     <MessageOutlined />
                   </button>
@@ -697,7 +697,7 @@ const MainPage: React.FC = () => {
               <Link href="/profile">
                 <button className={styles.iconButton}><UserOutlined /></button>
               </Link>
-              <Link href="#" id="chat-link-main">
+              <Link href={`/chat/${currentUser?.id}`}>
                 <button className={styles.iconButton} disabled id="chat-button-main">
                   <MessageOutlined />
                 </button>

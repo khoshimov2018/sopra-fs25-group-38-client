@@ -514,7 +514,7 @@ const ProfilePage = () => {
             <Link href="/main" className={mainStyles.logoLink}><Logo className={mainStyles.headerLogo} /></Link>
             <div className={mainStyles.headerRight}>
               <Link href="/profile"><button className={mainStyles.iconButton}><UserOutlined /></button></Link>
-              <Link href="/messages"><button className={mainStyles.iconButton}><MessageOutlined /></button></Link>
+              <Link href={`/chat/${currentUser?.id}`}><button className={mainStyles.iconButton}><MessageOutlined /></button></Link>
               <button className={mainStyles.iconButton} onClick={handleLogout}><LogoutOutlined /></button>
             </div>
           </div>

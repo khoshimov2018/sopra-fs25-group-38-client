@@ -417,10 +417,9 @@ const handleSubmitGroup = async () => {
               <Link href="/profile">
                 <button className={styles.iconButton}><UserOutlined /></button>
               </Link>
-              <Link href="/chat">
+              <Link href={`/chat/${parsedUserId}`}>
                 <button className={styles.iconButton}><MessageOutlined /></button>
               </Link>
-              <button className={styles.iconButton} onClick={handleLogout}><FilterOutlined /></button>
               <button
                 className={styles.iconButton}
                 onClick={actualLogout}
