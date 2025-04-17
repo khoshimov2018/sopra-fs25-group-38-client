@@ -197,34 +197,17 @@ const ProfilePage = () => {
     return errors.length ? errors : null;
   };
 
-  const handleSaveProfile = async () => {
-    if (!editableUser || !currentUser?.id) return;
-    const { userService } = apiService;
-    if (!userService) return;
-
-    // Validate all required fields
-    const validationErrors = validateProfile();
-    if (validationErrors) {
-      message.error(
-        <div>
-          <div>Please fix the following errors:</div>
-          <ul style={{ marginTop: '8px', marginBottom: 0, paddingLeft: '20px' }}>
-            {validationErrors.map((error, index) => (
-              <li key={index}>{error}</li>
-            ))}
-          </ul>
-        </div>
-      );
-      return;
-    }
-  
-    // ✅ Construct courseSelections properly and validate for duplicates
-    let courseSelections = (editableUser.userCourses || []).map((course) => {
-      return {
-        courseId: course.courseId,
-        knowledgeLevel: course.knowledgeLevel || 'BEGINNER'
-      };
-    }).filter(c => c.courseId !== 0); // skip empty courses
+  /**
+   * Prepare course selections from user data
+   * @param userCourses User's selected courses
+   * @returns Object containing course selections and any duplicate course IDs
+   */
+  const prepareCourseSelections = (userCourses = []) => {
+    // Map and filter courses
+    const courseSelections = userCourses.map((course) => ({
+      courseId: course.courseId,
+      knowledgeLevel: course.knowledgeLevel || 'BEGINNER'
+    })).filter(c => c.courseId !== 0); // skip empty courses
     
     // Check for duplicate courses
     const uniqueCourseIds = new Set();
@@ -238,105 +221,185 @@ const ProfilePage = () => {
       }
     });
     
+    return { courseSelections, duplicateCourses };
+  };
+
+  /**
+   * Process image for upload, compressing if needed
+   * @param profileImage Original profile image
+   * @returns Processed image suitable for upload
+   */
+  const processProfileImage = async (profileImage = "") => {
+    // If there's no image or it's not a data URL, return as is
+    if (!profileImage || !profileImage.startsWith('data:image')) {
+      return profileImage;
+    }
+    
+    // If image is small enough, return as is
+    if (profileImage.length <= 20000) {
+      return profileImage;
+    }
+    
+    console.log("Image may be too large for server:", profileImage.length, "bytes");
+    
+    try {
+      // First compression with smaller dimensions and lower quality
+      let compressed = await resizeImage(profileImage, 250, 250);
+      
+      // If still too large, compress even more aggressively
+      if (compressed.length > 20000) {
+        console.log("First compression not sufficient, trying more aggressive compression");
+        compressed = await resizeImage(compressed, 200, 200);
+      }
+      
+      console.log("Compressed image from", profileImage.length, "to", compressed.length, "bytes");
+      return compressed;
+    } catch (error) {
+      console.error("Error in image compression, using original:", error);
+      return profileImage;
+    }
+  };
+
+  /**
+   * Create profile update DTO from editable user data
+   * @param user User data to prepare
+   * @param courseSelections Prepared course selections
+   * @param profileImageToSave Processed profile image
+   * @returns UserPutDTO ready for API submission
+   */
+  const createProfileUpdateDTO = (user, courseSelections, profileImageToSave) => {
+    return {
+      name: user.name || "",
+      bio: user.bio || "",
+      profilePicture: profileImageToSave,
+      availability: user.availability,
+      studyLevel: user.studyLevel || "",
+      studyGoals: typeof user.studyGoals === 'string'
+        ? user.studyGoals.split(',').map(g => g.trim()).filter(Boolean)
+        : user.studyGoals || [],
+      courseSelections: courseSelections
+    };
+  };
+
+  /**
+   * Process updated user data after successful save
+   * @param updatedUser User data from API
+   * @param currentToken Current authentication token
+   * @param currentImage Current profile image
+   * @returns Processed user profile
+   */
+  const processUpdatedUserData = (updatedUser, currentToken, currentImage, currentPicture) => {
+    return {
+      ...updatedUser,
+      token: currentToken,
+      profileImage: currentImage,
+      profilePicture: currentPicture,
+      studyGoals: Array.isArray(updatedUser.studyGoals) 
+        ? updatedUser.studyGoals.join(", ") 
+        : updatedUser.studyGoals,
+      studyLevels: updatedUser.userCourses?.map(course => ({
+        subject: course.courseName || String(course.courseId),
+        grade: "N/A",
+        level: course.knowledgeLevel || "Beginner"
+      })) || [],
+      userCourses: updatedUser.userCourses || []
+    };
+  };
+
+  /**
+   * Handle API errors during profile save
+   * @param err Error from API
+   */
+  const handleProfileSaveError = (err) => {
+    console.error("Save failed", err);
+    
+    if (!(err instanceof Error)) {
+      message.error("Failed to save profile");
+      return;
+    }
+    
+    const errorMessage = err.message;
+    if (errorMessage.includes('Availability is required')) {
+      message.error('Availability is required');
+    } else if (errorMessage.includes('Study goals are required')) {
+      message.error('Study goals are required');
+    } else if (errorMessage.includes('At least one course must be selected')) {
+      message.error('At least one course must be selected');
+    } else {
+      message.error("Failed to save profile");
+    }
+  };
+
+  /**
+   * Display validation errors to user
+   * @param errors Array of validation error messages
+   */
+  const displayValidationErrors = (errors) => {
+    message.error(
+      <div>
+        <div>Please fix the following errors:</div>
+        <ul style={{ marginTop: '8px', marginBottom: 0, paddingLeft: '20px' }}>
+          {errors.map((error, index) => (
+            <li key={index}>{error}</li>
+          ))}
+        </ul>
+      </div>
+    );
+  };
+  
+  /**
+   * Main handler for saving user profile
+   */
+  const handleSaveProfile = async () => {
+    // Early returns for missing data
+    if (!editableUser || !currentUser?.id) return;
+    const { userService } = apiService;
+    if (!userService) return;
+
+    // Validate all required fields
+    const validationErrors = validateProfile();
+    if (validationErrors) {
+      displayValidationErrors(validationErrors);
+      return;
+    }
+  
+    // Prepare course selections and check for duplicates
+    const { courseSelections, duplicateCourses } = prepareCourseSelections(editableUser.userCourses);
+    
     if (duplicateCourses.length > 0) {
       message.error("You have selected some courses multiple times. Please select each course only once.");
       return;
     }
     
-    // Create the profile update object
-    // Important: courseSelections must be explicitly included with exactly the required format
-    // Prepare the profile image - ensure it's a reasonable size for the database
-    let profileImageToSave = editableUser.profileImage || "";
-    if (profileImageToSave && profileImageToSave.startsWith('data:image')) {
-      // If image is larger than 20KB, it might be too large for the server
-      if (profileImageToSave.length > 20000) {
-        console.log("Image may be too large for server:", profileImageToSave.length, "bytes");
-        try {
-          // Apply extra compression before saving
-          const compressPromise = async () => {
-            try {
-              // First compression with smaller dimensions and lower quality
-              let compressed = await resizeImage(profileImageToSave, 250, 250);
-              
-              // If still too large, compress even more aggressively
-              if (compressed.length > 20000) {
-                console.log("First compression not sufficient, trying more aggressive compression");
-                compressed = await resizeImage(compressed, 200, 200);
-              }
-              
-              console.log("Compressed image from", profileImageToSave.length, "to", compressed.length, "bytes");
-              return compressed;
-            } catch (err) {
-              console.error("Error during extra compression:", err);
-              return profileImageToSave;
-            }
-          };
-          
-          // Wait for compression to complete before continuing
-          profileImageToSave = await compressPromise();
-        } catch (error) {
-          console.error("Error in image compression, using original:", error);
-        }
-      }
-      
-      console.log("Final image size for upload:", profileImageToSave.length, "bytes");
-    }
+    // Process profile image
+    const profileImageToSave = await processProfileImage(editableUser.profileImage || "");
+    console.log("Final image size for upload:", profileImageToSave.length, "bytes");
 
-    const profileUpdate: UserPutDTO = {
-      name: editableUser.name || "",
-      bio: editableUser.bio || "",
-      profilePicture: profileImageToSave,
-      availability: editableUser.availability,
-      studyLevel: editableUser.studyLevel || "",
-      studyGoals: typeof editableUser.studyGoals === 'string'
-        ? editableUser.studyGoals.split(',').map(g => g.trim()).filter(Boolean)
-        : editableUser.studyGoals || [],
-      courseSelections: courseSelections
-    };
+    // Create the profile update object
+    const profileUpdate = createProfileUpdateDTO(editableUser, courseSelections, profileImageToSave);
   
     try {
       console.log("📦 Final payload for PUT:", JSON.stringify(profileUpdate, null, 2));
 
+      // Update user profile and fetch updated data
       await userService.updateUser(currentUser.id, profileUpdate);
       const updatedUser = await userService.getUserById(currentUser.id);
       
-      // Process the updated user properly to ensure studyLevels and userCourses are synchronized
-      const processedUser: UserProfile = {
-        ...updatedUser,
-        token: currentUser.token,
-        profileImage: editableUser.profileImage, // Preserve the current profile image
-        profilePicture: editableUser.profilePicture, // Preserve the current profile picture
-        studyGoals: Array.isArray(updatedUser.studyGoals) ? updatedUser.studyGoals.join(", ") : updatedUser.studyGoals,
-        studyLevels: updatedUser.userCourses?.map(course => ({
-          subject: course.courseName || String(course.courseId),
-          grade: "N/A",
-          level: course.knowledgeLevel || "Beginner"
-        })) || [],
-        userCourses: updatedUser.userCourses || []
-      };
+      // Process the updated user properly
+      const processedUser = processUpdatedUserData(
+        updatedUser, 
+        currentUser.token, 
+        editableUser.profileImage,
+        editableUser.profilePicture
+      );
       
+      // Update state and notify user
       setCurrentUser(processedUser);
       setEditableUser(processedUser);
       setIsEditing(false);
       message.success("Profile updated");
     } catch (err) {
-      console.error("Save failed", err);
-      
-      // Extract and display specific validation errors from the backend if available
-      if (err instanceof Error) {
-        const errorMessage = err.message;
-        if (errorMessage.includes('Availability is required')) {
-          message.error('Availability is required');
-        } else if (errorMessage.includes('Study goals are required')) {
-          message.error('Study goals are required');
-        } else if (errorMessage.includes('At least one course must be selected')) {
-          message.error('At least one course must be selected');
-        } else {
-          message.error("Failed to save profile");
-        }
-      } else {
-        message.error("Failed to save profile");
-      }
+      handleProfileSaveError(err);
     }
   };
   

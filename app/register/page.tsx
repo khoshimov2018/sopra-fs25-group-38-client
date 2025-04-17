@@ -64,56 +64,242 @@ const Register: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  /**
+   * Validate course selections
+   * @param selections Course selections to validate
+   * @returns Object containing validation results
+   */
+  const validateCourseSelections = (selections: CourseSelection[]) => {
+    // Filter out any course selections with courseId = 0 (unselected)
+    const filteredSelections = selections.filter(sel => sel.courseId !== 0);
+
+    // Check if at least one course is selected
+    if (filteredSelections.length === 0) {
+      return { 
+        isValid: false, 
+        filteredSelections,
+        error: "Please select at least one course" 
+      };
+    }
+    
+    // Check for duplicate courses
+    const uniqueCourseIds = new Set<number>();
+    const duplicateCourses: number[] = [];
+    
+    filteredSelections.forEach(course => {
+      if (uniqueCourseIds.has(course.courseId)) {
+        duplicateCourses.push(course.courseId);
+      } else {
+        uniqueCourseIds.add(course.courseId);
+      }
+    });
+    
+    if (duplicateCourses.length > 0) {
+      return { 
+        isValid: false, 
+        filteredSelections,
+        error: "You have selected some courses multiple times. Please select each course only once." 
+      };
+    }
+
+    return { 
+      isValid: true, 
+      filteredSelections,
+      error: null 
+    };
+  };
+
+  /**
+   * Create registration payload
+   * @param values Form values
+   * @param filteredSelections Validated course selections
+   * @returns Registration payload
+   */
+  const createRegistrationPayload = (values: FormFieldProps, filteredSelections: CourseSelection[]): UserRegistration => {
+    return {
+      name: values.name,
+      email: values.email,
+      password: values.password,
+      studyLevel: values.studyLevel,
+      studyGoals: values.studyGoals, // Send as array, not as string
+      courseSelections: filteredSelections
+    };
+  };
+
+  /**
+   * Process successful registration
+   * @param response Registration response
+   * @param credentials Login credentials
+   */
+  const processSuccessfulRegistration = async (
+    response: User, 
+    credentials: { email: string; password: string }
+  ) => {
+    try {
+      // Try to auto-login with the same credentials
+      console.log("Auto-logging in after registration");
+      const loginResponse = await apiService.apiService.post<User>("/login", credentials as UserLogin);
+      
+      if (loginResponse?.token) {
+        handleSuccessfulLogin(loginResponse.token, "Registration successful! You are now online.");
+        return;
+      }
+      
+      // Fall back to registration token if auto-login didn't return a token
+      if (response.token) {
+        handleSuccessfulLogin(response.token, "Registration successful!");
+        return;
+      }
+      
+      throw new Error("No token returned from backend");
+    } catch (loginError) {
+      console.error("Auto-login failed:", loginError);
+      
+      // Fall back to registration token if available
+      if (response.token) {
+        handleSuccessfulLogin(
+          response.token, 
+          "Registration successful! (Login failed, please log in manually to appear online)"
+        );
+        return;
+      }
+      
+      throw new Error("No token returned from backend");
+    }
+  };
+
+  /**
+   * Handle successful login process
+   * @param token Authentication token
+   * @param successMessage Message to display to the user
+   */
+  const handleSuccessfulLogin = (token: string, successMessage: string) => {
+    console.log("Setting token and redirecting");
+    localStorage.setItem("token", token);
+    setToken(token);
+    
+    message.success(successMessage);
+    setTimeout(() => {
+      window.location.href = "/main";
+    }, 500);
+  };
+
+  /**
+   * Handle registration error
+   * @param error Error object
+   */
+  const handleRegistrationError = (error: unknown) => {
+    console.error("Registration error:", error);
+    
+    if (error instanceof Error) {
+      console.error("Full error object:", JSON.stringify(error, null, 2));
+      
+      if ('info' in error) {
+        try {
+          const errorInfo = JSON.parse((error as any).info);
+          console.error("Error info:", errorInfo);
+        } catch (e) {
+          if (e instanceof Error) {
+            console.error("Error parsing info:", e.message);
+          }
+          console.error("Error info (not JSON):", (error as any).info);
+        }
+      }
+      
+      message.destroy();
+      setIsLoading(false);
+      
+      const err = error.message ?? "";
+      console.log("Error message:", err);
+      
+      displayUserFriendlyError(err);
+    } else {
+      message.error("Registration failed. Please try again.");
+      setIsLoading(false);
+    }
+  };
+
+  /**
+   * Display user-friendly error based on error message
+   * @param errorMessage Error message from API
+   */
+  const displayUserFriendlyError = (errorMessage: string) => {
+    if (errorMessage.includes("409") || errorMessage.includes("Conflict") || errorMessage.includes("already exists")) {
+      handleEmailAlreadyExists();
+    } else if (errorMessage.includes("400")) {
+      handleBadRequestError(errorMessage);
+    } else if (errorMessage.includes("parse")) {
+      message.error("There was an error processing the server response. Please try again.");
+    } else if (errorMessage.includes("empty response")) {
+      message.error("The server returned an empty response. Please try again.");
+    } else if (errorMessage.includes("fetch") || errorMessage.includes("Network")) {
+      message.error("Server not reachable. Is backend running?");
+    } else {
+      message.error("Registration failed. Please try again.");
+    }
+  };
+
+  /**
+   * Handle email already exists error
+   */
+  const handleEmailAlreadyExists = () => {
+    message.error("Email already taken. Please use a different email address.");
+    
+    // Focus the email field for better UX
+    form.setFields([
+      {
+        name: 'email',
+        errors: ['This email is already registered. Please use a different email.']
+      }
+    ]);
+  };
+
+  /**
+   * Handle bad request errors with specific field messages
+   * @param errorMessage Error message from API
+   */
+  const handleBadRequestError = (errorMessage: string) => {
+    const lowerCaseError = errorMessage.toLowerCase();
+    
+    if (lowerCaseError.includes("email")) {
+      message.error("Email is required or invalid.");
+    } else if (lowerCaseError.includes("password")) {
+      message.error("Password is required or too short (minimum 8 characters).");
+    } else if (lowerCaseError.includes("study level")) {
+      message.error("Study level is required.");
+    } else if (lowerCaseError.includes("study goals")) {
+      message.error("Study goals are required.");
+    } else if (lowerCaseError.includes("course")) {
+      message.error("At least one course selection is required.");
+    } else if (lowerCaseError.includes("invalid input data")) {
+      message.error("Please check all required fields are filled correctly.");
+    } else {
+      // Generic message for other 400 errors
+      message.error("Invalid input data. Please check all fields and try again.");
+    }
+  };
+
+  /**
+   * Main handler for user registration
+   */
   const handleRegister = async (values: FormFieldProps) => {
     try {
       setIsLoading(true);
       message.loading("Creating account...");
 
-      // Filter out any course selections with courseId = 0 (unselected)
-      const filteredSelections = courseSelections
-        .filter(sel => sel.courseId !== 0);
-
-      // Check if at least one course is selected
-      if (filteredSelections.length === 0) {
-        message.error("Please select at least one course");
-        setIsLoading(false);
-        return;
-      }
-      
-      // Check for duplicate courses
-      const uniqueCourseIds = new Set();
-      const duplicateCourses = [];
-      
-      filteredSelections.forEach(course => {
-        if (uniqueCourseIds.has(course.courseId)) {
-          duplicateCourses.push(course.courseId);
-        } else {
-          uniqueCourseIds.add(course.courseId);
-        }
-      });
-      
-      if (duplicateCourses.length > 0) {
-        message.error("You have selected some courses multiple times. Please select each course only once.");
+      // Validate course selections
+      const validation = validateCourseSelections(courseSelections);
+      if (!validation.isValid) {
+        message.error(validation.error);
         setIsLoading(false);
         return;
       }
 
-      // The backend might expect studyGoals as an array, so let's try sending it as is
-      // Don't join into a string as the backend probably expects an array of strings
-      
-      // Create a structured payload that matches backend expectations
-      const payload: UserRegistration = {
-        name: values.name,
-        email: values.email,
-        password: values.password,
-        studyLevel: values.studyLevel,
-        studyGoals: values.studyGoals, // Send as array, not as string
-        courseSelections: filteredSelections
-      };
-
+      // Create payload
+      const payload = createRegistrationPayload(values, validation.filteredSelections);
       console.log("Registration payload:", JSON.stringify(payload, null, 2));
 
-      // Send registration request and handle possible empty response
+      // Send registration request
       const response = await apiService.apiService.post<User>("/users/register", payload);
       console.log("Registration successful:", response);
       
@@ -122,115 +308,16 @@ const Register: React.FC = () => {
         throw new Error("Server returned an empty response");
       }
 
-      // Store registration credentials to use for auto-login
+      // Store registration credentials for auto-login
       const credentials = {
         email: values.email,
         password: values.password
       };
 
-      // Try to auto-login with the same credentials
-      try {
-        console.log("Auto-logging in after registration");
-        const loginResponse = await apiService.apiService.post<User>("/login", credentials as UserLogin);
-        
-        if (loginResponse && loginResponse.token) {
-          console.log("Auto-login successful, setting token");
-          localStorage.setItem("token", loginResponse.token);
-          setToken(loginResponse.token);
-          
-          message.success("Registration successful! You are now online.");
-          setTimeout(() => {
-            window.location.href = "/main";
-          }, 500);
-        } else {
-          // Fall back to registration token if auto-login didn't return a token
-          if (response.token) {
-            console.log("Using registration token instead");
-            localStorage.setItem("token", response.token);
-            setToken(response.token);
-            
-            message.success("Registration successful!");
-            setTimeout(() => {
-              window.location.href = "/main";
-            }, 500);
-          } else {
-            throw new Error("No token returned from backend");
-          }
-        }
-      } catch (loginError) {
-        console.error("Auto-login failed:", loginError);
-        
-        // Fall back to registration token if available
-        if (response.token) {
-          console.log("Auto-login failed, using registration token");
-          localStorage.setItem("token", response.token);
-          setToken(response.token);
-          
-          message.success("Registration successful! (Login failed, please log in manually to appear online)");
-          setTimeout(() => {
-            window.location.href = "/main";
-          }, 500);
-        } else {
-          throw new Error("No token returned from backend");
-        }
-      }
-    } catch (error: any) {
-      console.error("Registration error:", error);
-      console.error("Full error object:", JSON.stringify(error, null, 2));
-      
-      if (error.info) {
-        try {
-          const errorInfo = JSON.parse(error.info);
-          console.error("Error info:", errorInfo);
-        } catch (e) {
-          console.error("Error info (not JSON):", error.info);
-        }
-      }
-      
-      message.destroy();
-      setIsLoading(false);
-      
-      const err = error?.message || "";
-      console.log("Error message:", err);
-      
-      // Handle various error scenarios with user-friendly messages
-      if (err.includes("409") || err.includes("Conflict") || err.includes("already exists")) {
-        message.error("Email already taken. Please use a different email address.");
-        
-        // Focus the email field for better UX
-        form.setFields([
-          {
-            name: 'email',
-            errors: ['This email is already registered. Please use a different email.']
-          }
-        ]);
-      } else if (err.includes("400")) {
-        // For 400 Bad Request, check specific field errors
-        if (err.toLowerCase().includes("email")) {
-          message.error("Email is required or invalid.");
-        } else if (err.toLowerCase().includes("password")) {
-          message.error("Password is required or too short (minimum 8 characters).");
-        } else if (err.toLowerCase().includes("study level")) {
-          message.error("Study level is required.");
-        } else if (err.toLowerCase().includes("study goals")) {
-          message.error("Study goals are required.");
-        } else if (err.toLowerCase().includes("course")) {
-          message.error("At least one course selection is required.");
-        } else if (err.toLowerCase().includes("invalid input data")) {
-          message.error("Please check all required fields are filled correctly.");
-        } else {
-          // Generic message for other 400 errors
-          message.error("Invalid input data. Please check all fields and try again.");
-        }
-      } else if (err.includes("parse")) {
-        message.error("There was an error processing the server response. Please try again.");
-      } else if (err.includes("empty response")) {
-        message.error("The server returned an empty response. Please try again.");
-      } else if (err.includes("fetch") || err.includes("Network")) {
-        message.error("Server not reachable. Is backend running?");
-      } else {
-        message.error("Registration failed. Please try again.");
-      }
+      // Process registration and handle login
+      await processSuccessfulRegistration(response, credentials);
+    } catch (error) {
+      handleRegistrationError(error);
     }
   };
 
@@ -242,7 +329,7 @@ const Register: React.FC = () => {
     
     if (isDuplicate) {
       // Find the course name for better error message
-      const courseName = availableCourses.find(c => c.id === value)?.courseName || `Course #${value}`;
+      const courseName = availableCourses.find(c => c.id === value)?.courseName ?? `Course #${value}`;
       
       message.error(`"${courseName}" is already selected. Please choose a different course.`);
       
@@ -356,21 +443,14 @@ const Register: React.FC = () => {
                           return Promise.resolve();
                         }
                         
-                        try {
-                          // Check if the email exists
-                          const exists = await userService.emailExists(value);
-                          
-                          if (exists) {
-                            return Promise.reject('This email is already registered. Please use a different email.');
-                          }
-                          
-                          return Promise.resolve();
-                        } catch (apiError) {
-                          // Log the error but continue with form submission
-                          console.warn("Email validation API error:", apiError);
-                          // Don't block registration if email check fails
-                          return Promise.resolve();
+                        // Check if the email exists
+                        const exists = await userService.emailExists(value);
+                        
+                        if (exists) {
+                          return Promise.reject(new Error('This email is already registered. Please use a different email.'));
                         }
+                        
+                        return Promise.resolve();
                       } catch (error) {
                         // If the API call fails, we still allow the form submission
                         // The server-side validation will catch duplicate emails
@@ -452,7 +532,7 @@ const Register: React.FC = () => {
                 </div>
                 
                 {courseSelections.map((entry, index) => (
-                  <Row key={index} gutter={[8, 16]} style={{ marginBottom: 16 }}>
+                  <Row key={`course-${index}-${entry.courseId}`} gutter={[8, 16]} style={{ marginBottom: 16 }}>
                     <Col span={11}>
                       <Select
                         placeholder="Select Course"

@@ -102,113 +102,167 @@ export class ApiService {
     console.log(`Response status: ${res.status} ${res.statusText}`);
     
     if (!res.ok) {
-      let errorDetail = res.statusText;
-      let errorBody: any = null;
-      
-      try {
-        // Clone the response before parsing to avoid consuming it
-        const clonedRes = res.clone();
-        const responseText = await clonedRes.text();
-        console.log(`Error response body: ${responseText}`);
-        
-        try {
-          // Only try to parse if there's actual content
-          if (responseText && responseText.trim() !== '') {
-            errorBody = JSON.parse(responseText);
-            if (errorBody?.message) {
-              errorDetail = errorBody.message;
-            } else {
-              errorDetail = JSON.stringify(errorBody);
-            }
-          } else {
-            // Handle empty response with better error message
-            console.log("Empty error response body");
-            // Use status code to provide more informative messages
-            switch (res.status) {
-              case 400:
-                errorDetail = "Bad Request - Invalid input data";
-                break;
-              case 401:
-                errorDetail = "Unauthorized - Authentication required";
-                break;
-              case 403:
-                errorDetail = "Forbidden - Insufficient permissions";
-                break;
-              case 404:
-                errorDetail = "Not Found - Resource does not exist";
-                break;
-              case 409:
-                errorDetail = "Conflict - Resource already exists";
-                break;
-              case 500:
-                errorDetail = "Server Error - Please try again later";
-                break;
-              default:
-                errorDetail = res.statusText || `HTTP Error ${res.status}`;
-            }
-          }
-        } catch (error) {
-          console.error("Error parsing response JSON:", error);
-          errorDetail = responseText || res.statusText || "Unknown error";
-        }
-      } catch (textError) {
-        console.error("Error reading response text:", textError);
-        // If reading text fails, provide meaningful fallback message
-        errorDetail = `Failed to read error details (${res.status})`;
-      }
-      
-      const detailedMessage = `${errorMessage} (${res.status}: ${errorDetail})`;
-      
-      // Only log unexpected errors as errors, log expected errors as info
-      if ([401, 403, 404].includes(res.status)) {
-        console.info("API Response:", detailedMessage);
-      } else {
-        console.error("API Error:", detailedMessage);
-      }
-      
-      const error: ApplicationError = new Error(
-        detailedMessage,
-      ) as ApplicationError;
-      error.info = JSON.stringify(
-        { status: res.status, statusText: res.statusText, body: errorBody },
-        null,
-        2,
-      );
-      error.status = res.status;
+      const error = await this.handleErrorResponse(res, errorMessage);
       throw error;
     }
     
+    return this.parseSuccessResponse<T>(res);
+  }
+  
+  /**
+   * Handle error response from API
+   * @param res Response object
+   * @param errorMessage Base error message
+   * @returns ApplicationError to be thrown
+   */
+  private async handleErrorResponse(
+    res: Response, 
+    errorMessage: string
+  ): Promise<ApplicationError> {
+    const { errorDetail, errorBody } = await this.extractErrorDetails(res);
+    const detailedMessage = `${errorMessage} (${res.status}: ${errorDetail})`;
+    
+    this.logErrorResponse(res.status, detailedMessage);
+    
+    const error: ApplicationError = new Error(detailedMessage) as ApplicationError;
+    error.info = JSON.stringify(
+      { status: res.status, statusText: res.statusText, body: errorBody },
+      null,
+      2
+    );
+    error.status = res.status;
+    
+    return error;
+  }
+  
+  /**
+   * Extract error details from an error response
+   * @param res Response object
+   * @returns Error detail message and parsed error body
+   */
+  private async extractErrorDetails(res: Response): Promise<{ errorDetail: string, errorBody: any }> {
+    let errorDetail = res.statusText;
+    let errorBody: any = null;
+    
     try {
-      // Check if response is empty
+      const clonedRes = res.clone();
+      const responseText = await clonedRes.text();
+      console.log(`Error response body: ${responseText}`);
+      
+      if (responseText && responseText.trim() !== '') {
+        const result = this.parseErrorResponseText(responseText);
+        errorBody = result.errorBody;
+        errorDetail = result.errorDetail;
+      } else {
+        errorDetail = this.getStatusCodeErrorMessage(res.status);
+      }
+    } catch (textError) {
+      console.error("Error reading response text:", textError);
+      errorDetail = `Failed to read error details (${res.status})`;
+    }
+    
+    return { errorDetail, errorBody };
+  }
+  
+  /**
+   * Parse error response text
+   * @param responseText Response text to parse
+   * @returns Parsed error body and detail message
+   */
+  private parseErrorResponseText(responseText: string): { errorBody: any, errorDetail: string } {
+    let errorBody = null;
+    let errorDetail = responseText;
+    
+    try {
+      errorBody = JSON.parse(responseText);
+      if (errorBody?.message) {
+        errorDetail = errorBody.message;
+      } else {
+        errorDetail = JSON.stringify(errorBody);
+      }
+    } catch (error) {
+      console.error("Error parsing response JSON:", error);
+      errorDetail = responseText;
+    }
+    
+    return { errorBody, errorDetail };
+  }
+  
+  /**
+   * Get appropriate error message based on status code
+   * @param statusCode HTTP status code
+   * @returns Human-readable error message
+   */
+  private getStatusCodeErrorMessage(statusCode: number): string {
+    const statusMessages: Record<number, string> = {
+      400: "Bad Request - Invalid input data",
+      401: "Unauthorized - Authentication required",
+      403: "Forbidden - Insufficient permissions",
+      404: "Not Found - Resource does not exist",
+      409: "Conflict - Resource already exists",
+      500: "Server Error - Please try again later"
+    };
+    
+    return statusMessages[statusCode] || `HTTP Error ${statusCode}`;
+  }
+  
+  /**
+   * Log error response appropriately based on status code
+   * @param statusCode HTTP status code
+   * @param message Error message to log
+   */
+  private logErrorResponse(statusCode: number, message: string): void {
+    if ([401, 403, 404].includes(statusCode)) {
+      console.info("API Response:", message);
+    } else {
+      console.error("API Error:", message);
+    }
+  }
+  
+  /**
+   * Parse successful response body
+   * @param res Response object
+   * @returns Parsed response data
+   */
+  private async parseSuccessResponse<T>(res: Response): Promise<T> {
+    try {
       const text = await res.text();
+      
       if (!text || text.trim() === '') {
         console.log("Server returned empty response body");
         return {} as T;
       }
       
-      // Try to parse as JSON
-      try {
-        const data = JSON.parse(text);
-        console.log("API response data:", data);
-        return data as T;
-      } catch (error) {
-        console.error("Error parsing JSON response:", error);
-        console.log("Raw response text:", text);
-        // Return empty object instead of throwing if we got a successful response
-        // but couldn't parse the JSON (may be empty or non-JSON)
-        if (res.ok) {
-          console.log("Response was OK but couldn't parse JSON - returning empty object");
-          return {} as T;
-        }
-        throw new Error(`Failed to parse API response: ${error}`);
-      }
+      return this.parseJsonResponseText<T>(text, res.ok);
     } catch (textError) {
       console.error("Error reading response text:", textError);
       if (res.ok) {
-        // If response is OK but we couldn't read the text, return empty object
         return {} as T;
       }
       throw new Error(`Failed to read API response: ${textError}`);
+    }
+  }
+  
+  /**
+   * Parse JSON response text
+   * @param text Response text to parse
+   * @param isOk Whether the response status was OK
+   * @returns Parsed JSON data
+   */
+  private parseJsonResponseText<T>(text: string, isOk: boolean): T {
+    try {
+      const data = JSON.parse(text);
+      console.log("API response data:", data);
+      return data as T;
+    } catch (error) {
+      console.error("Error parsing JSON response:", error);
+      console.log("Raw response text:", text);
+      
+      if (isOk) {
+        console.log("Response was OK but couldn't parse JSON - returning empty object");
+        return {} as T;
+      }
+      throw new Error(`Failed to parse API response: ${error}`);
     }
   }
 
