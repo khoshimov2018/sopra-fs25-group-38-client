@@ -167,7 +167,7 @@ const UsersList: React.FC = () => {
             rowKey="id"
             pagination={{ pageSize: 10 }}
             onRow={(record) => ({
-              onClick: () => handleProfileView(record.id || ""),
+              onClick: () => handleProfileView(record.id ?? ""),
               style: { cursor: "pointer" }
             })}
           />

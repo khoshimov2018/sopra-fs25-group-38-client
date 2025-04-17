@@ -1,14 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Checkbox, Radio, Button, List, Typography, Space, Divider } from 'antd';
+import { Modal, Checkbox, Button, List, Typography, Divider } from 'antd';
 import { useApi } from '@/hooks/useApi';
 import { Course } from '@/types/course';
 import { UserAvailability } from '@/types/dto';
 import styles from '@/styles/theme/components.module.css';
 
 const { Text, Title } = Typography;
-
-// We'll use the Course interface directly without extending it
-import { Course } from '@/types/course';
 
 interface FilterModalProps {
   visible: boolean;
@@ -44,7 +41,7 @@ const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose, onSave }) =
       const response = await courseService.getCourses();
       
       // Just use the courses as they come from the API without adding mock data
-      setCourses(response || []);
+      setCourses(response ?? []);
     } catch (error) {
       console.error('Failed to fetch courses:', error);
       // Use simplified mock data if the API fails

@@ -2,8 +2,8 @@
 
 import { useApi } from "@/hooks/useApi";
 import useLocalStorage from "@/hooks/useLocalStorage";
-import { User, UserLogin } from "@/types/user";
-import { Form, Input, App, message as antMessage } from "antd";
+import { UserLogin } from "@/types/user";
+import { Form, Input, App } from "antd";
 import { useMessage } from '@/hooks/useMessage';
 import Link from "next/link";
 import styles from "@/styles/theme/layout.module.css";
@@ -37,7 +37,7 @@ const Login: React.FC = () => {
       }
 
       // Store token and redirect
-      if (response && response.token) {
+      if (response?.token) {
         message.success("Connected to server successfully!");
         
         // Set token in localStorage directly as a string, not JSON

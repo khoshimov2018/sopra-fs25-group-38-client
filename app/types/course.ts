@@ -1,5 +1,5 @@
 // Interfaces for Course-related entities
-import { ProfileKnowledgeLevel, UserCourse } from './user';
+import { UserCourse } from './user';
 
 // Matches Course.java entity
 export interface Course {

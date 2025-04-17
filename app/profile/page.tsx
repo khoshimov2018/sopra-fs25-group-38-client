@@ -6,12 +6,12 @@ import { useApi } from "@/hooks/useApi";
 import useLocalStorage from "@/hooks/useLocalStorage";
 import { useMessage } from '@/hooks/useMessage';
 import { UserProfile } from "@/types/profile";
-import { UserAvailability, ProfileKnowledgeLevel, UserPutDTO } from "@/types/dto";
+import { ProfileKnowledgeLevel, UserPutDTO } from "@/types/dto";
 import Link from "next/link";
 import Logo from "@/components/Logo";
 import DeleteAccountModal from "@/components/DeleteAccountModal";
-import { UserOutlined, MessageOutlined, FilterOutlined, LogoutOutlined } from "@ant-design/icons";
-import { Modal, Upload, message as antdMessage } from "antd";
+import { UserOutlined, MessageOutlined, LogoutOutlined } from "@ant-design/icons";
+import { Modal, Upload } from "antd";
 import { RcFile, UploadProps } from "antd/es/upload";
 import styles from "@/styles/profile.module.css";
 import mainStyles from "@/styles/main.module.css";
@@ -61,11 +61,11 @@ const ProfilePage = () => {
           profileImage: fullDetails.profilePicture ?? "",
           studyGoals: Array.isArray(fullDetails.studyGoals) ? fullDetails.studyGoals.join(", ") : fullDetails.studyGoals,
           studyLevels: fullDetails.userCourses?.map(course => ({
-            subject: course.courseName || String(course.courseId),
+            subject: course.courseName ?? String(course.courseId),
             grade: "N/A",
-            level: course.knowledgeLevel || "Beginner"
-          })) || [],
-          userCourses: fullDetails.userCourses || []
+            level: course.knowledgeLevel ?? "Beginner"
+          })) ?? [],
+          userCourses: fullDetails.userCourses ?? []
         };
 
         setCurrentUser(userProfile);
@@ -230,7 +230,7 @@ const ProfilePage = () => {
    */
   const processProfileImage = async (profileImage = "") => {
     // If there's no image or it's not a data URL, return as is
-    if (!profileImage || !profileImage.startsWith('data:image')) {
+    if (!profileImage?.startsWith('data:image')) {
       return profileImage;
     }
     
@@ -268,14 +268,14 @@ const ProfilePage = () => {
    */
   const createProfileUpdateDTO = (user, courseSelections, profileImageToSave) => {
     return {
-      name: user.name || "",
-      bio: user.bio || "",
+      name: user.name ?? "",
+      bio: user.bio ?? "",
       profilePicture: profileImageToSave,
       availability: user.availability,
-      studyLevel: user.studyLevel || "",
+      studyLevel: user.studyLevel ?? "",
       studyGoals: typeof user.studyGoals === 'string'
         ? user.studyGoals.split(',').map(g => g.trim()).filter(Boolean)
-        : user.studyGoals || [],
+        : user.studyGoals ?? [],
       courseSelections: courseSelections
     };
   };
@@ -297,11 +297,11 @@ const ProfilePage = () => {
         ? updatedUser.studyGoals.join(", ") 
         : updatedUser.studyGoals,
       studyLevels: updatedUser.userCourses?.map(course => ({
-        subject: course.courseName || String(course.courseId),
+        subject: course.courseName ?? String(course.courseId),
         grade: "N/A",
-        level: course.knowledgeLevel || "Beginner"
-      })) || [],
-      userCourses: updatedUser.userCourses || []
+        level: course.knowledgeLevel ?? "Beginner"
+      })) ?? [],
+      userCourses: updatedUser.userCourses ?? []
     };
   };
 

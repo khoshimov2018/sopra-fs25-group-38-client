@@ -1,7 +1,6 @@
 "use client";
 
 import { message } from 'antd';
-import { useEffect } from 'react';
 
 // Create a hook that manages message API instances
 export const useMessage = () => {

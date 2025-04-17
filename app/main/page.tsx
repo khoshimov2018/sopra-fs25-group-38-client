@@ -168,12 +168,12 @@ const MainPage: React.FC = () => {
           token: u.token,
           status: u.status,
           studyStyle,
-          bio: u.bio || "",
-          studyLevel: u.studyLevel || "",
+          bio: u.bio ?? "",
+          studyLevel: u.studyLevel ?? "",
           tags,
           studyLevels,
           profileImage:
-            u.profilePicture ||
+            u.profilePicture ?? 
             `https://placehold.co/600x800/random/white.png?text=${encodeURIComponent(
               u.name
             )}`
@@ -241,7 +241,7 @@ const MainPage: React.FC = () => {
       showNextProfile();
     } catch (err: any) {
       console.error(err);
-      const msg = err?.message || "";
+      const msg = err?.message ?? "";
       if (msg.includes("block")) {
         message.info("You cannot match with this user due to block settings.");
       } else {
