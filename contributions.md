@@ -108,7 +108,8 @@ From Zhidian: Sorry for the inconvenience. For the commit after the email, I hav
 ---
 
 ## Contributions Week 4 - [Begin Date] to [End Date]
-
+| **Student**        | **Date** | **Link to Commit** | **Description**                 | **Relevance**                       |
+| ------------------ | -------- | ------------------ | ------------------------------- | ----------------------------------- |
 | **[@notsofun]** | [16.04.2025]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-client/commit/85e3ff0eae9119e597dfcca124077b5aaff4dc7f] | [Fixed bugs in chatting and creating groups] | [This is a key user story in our project] |
 | **[@RomanticSilence]** | [13/04/2025]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-server/commit/9c7535753d8a29ce48790c19c5281d48c6ca383c] | [entity & controller & service  for Chat typing indicator & user status - implementation of S16] | [essential for implementing user story 16] |
 |                    | [14/04/2025]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-server/commit/73d2a4bf3bec16564fc9a9f8fa9a9db4adc263dd] | [test suite for typing indicator & user status for user story 16] | [To make sure the api and logic work as expected] |
