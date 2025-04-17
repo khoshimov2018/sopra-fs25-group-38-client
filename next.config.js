@@ -12,9 +12,6 @@ const nextConfig = {
   experimental: {
     optimizePackageImports: ['antd']
   },
-  serverActions: {
-    bodySizeLimit: '4mb' // Increase the body size limit to 4MB
-  }
 };
 
 export default nextConfig;
