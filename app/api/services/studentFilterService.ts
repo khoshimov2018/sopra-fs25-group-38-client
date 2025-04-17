@@ -36,7 +36,7 @@ export class StudentFilterService {
       availability.forEach(avail => params.append('availability', avail.toString()));
     }
 
-    params.append('requireCourses', 'true');
+    // params.append('requireCourses', 'true');
     
     // Construct URL with query parameters
     const url = `/students${params.toString() ? '?' + params.toString() : ''}`;

@@ -160,7 +160,7 @@ input:focus, .ant-input:focus, .ant-input-password:focus {
 /* Message styling - consistent styling with dark theme */
 .ant-message-notice-content {
   background-color: var(--bg-card) !important;
-  color: var(--text-light) !important;
+  color: var(--text-dark) !important;
   font-weight: 500;
   border-radius: 4px;
   box-shadow: 0 3px 6px var(--shadow-color) !important;
@@ -168,12 +168,12 @@ input:focus, .ant-input:focus, .ant-input-password:focus {
 
 /* Force all Ant Design message text to be light color */
 .ant-message-custom-content {
-  color: var(--text-light) !important;
+  color: var(--text-dark) !important;
 }
 
 /* Target the actual text span inside messages */
 .ant-message-custom-content span {
-  color: var(--text-light) !important;
+  color: var(--text-dark) !important;
 }
 
 /* Success message styling */
@@ -230,7 +230,7 @@ input:focus, .ant-input:focus, .ant-input-password:focus {
 
 /* Force message text to be light */
 .ant-message .anticon {
-  color: var(--text-light) !important;
+  color: var(--text-dark) !important;
 }
 
 /* Form validation error messages */

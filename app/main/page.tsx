@@ -50,6 +50,7 @@ const MainPage: React.FC = () => {
   const [profiles, setProfiles] = useState<UserProfile[]>([]);
   const [currentProfileIndex, setCurrentProfileIndex] = useState(0);
   const [filterModalVisible, setFilterModalVisible] = useState(false);
+  const [isUserLoaded, setIsUserLoaded] = useState(false);
   const [filters, setFilters] = useState<{
     selectedCourses: number[];
     availability: UserAvailability | null;
@@ -62,22 +63,46 @@ const MainPage: React.FC = () => {
   const [mockProfiles, setMockProfiles] = useState<UserProfile[]>([]);
 
   // Function to fetch users from the backend
-  const fetchUsers = async () => {
-    try {
-      message.loading("Loading profiles...");
+  // const fetchUsers = async () => {
+  //   try {
+  //     message.loading("Loading profiles...");
       
-      if (!currentUser || currentUser.id === null) {
-        console.error("Current user is not available - cannot filter properly");
-        message.error("Failed to load user information");
-        return;
-      }
+  //     if (!currentUser || currentUser.id === null) {
+  //       console.error("Current user is not available - cannot filter properly");
+  //       message.error("Failed to load user information");
+  //       return;
+  //     }
       
-      console.log("Current user:", currentUser);
+  //     console.log("Current user:", currentUser);
       
-      // Get all available users using the studentFilterService
-      const users = await studentFilterService.getFilteredStudents();
+  //     // Get all available users using the studentFilterService
+  //     // const users = await studentFilterService.getFilteredStudents();
+  //     const users = await studentFilterService.getFilteredStudents(
+  //       filters.selectedCourses.length > 0 ? filters.selectedCourses : undefined,
+  //       filters.availability ? [filters.availability] : undefined
+  //     );
+  //     console.log("All fetched users:", users.map(u => ({ id: u.id, name: u.name })));
+    const fetchUsers = async (
+        courseIds?: number[],                     // courseIds passed directly
+        availability?: UserAvailability[],        // availability passed directly
+        currentUserId?: number
+      ) => {
+        try {
+          message.loading("Loading profiles...");
+      
+          if (!currentUser || currentUser.id === null) {
+            console.error("Current user is not available - cannot filter properly");
+            message.error("Failed to load user information");
+            return;
+          }
+      
+          console.log("Current user:", currentUser);
+      
+      // Called with provided values
+      const users = await studentFilterService.getFilteredStudents(courseIds, availability);
       console.log("All fetched users:", users.map(u => ({ id: u.id, name: u.name })));
-      
+  
+
       if (users && users.length > 0) {
         // Convert all user IDs to numbers for comparison
         const currentUserId = Number(currentUser.id);
@@ -168,13 +193,32 @@ const MainPage: React.FC = () => {
   const fetchCurrentUser = async () => {
     try {
       const user = await userService.getCurrentUser();
+      console.log("userService.getCurrentUser returned:", user);
+
       if (user) {
         setCurrentUser(user);
         localStorage.setItem("currentUserId", user.id.toString()); // 存储 currentUserId
+
+        // Initialize the filter's selectedCourses with them
+        if (user.userCourses && user.userCourses.length > 0) {
+          const courseIds = user.userCourses.map(course => course.courseId);
+          setFilters(prev => ({
+            ...prev,
+            selectedCourses: courseIds
+          }));
+        }
+
+      } else {
+        // If user information is unavailable, explicitly set currentUser to null
+        setCurrentUser(null);
       }
+      // Flag that currentUser loading is complete
+      setIsUserLoaded(true);
     } catch (error) {
       console.error("Error fetching current user:", error);
       message.error("Failed to load your profile");
+      setCurrentUser(null);
+      setIsUserLoaded(true);
     }
   };
 
@@ -201,15 +245,15 @@ const MainPage: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   
-  // This useEffect runs when currentUser changes
-  useEffect(() => {
-    // Only fetch users after we have the current user
-    if (currentUser) {
-      console.log("Current user loaded, now fetching other users");
-      fetchUsers();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentUser]);
+  // // This useEffect runs when currentUser changes
+  // useEffect(() => {
+  //   // Only fetch users after we have the current user
+  //   if (currentUser) {
+  //     console.log("Current user loaded, now fetching other users");
+  //     fetchUsers();
+  //   }
+  //   // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, [currentUser]);
 
   const handleFilterClick = () => {
     setFilterModalVisible(true);
@@ -223,7 +267,7 @@ const MainPage: React.FC = () => {
     
     try {
       if (!currentUser || currentUser.id === null) {
-        console.error("Current user is not available - cannot filter properly");
+        console.log("Skipping fetchUsers: currentUser not ready yet");
         message.error("Failed to load user information");
         return;
       }
@@ -338,6 +382,29 @@ const MainPage: React.FC = () => {
     }
   };
   
+  //Fetch matching users only after currentUser and filters are fully loaded
+  useEffect(() => {
+    if (!isUserLoaded) {
+      console.log("Waiting for currentUser to load...");
+      return;
+    }
+
+    if (!currentUser || currentUser.id === null) {
+      console.error("Current user is not available - cannot filter properly");
+      return;
+    }
+  
+    console.log("Calling fetchUsers with:", {
+      courseIds: filters.selectedCourses,
+      availability: filters.availability
+    });    
+    fetchUsers(
+      filters.selectedCourses.length > 0 ? filters.selectedCourses : undefined,
+      filters.availability ? [filters.availability] : undefined,
+      currentUser.id
+    );
+  }, [filters, currentUser, isUserLoaded]);
+
   const actualLogout = async () => {
     try {
       message.success("Logging out...");
