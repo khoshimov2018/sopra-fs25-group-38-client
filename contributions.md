@@ -115,7 +115,6 @@ From Zhidian: Sorry for the inconvenience. For the commit after the email, I hav
 |                  | [16.04.2025]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-client/commit/7f727f1e8c1e46ab9bfa9980206dc4f3470f5a32] | [Rendering issues fixed] | [Rendiring issues are fixed in Main page and student filters page] |
 |                  | [16.04.2025]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-client/commit/e05df6bd919582ff0fe551c3936d7ae7cab17b33] | [Refactored Main page] | [Main page code is refactored] |
 |                  | [16.04.2025]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-client/commit/e05df6bd919582ff0fe551c3936d7ae7cab17b33] | [Minor Fixes] | [Debugging and minor logic fixes] |
-
 | **[@notsofun]** | [16.04.2025]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-client/commit/85e3ff0eae9119e597dfcca124077b5aaff4dc7f] | [Fixed bugs in chatting and creating groups] | [This is a key user story in our project] |
 | **[@RomanticSilence]** | [13/04/2025]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-server/commit/9c7535753d8a29ce48790c19c5281d48c6ca383c] | [entity & controller & service  for Chat typing indicator & user status - implementation of S16] | [essential for implementing user story 16] |
 |                    | [14/04/2025]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-server/commit/73d2a4bf3bec16564fc9a9f8fa9a9db4adc263dd] | [test suite for typing indicator & user status for user story 16] | [To make sure the api and logic work as expected] |
