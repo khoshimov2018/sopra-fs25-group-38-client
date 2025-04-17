@@ -182,7 +182,7 @@ const ChatPage: React.FC = () => {
   };
 
   const fetchTypingStatus = async (userId: number) => {
-    const url = `/typing/${userId}`;
+    const url = `/chat/typing/${userId}`;
     console.log(`Fetching typing status from URL: ${url}`); // 打印完整的 URL
     try {
       const response = await apiService.get<UserTypingStatusPushDTO>(url);
@@ -366,25 +366,25 @@ const handleSubmitGroupModal = async (selectedUsers: number[], channelName?: str
     }
   }, [channelMessages]);
 
-  // useEffect(() => {
-  //   if (!selectedChannel) return;
+  useEffect(() => {
+    if (!selectedChannel) return;
 
-  //   // 获取当前频道的参与者（排除当前用户）
-  //   const currentChannel = channels.find((channel) => String(channel.channelId) === String(selectedChannel));
-  //   if (!currentChannel || currentChannel.channelType !== "individual") return;
+    // 获取当前频道的参与者（排除当前用户）
+    const currentChannel = channels.find((channel) => String(channel.channelId) === String(selectedChannel));
+    if (!currentChannel || currentChannel.channelType !== "individual") return;
 
-  //   const participant = currentChannel.participants?.find((p) => p.userId !== parsedUserId);
-  //   if (!participant) return;
+    const participant = currentChannel.participants?.find((p) => p.userId !== parsedUserId);
+    if (!participant) return;
 
-  //   const participantId = participant.userId;
+    const participantId = participant.userId;
 
-  //   const interval = setInterval(async () => {
-  //     const isTyping = await fetchTypingStatus(participantId);
-  //     setTypingStatus(isTyping);
-  //   }, 20000);
+    const interval = setInterval(async () => {
+      const isTyping = await fetchTypingStatus(participantId);
+      setTypingStatus(isTyping);
+    }, 200);
 
-  //   return () => clearInterval(interval); // 清除定时器
-  // }, [selectedChannel, channels, parsedUserId]);
+    return () => clearInterval(interval); // 清除定时器
+  }, [selectedChannel, channels, parsedUserId]);
  
 
   const handleSendMessage = async (customPrompt?: string, quickReplyMessage?: string) => {
@@ -770,7 +770,7 @@ const handleSubmitGroupModal = async (selectedUsers: number[], channelName?: str
                       }}
                       onBlur={() => {
                         if (selectedChannel !== "AI Advisor") {
-                          handleTypingStatus(true); // 用户离开输入框时, 调试用
+                          handleTypingStatus(false); // 用户离开输入框时, 调试用
                         }
                       }}
                     />
