@@ -22,55 +22,68 @@ export class ApiService {
    * Aligns with the security setup in the server (JWT token in Authorization header)
    */
   private getHeaders(): HeadersInit {
-    // Create a new headers object starting with the default headers
     const headers: Record<string, string> = { ...this.defaultHeaders as Record<string, string> };
-    
-    // Add auth token if available - gets fresh token each time
-    if (typeof window !== 'undefined') {
-      const tokenStr = localStorage.getItem("token");
-      if (tokenStr) {
-        try {
-          // First try to parse it in case it's JSON (older storage format)
-          let token = tokenStr;
-          try {
-            const parsed = JSON.parse(tokenStr);
-            if (typeof parsed === 'string') {
-              token = parsed;
-            } else if (parsed && typeof parsed.token === 'string') {
-              // Handle the case where we stored the whole user object
-              token = parsed.token;
-            }
-          } catch {
-            // Not JSON, use as is
-          }
-          
-          // Ensure the token is properly formatted for the server's Authorization header
-          // The server expects: Authorization: Bearer <jwt-token>
-          // If token already starts with Bearer, don't add it again
-          const finalToken = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
-          
-          // Only log token in development environment
-          if (process.env.NODE_ENV === 'development') {
-            // Don't log the full token for security reasons
-            const displayToken = finalToken.substring(0, 20) + '...';
-            console.log("Using token for API request:", displayToken);
-          }
-          
-          // Set the Authorization header
-          headers["Authorization"] = finalToken;
-        } catch (error) {
-          console.error("Error processing token:", error);
-          // Fallback to using token directly with Bearer prefix
-          const fallbackToken = tokenStr.startsWith('Bearer ') ? tokenStr : `Bearer ${tokenStr}`;
-          headers["Authorization"] = fallbackToken;
-          console.log("Using fallback token format:", fallbackToken.substring(0, 20) + '...');
-        }
-      } else {
-        console.log("No token found in localStorage");
-      }
+
+    // Only browser can access localStorage
+    if (typeof window === 'undefined') {
+      return headers;
     }
-    
+
+    const tokenStr = localStorage.getItem('token');
+    if (!tokenStr) {
+      this.logNoToken();
+      return headers;
+    }
+
+    const auth = this.buildAuthHeader(tokenStr);
+    if (auth) {
+      headers['Authorization'] = auth;
+    }
+
     return headers;
+  }
+
+  private buildAuthHeader(tokenStr: string): string | null {
+    try {
+      const raw = this.extractRawToken(tokenStr);
+      const bearer = raw.startsWith('Bearer ') ? raw : `Bearer ${raw}`;
+      this.logToken(bearer);
+      return bearer;
+    } catch (err) {
+      // fallback to prefixing the original string
+      const fallback = tokenStr.startsWith('Bearer ') ? tokenStr : `Bearer ${tokenStr}`;
+      console.error('Error processing token, using fallback format:', err);
+      this.logToken(fallback, true);
+      return fallback;
+    }
+  }
+
+  private extractRawToken(tokenStr: string): string {
+    try {
+      const parsed = JSON.parse(tokenStr);
+      if (typeof parsed === 'string') {
+        return parsed;
+      }
+      if (parsed && typeof (parsed as any).token === 'string') {
+        return (parsed as any).token;
+      }
+    } catch {
+      // not JSON, use as-is
+    }
+    return tokenStr;
+  }
+
+  private logToken(token: string, isFallback = false): void {
+    if (process.env.NODE_ENV !== 'development') {
+      return;
+    }
+    const display = token.substring(0, 20) + '...';
+    const prefix = isFallback ? 'Using fallback token format:' : 'Using token for API request:';
+    console.log(prefix, display);
+  }
+
+  private logNoToken(): void {
+    console.log('No token found in localStorage');
   }
 
   /**
@@ -90,7 +103,7 @@ export class ApiService {
     
     if (!res.ok) {
       let errorDetail = res.statusText;
-      let errorBody = null;
+      let errorBody: any = null;
       
       try {
         // Clone the response before parsing to avoid consuming it
@@ -111,20 +124,27 @@ export class ApiService {
             // Handle empty response with better error message
             console.log("Empty error response body");
             // Use status code to provide more informative messages
-            if (res.status === 400) {
-              errorDetail = "Bad Request - Invalid input data";
-            } else if (res.status === 401) {
-              errorDetail = "Unauthorized - Authentication required";
-            } else if (res.status === 403) {
-              errorDetail = "Forbidden - Insufficient permissions";
-            } else if (res.status === 404) {
-              errorDetail = "Not Found - Resource does not exist";
-            } else if (res.status === 409) {
-              errorDetail = "Conflict - Resource already exists";
-            } else if (res.status === 500) {
-              errorDetail = "Server Error - Please try again later";
-            } else {
-              errorDetail = res.statusText || `HTTP Error ${res.status}`;
+            switch (res.status) {
+              case 400:
+                errorDetail = "Bad Request - Invalid input data";
+                break;
+              case 401:
+                errorDetail = "Unauthorized - Authentication required";
+                break;
+              case 403:
+                errorDetail = "Forbidden - Insufficient permissions";
+                break;
+              case 404:
+                errorDetail = "Not Found - Resource does not exist";
+                break;
+              case 409:
+                errorDetail = "Conflict - Resource already exists";
+                break;
+              case 500:
+                errorDetail = "Server Error - Please try again later";
+                break;
+              default:
+                errorDetail = res.statusText || `HTTP Error ${res.status}`;
             }
           }
         } catch (error) {
@@ -140,11 +160,9 @@ export class ApiService {
       const detailedMessage = `${errorMessage} (${res.status}: ${errorDetail})`;
       
       // Only log unexpected errors as errors, log expected errors as info
-      if (res.status === 404 || res.status === 401 || res.status === 403) {
-        // These are expected errors in normal app flow
+      if ([401, 403, 404].includes(res.status)) {
         console.info("API Response:", detailedMessage);
       } else {
-        // Unexpected errors should still be logged as errors
         console.error("API Error:", detailedMessage);
       }
       
@@ -207,10 +225,9 @@ export class ApiService {
     try {
       const res = await fetch(url, {
         method: "GET",
-        headers: headers,
-        // Properly configured fetch options
+        headers,
         mode: 'cors',
-        credentials: 'omit', // Don't send or receive cookies
+        credentials: 'omit',
         cache: 'no-cache',
         redirect: 'follow',
       });
@@ -236,18 +253,16 @@ export class ApiService {
     console.log(`Making POST request to: ${url}`);
     const headers = this.getHeaders();
     
-    // Log request details for debugging
     console.log("Request headers:", JSON.stringify(headers, null, 2));
     console.log("Request payload:", JSON.stringify(data, null, 2));
     
     try {
       const res = await fetch(url, {
         method: "POST",
-        headers: headers,
+        headers,
         body: JSON.stringify(data),
-        // Properly configured fetch options
         mode: 'cors',
-        credentials: 'omit', // Don't send or receive cookies
+        credentials: 'omit',
         cache: 'no-cache',
         redirect: 'follow',
       });
@@ -262,37 +277,33 @@ export class ApiService {
     }
   }
 
-   /**
+  /**
    * PUT request.
    * @param endpoint - The API endpoint (e.g. "/users/123").
    * @param data - The payload to update.
    * @returns JSON data of type T.
    */
-   public async put<T>(endpoint: string, data: unknown): Promise<T> {
+  public async put<T>(endpoint: string, data: unknown): Promise<T> {
     const url = `${this.baseURL}${endpoint}`;
     console.log(`Making PUT request to: ${url}`);
     const headers = this.getHeaders();
     
-    // Log request payload for debugging
     console.log("PUT request payload:", JSON.stringify(data, null, 2));
     
     try {
       const res = await fetch(url, {
         method: "PUT",
-        headers: headers,
+        headers,
         body: JSON.stringify(data),
-        // Properly configured fetch options
         mode: 'cors',
-        credentials: 'omit', // Don't send or receive cookies
+        credentials: 'omit',
         cache: 'no-cache',
         redirect: 'follow',
       });
       
-      // Check if the response is empty
       const contentType = res.headers.get('content-type');
       if (res.status === 204 || !contentType || !contentType.includes('application/json')) {
         console.log("Server returned no content or non-JSON response:", res.status);
-        // For 204 No Content responses, just return an empty success object
         return {} as T;
       }
       
@@ -305,7 +316,6 @@ export class ApiService {
       throw new Error(`Network error: Unable to connect to server at ${url}. Please check your connection.`);
     }
   }
-
 
   /**
    * DELETE request.
@@ -320,10 +330,9 @@ export class ApiService {
     try {
       const res = await fetch(url, {
         method: "DELETE",
-        headers: headers,
-        // Properly configured fetch options
+        headers,
         mode: 'cors',
-        credentials: 'omit', // Don't send or receive cookies
+        credentials: 'omit',
         cache: 'no-cache',
         redirect: 'follow',
       });
