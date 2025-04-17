@@ -2,8 +2,8 @@ import { getApiDomain } from "@/utils/domain";
 import { ApplicationError } from "@/types/error";
 
 export class ApiService {
-  private baseURL: string;
-  private defaultHeaders: HeadersInit;
+  private readonly baseURL: string;
+  private readonly defaultHeaders: HeadersInit;
 
   constructor() {
     this.baseURL = getApiDomain();
@@ -64,8 +64,8 @@ export class ApiService {
       if (typeof parsed === 'string') {
         return parsed;
       }
-      if (parsed && typeof (parsed as any).token === 'string') {
-        return (parsed as any).token;
+      if (parsed && typeof parsed === 'object' && 'token' in parsed && typeof parsed.token === 'string') {
+        return parsed.token;
       }
     } catch {
       // not JSON, use as-is
@@ -141,8 +141,8 @@ export class ApiService {
    * @returns Error detail message and parsed error body
    */
   private async extractErrorDetails(res: Response): Promise<{ errorDetail: string, errorBody: any }> {
-    let errorDetail = res.statusText;
     let errorBody: any = null;
+    let finalErrorDetail: string;
     
     try {
       const clonedRes = res.clone();
@@ -152,16 +152,16 @@ export class ApiService {
       if (responseText && responseText.trim() !== '') {
         const result = this.parseErrorResponseText(responseText);
         errorBody = result.errorBody;
-        errorDetail = result.errorDetail;
+        finalErrorDetail = result.errorDetail;
       } else {
-        errorDetail = this.getStatusCodeErrorMessage(res.status);
+        finalErrorDetail = this.getStatusCodeErrorMessage(res.status);
       }
     } catch (textError) {
       console.error("Error reading response text:", textError);
-      errorDetail = `Failed to read error details (${res.status})`;
+      finalErrorDetail = `Failed to read error details (${res.status})`;
     }
     
-    return { errorDetail, errorBody };
+    return { errorDetail: finalErrorDetail, errorBody };
   }
   
   /**
@@ -171,21 +171,21 @@ export class ApiService {
    */
   private parseErrorResponseText(responseText: string): { errorBody: any, errorDetail: string } {
     let errorBody = null;
-    let errorDetail = responseText;
+    let parsedErrorDetail: string;
     
     try {
       errorBody = JSON.parse(responseText);
       if (errorBody?.message) {
-        errorDetail = errorBody.message;
+        parsedErrorDetail = errorBody.message;
       } else {
-        errorDetail = JSON.stringify(errorBody);
+        parsedErrorDetail = JSON.stringify(errorBody);
       }
     } catch (error) {
       console.error("Error parsing response JSON:", error);
-      errorDetail = responseText;
+      parsedErrorDetail = responseText;
     }
     
-    return { errorBody, errorDetail };
+    return { errorBody, errorDetail: parsedErrorDetail };
   }
   
   /**
@@ -355,8 +355,7 @@ export class ApiService {
         redirect: 'follow',
       });
       
-      const contentType = res.headers.get('content-type');
-      if (res.status === 204 || !contentType || !contentType.includes('application/json')) {
+      if (res.status === 204 || !res.headers.get('content-type')?.includes('application/json')) {
         console.log("Server returned no content or non-JSON response:", res.status);
         return {} as T;
       }
