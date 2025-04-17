@@ -169,6 +169,36 @@ const EditProfile: React.FC<EditProfileProps> = ({
 
   // Handle course selection change
   const handleCourseChange = (index: number, courseId: number) => {
+    // Skip validation if selecting empty course (courseId = 0)
+    if (courseId !== 0) {
+      // Check if this course is already selected in another row
+      const isDuplicate = (user.userCourses || []).some((course, i) => 
+        i !== index && course.courseId === courseId
+      );
+      
+      if (isDuplicate) {
+        // Find the course name for better error message
+        const courseName = availableCourses.find(c => c.id === courseId)?.courseName || `Course #${courseId}`;
+        
+        // Use antdMessage instead of potentially undefined message
+        const antdMessage = require('antd').message;
+        antdMessage.error(`"${courseName}" is already selected. Please choose a different course.`);
+        
+        // Reset the selection to the previous value or empty (0)
+        const previousCourseId = user.userCourses && user.userCourses[index] 
+          ? user.userCourses[index].courseId 
+          : 0;
+          
+        // If the previous value was also a duplicate somehow, just reset to empty
+        if ((user.userCourses || []).some((course, i) => 
+            i !== index && course.courseId === previousCourseId && previousCourseId !== 0)) {
+          courseId = 0;
+        } else {
+          courseId = previousCourseId;
+        }
+      }
+    }
+    
     const selectedCourse = availableCourses.find(c => c.id === courseId);
     const courseName = selectedCourse?.courseName || '';
   
@@ -232,6 +262,48 @@ const EditProfile: React.FC<EditProfileProps> = ({
         layout="vertical"
         style={{ width: '100%' }}
         onFinish={() => {
+          // Validate for duplicate courses before proceeding
+          const userCourses = user.userCourses || [];
+          const validCourses = userCourses.filter(course => course.courseId !== 0);
+          
+          // Check for duplicate course IDs
+          const uniqueCourseIds = new Set();
+          const duplicateCourses = [];
+          
+          validCourses.forEach(course => {
+            if (uniqueCourseIds.has(course.courseId)) {
+              duplicateCourses.push(
+                availableCourses.find(c => c.id === course.courseId)?.courseName || `Course #${course.courseId}`
+              );
+            } else {
+              uniqueCourseIds.add(course.courseId);
+            }
+          });
+          
+          if (duplicateCourses.length > 0) {
+            const antdMessage = require('antd').message;
+            antdMessage.error(
+              <div>
+                <div>You have selected some courses multiple times:</div>
+                <ul style={{ marginTop: '8px', marginBottom: 0, paddingLeft: '20px' }}>
+                  {duplicateCourses.map((course, idx) => (
+                    <li key={idx}>{course}</li>
+                  ))}
+                </ul>
+                <div style={{ marginTop: '8px' }}>Please select each course only once.</div>
+              </div>
+            );
+            return;
+          }
+          
+          // Check for empty selections if at least one course is required
+          const emptySelections = userCourses.some(course => course.courseId === 0);
+          if (validCourses.length === 0 && emptySelections) {
+            const antdMessage = require('antd').message;
+            antdMessage.error("Please select at least one course");
+            return;
+          }
+          
           form.validateFields()
             .then(() => {
               onSave();
@@ -442,9 +514,22 @@ const EditProfile: React.FC<EditProfileProps> = ({
                       option?.children ? option.children.toString().toLowerCase().includes(input.toLowerCase()) : false
                     }
                   >
-                    {availableCourses.map(course => (
-                      <Option key={course.id} value={course.id}>{course.courseName}</Option>
-                    ))}
+                    {availableCourses.map(course => {
+                      // Check if this course is already selected in any other row
+                      const isSelected = (user.userCourses || []).some((userCourse, i) => 
+                        i !== index && userCourse.courseId === course.id
+                      );
+                      
+                      return (
+                        <Option 
+                          key={course.id} 
+                          value={course.id} 
+                          disabled={isSelected}
+                        >
+                          {course.courseName} {isSelected && '(already selected)'}
+                        </Option>
+                      );
+                    })}
                   </Select>
                 </Col>
                 <Col span={9}>

@@ -59,6 +59,7 @@ const ProfilePage = () => {
           ...apiUser,
           ...fullDetails,
           token: effectiveToken,
+          profileImage: fullDetails.profilePicture ?? "",
           studyGoals: Array.isArray(fullDetails.studyGoals) ? fullDetails.studyGoals.join(", ") : fullDetails.studyGoals,
           studyLevels: fullDetails.userCourses?.map(course => ({
             subject: course.courseName || String(course.courseId),
@@ -96,6 +97,14 @@ const ProfilePage = () => {
 
   const handleAddStudyLevel = () => {
     if (!editableUser) return;
+  
+    // Check if there are any unselected courses (courseId === 0)
+    const hasUnselectedCourse = editableUser.userCourses?.some(course => course.courseId === 0);
+    
+    if (hasUnselectedCourse) {
+      message.warning("Please select a course in the existing empty field before adding another one.");
+      return;
+    }
   
     const newStudyLevel = { subject: '', grade: '', level: 'Beginner' };
     const newUserCourse = {
@@ -209,14 +218,31 @@ const ProfilePage = () => {
       return;
     }
   
-    // ✅ Construct courseSelections properly
-    const courseSelections = (editableUser.userCourses || []).map((course, index) => {
+    // ✅ Construct courseSelections properly and validate for duplicates
+    let courseSelections = (editableUser.userCourses || []).map((course) => {
       return {
         courseId: course.courseId,
         knowledgeLevel: course.knowledgeLevel || 'BEGINNER'
       };
     }).filter(c => c.courseId !== 0); // skip empty courses
-  
+    
+    // Check for duplicate courses
+    const uniqueCourseIds = new Set();
+    const duplicateCourses = [];
+    
+    courseSelections.forEach(course => {
+      if (uniqueCourseIds.has(course.courseId)) {
+        duplicateCourses.push(course.courseId);
+      } else {
+        uniqueCourseIds.add(course.courseId);
+      }
+    });
+    
+    if (duplicateCourses.length > 0) {
+      message.error("You have selected some courses multiple times. Please select each course only once.");
+      return;
+    }
+    
     // Create the profile update object
     // Important: courseSelections must be explicitly included with exactly the required format
     // Prepare the profile image - ensure it's a reasonable size for the database
@@ -278,6 +304,8 @@ const ProfilePage = () => {
       const processedUser: UserProfile = {
         ...updatedUser,
         token: currentUser.token,
+        profileImage: editableUser.profileImage, // Preserve the current profile image
+        profilePicture: editableUser.profilePicture, // Preserve the current profile picture
         studyGoals: Array.isArray(updatedUser.studyGoals) ? updatedUser.studyGoals.join(", ") : updatedUser.studyGoals,
         studyLevels: updatedUser.userCourses?.map(course => ({
           subject: course.courseName || String(course.courseId),
@@ -483,7 +511,8 @@ const ProfilePage = () => {
         // Update the editableUser with the resized image
         setEditableUser({
           ...editableUser,
-          profileImage: resizedImage
+          profileImage: resizedImage,
+          profilePicture: resizedImage
         });
         
         message.success('Profile picture updated!');

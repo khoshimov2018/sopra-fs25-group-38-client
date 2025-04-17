@@ -79,6 +79,24 @@ const Register: React.FC = () => {
         setIsLoading(false);
         return;
       }
+      
+      // Check for duplicate courses
+      const uniqueCourseIds = new Set();
+      const duplicateCourses = [];
+      
+      filteredSelections.forEach(course => {
+        if (uniqueCourseIds.has(course.courseId)) {
+          duplicateCourses.push(course.courseId);
+        } else {
+          uniqueCourseIds.add(course.courseId);
+        }
+      });
+      
+      if (duplicateCourses.length > 0) {
+        message.error("You have selected some courses multiple times. Please select each course only once.");
+        setIsLoading(false);
+        return;
+      }
 
       // The backend might expect studyGoals as an array, so let's try sending it as is
       // Don't join into a string as the backend probably expects an array of strings
@@ -217,6 +235,29 @@ const Register: React.FC = () => {
   };
 
   const handleCourseChange = (index: number, value: number) => {
+    // Check if this course is already selected in another row
+    const isDuplicate = courseSelections.some((course, i) => 
+      i !== index && course.courseId === value && value !== 0
+    );
+    
+    if (isDuplicate) {
+      // Find the course name for better error message
+      const courseName = availableCourses.find(c => c.id === value)?.courseName || `Course #${value}`;
+      
+      message.error(`"${courseName}" is already selected. Please choose a different course.`);
+      
+      // Reset the selection to the previous value or empty
+      const previousValue = courseSelections[index].courseId;
+      
+      // If the previous value was also a duplicate somehow, just reset to empty (0)
+      if (courseSelections.some((course, i) => 
+          i !== index && course.courseId === previousValue && previousValue !== 0)) {
+        value = 0;
+      } else {
+        value = previousValue;
+      }
+    }
+    
     const updated = [...courseSelections];
     updated[index].courseId = value;
     setCourseSelections(updated);
@@ -229,6 +270,14 @@ const Register: React.FC = () => {
   };
 
   const addCourseSelection = () => {
+    // Check if there are any unselected courses (courseId === 0)
+    const hasUnselectedCourse = courseSelections.some(course => course.courseId === 0);
+    
+    if (hasUnselectedCourse) {
+      message.warning("Please select a course in the existing empty field before adding another one.");
+      return;
+    }
+    
     setCourseSelections([...courseSelections, { courseId: 0, knowledgeLevel: ProfileKnowledgeLevel.BEGINNER }]);
   };
 
@@ -413,9 +462,22 @@ const Register: React.FC = () => {
                         className={componentStyles.input}
                         popupMatchSelectWidth={false}
                       >
-                        {availableCourses.map(course => (
-                          <Option key={course.id} value={course.id}>{course.courseName}</Option>
-                        ))}
+                        {availableCourses.map(course => {
+                          // Check if this course is already selected in any other row
+                          const isSelected = courseSelections.some((selection, i) => 
+                            i !== index && selection.courseId === course.id
+                          );
+                          
+                          return (
+                            <Option 
+                              key={course.id} 
+                              value={course.id} 
+                              disabled={isSelected}
+                            >
+                              {course.courseName} {isSelected && '(already selected)'}
+                            </Option>
+                          );
+                        })}
                       </Select>
                     </Col>
                     <Col span={9}>
