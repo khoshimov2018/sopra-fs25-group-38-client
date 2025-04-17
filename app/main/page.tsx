@@ -85,35 +85,55 @@ const MainPage: React.FC = () => {
         availability?: UserAvailability[],        // availability passed as an array, matching server expectations
         currentUserId?: number
       ) => {
+        let loadingMessage = message.loading("Loading profiles...");
+        
         try {
-          message.loading("Loading profiles...");
-      
           if (!currentUser || currentUser.id === null) {
             console.error("Current user is not available - cannot filter properly");
             message.error("Failed to load user information");
             return;
           }
       
-          // No need to log current user details
-      
-      // Called with provided values
-      const users = await studentFilterService.getFilteredStudents(courseIds, availability);
-      // No need to log all fetched users
-  
+          // Get filtered users with a try/catch for better error handling
+          let users: any[] = [];
+          try {
+            // Make the API call with the service
+            users = await studentFilterService.getFilteredStudents(courseIds, availability);
+            
+            // Validate the response
+            if (!Array.isArray(users)) {
+              console.error("Server returned non-array response:", users);
+              message.error("Invalid data received from server. Showing available profiles.");
+              users = []; // Reset to empty array to avoid errors
+            }
+          } catch (filterError) {
+            console.error("Error fetching filtered students:", filterError);
+            message.error("Could not apply filters. Showing available profiles.");
+            
+            // Try without filters as a fallback
+            try {
+              users = await studentFilterService.getFilteredStudents();
+            } catch (fallbackError) {
+              console.error("Fallback fetch also failed:", fallbackError);
+              message.error("Could not load any profiles");
+              setProfiles([]);
+              return;
+            }
+          }
 
-      if (users && users.length > 0) {
-        // Convert all user IDs to numbers for comparison
-        const currentUserId = Number(currentUser.id);
-        
-        // Filter out the current user from the list
-        const filteredUsers = users.filter(user => Number(user.id) !== currentUserId);
-        console.log("After filtering current user:", filteredUsers.map(u => ({ id: u.id, name: u.name })));
-        
-        if (filteredUsers.length === 0) {
-          message.info("No other users available");
-          setProfiles([]);
-          return;
-        }
+          if (users && users.length > 0) {
+            // Convert all user IDs to numbers for comparison
+            const currentUserId = Number(currentUser.id);
+            
+            // Filter out the current user from the list
+            const filteredUsers = users.filter(user => Number(user.id) !== currentUserId);
+            console.log(`Found ${filteredUsers.length} users after filtering out current user`);
+            
+            if (filteredUsers.length === 0) {
+              message.info("No other users available");
+              setProfiles([]);
+              return;
+            }
         
         // Convert UserGetDTO to UserProfile format
         const fetchedProfiles: UserProfile[] = filteredUsers.map(user => {
@@ -182,6 +202,9 @@ const MainPage: React.FC = () => {
       console.error("Error fetching profiles:", error);
       message.error("Failed to load profiles");
       setProfiles([]);
+    } finally {
+      // Always close the loading message
+      loadingMessage();
     }
   };
 
@@ -193,7 +216,9 @@ const MainPage: React.FC = () => {
 
       if (user) {
         setCurrentUser(user);
-        localStorage.setItem("currentUserId", user.id.toString()); // 存储 currentUserId
+        if (typeof window !== 'undefined') {
+          localStorage.setItem("currentUserId", user.id.toString()); // store currentUserId
+        }
 
         // Initialize the filter's selectedCourses with them
         if (user.userCourses && user.userCourses.length > 0) {
@@ -379,6 +404,54 @@ const MainPage: React.FC = () => {
     }
   };
   
+  // Update chat links after component mounts
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    // Update links after component mounts to avoid hydration mismatch
+    const updateChatLinks = () => {
+      const chatLinkId = document.getElementById('chat-link');
+      const chatButtonId = document.getElementById('chat-button');
+      const chatLinkMainId = document.getElementById('chat-link-main');
+      const chatButtonMainId = document.getElementById('chat-button-main');
+      
+      const chatPath = currentUser 
+        ? `/chat/${currentUser.id}` 
+        : localStorage.getItem("currentUserId") 
+        ? `/chat/${localStorage.getItem("currentUserId")}` 
+        : "#";
+      
+      const isDisabled = !currentUser && !localStorage.getItem("currentUserId");
+      
+      // Update first link and button
+      if (chatLinkId) {
+        chatLinkId.setAttribute('href', chatPath);
+      }
+      if (chatButtonId) {
+        if (isDisabled) {
+          chatButtonId.setAttribute('disabled', '');
+        } else {
+          chatButtonId.removeAttribute('disabled');
+        }
+      }
+      
+      // Update second link and button
+      if (chatLinkMainId) {
+        chatLinkMainId.setAttribute('href', chatPath);
+      }
+      if (chatButtonMainId) {
+        if (isDisabled) {
+          chatButtonMainId.setAttribute('disabled', '');
+        } else {
+          chatButtonMainId.removeAttribute('disabled');
+        }
+      }
+    };
+    
+    // Run it once when component mounts
+    updateChatLinks();
+  }, [currentUser]);
+
   //Fetch matching users only after currentUser and filters are fully loaded
   useEffect(() => {
     if (!isUserLoaded) {
@@ -391,12 +464,26 @@ const MainPage: React.FC = () => {
       return;
     }
   
-    // No need to log fetch parameters    
-    fetchUsers(
-      filters.selectedCourses.length > 0 ? filters.selectedCourses : undefined,
-      filters.availabilities.length > 0 ? filters.availabilities : undefined,
-      currentUser.id
-    );
+    // Check if we're in development mode
+    const isDev = process.env.NODE_ENV === 'development';
+    if (isDev) {
+      console.log("Fetching users with filters:", {
+        courseIds: filters.selectedCourses.length > 0 ? filters.selectedCourses : "none",
+        availability: filters.availabilities.length > 0 ? filters.availabilities : "none"
+      });
+    }
+    
+    // Wrap in try/catch to ensure UI doesn't break if fetch fails
+    try {
+      fetchUsers(
+        filters.selectedCourses.length > 0 ? filters.selectedCourses : undefined,
+        filters.availabilities.length > 0 ? filters.availabilities : undefined,
+        currentUser.id
+      );
+    } catch (error) {
+      console.error("Error initiating user fetch:", error);
+      message.error("Could not load profiles. Please try again later.");
+    }
   }, [filters, currentUser, isUserLoaded]);
 
   const actualLogout = async () => {
@@ -417,16 +504,22 @@ const MainPage: React.FC = () => {
       }
       
       // Clear token and redirect to login
-      localStorage.removeItem("token");
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem("token");
+      }
       clearToken();
       
       // Use window.location for a hard refresh to ensure clean state
-      window.location.href = "/login";
+      if (typeof window !== 'undefined') {
+        window.location.href = "/login";
+      }
     } catch (error) {
       console.error("Error during logout:", error);
-      localStorage.removeItem("token");
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem("token");
+        window.location.href = "/login";
+      }
       clearToken();
-      window.location.href = "/login";
     }
   };
 
@@ -526,16 +619,8 @@ const MainPage: React.FC = () => {
                 <Link href="/profile">
                   <button className={styles.iconButton}><UserOutlined /></button>
                 </Link>
-                <Link
-                  href={
-                    currentUser
-                      ? `/chat/${currentUser.id}`
-                      : localStorage.getItem("currentUserId")
-                      ? `/chat/${localStorage.getItem("currentUserId")}`
-                      : "#"
-                  }
-                >
-                  <button className={styles.iconButton} disabled={!currentUser && !localStorage.getItem("currentUserId")}>
+                <Link href="#" id="chat-link">
+                  <button className={styles.iconButton} disabled id="chat-button">
                     <MessageOutlined />
                   </button>
                 </Link>
@@ -612,16 +697,8 @@ const MainPage: React.FC = () => {
               <Link href="/profile">
                 <button className={styles.iconButton}><UserOutlined /></button>
               </Link>
-              <Link
-                href={
-                  currentUser
-                    ? `/chat/${currentUser.id}`
-                    : localStorage.getItem("currentUserId")
-                    ? `/chat/${localStorage.getItem("currentUserId")}`
-                    : "#"
-                }
-              >
-                <button className={styles.iconButton} disabled={!currentUser && !localStorage.getItem("currentUserId")}>
+              <Link href="#" id="chat-link-main">
+                <button className={styles.iconButton} disabled id="chat-button-main">
                   <MessageOutlined />
                 </button>
               </Link>

@@ -23,46 +23,41 @@ export class StudentFilterService {
     courseIds?: number[],
     availability?: UserAvailability[]
   ): Promise<UserGetDTO[]> {
-    // Build query parameters
-    const params = new URLSearchParams();
-    
-    const hasCourses = courseIds && courseIds.length > 0;
-    const hasAvailability = availability && availability.length > 0;
-
-    // Add course IDs if provided
-    if (hasCourses) {
-      courseIds!.forEach(id => params.append("courseIds", id.toString()));
-
-      // Automatically use matchAny if filtering ONLY by courses (and multiple selected)
-      if (!hasAvailability && courseIds!.length > 1) {
-        params.append("matchAny", "true");
+    try {
+      // For simplicity, just fetch all students first to avoid server errors
+      console.log("Fetching all students and filtering client-side");
+      const allStudents = await this.apiService.get<UserGetDTO[]>("/students");
+      
+      // If no filters, return all students
+      if ((!courseIds || courseIds.length === 0) && (!availability || availability.length === 0)) {
+        return allStudents;
       }
+      
+      // Otherwise, filter client-side
+      return allStudents.filter(student => {
+        // Course filter
+        let passesCoursesFilter = true;
+        if (courseIds && courseIds.length > 0) {
+          // Check if student is enrolled in at least one of the courses
+          const studentCourseIds = student.userCourses?.map(c => c.courseId) || [];
+          passesCoursesFilter = courseIds.some(id => studentCourseIds.includes(id));
+        }
+        
+        // Availability filter
+        let passesAvailabilityFilter = true;
+        if (availability && availability.length > 0) {
+          // Check if student's availability matches any in the filter
+          passesAvailabilityFilter = !student.availability || 
+            availability.includes(student.availability);
+        }
+        
+        // Return true if student passes both filters
+        return passesCoursesFilter && passesAvailabilityFilter;
+      });
+    } catch (error) {
+      console.error("Error in getFilteredStudents:", error);
+      return []; // Return empty array on error
     }
-
-    // Add availability if provided
-    if (availability && availability.length > 0) {
-      // Server expects each value as a separate parameter with the same name
-      // e.g., availability=MORNING&availability=EVENING
-      availability.forEach(avail => params.append('availability', avail.toString()));
-
-    }
-
-    // // Add course IDs if provided
-    // if (courseIds && courseIds.length > 0) {
-    //   courseIds.forEach(id => params.append('courseIds', id.toString()));
-    // }
-    
-    // // Add availability if provided
-    // if (availability && availability.length > 0) {
-    //   availability.forEach(avail => params.append('availability', avail.toString()));
-    // }
-
-    // params.append('requireCourses', 'true');
-    
-    // Construct URL with query parameters
-    const url = `/students${params.toString() ? '?' + params.toString() : ''}`;
-    // No need to log the URL for every request
-    return this.apiService.get<UserGetDTO[]>(url);
   }
 
   /**
