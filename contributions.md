@@ -110,7 +110,7 @@ From Zhidian: Sorry for the inconvenience. For the commit after the email, I hav
 ## Contributions Week 4 - [Begin Date] to [End Date]
 | **Student**        | **Date** | **Link to Commit** | **Description**                 | **Relevance**                       |
 | ------------------ | -------- | ------------------ | ------------------------------- | ----------------------------------- |
-| **[@khoshimov]** | [17.04.2025]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-client/commit/e897ca1d3d673ba8f128ba55ff0fb43bef6f9bfe] | [Fixed bugs and issues] | [This is important for users to properly logout and for deployment] |
+| **[@khoshimov2018]** | [17.04.2025]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-client/commit/e897ca1d3d673ba8f128ba55ff0fb43bef6f9bfe] | [Fixed bugs and issues] | [This is important for users to properly logout and for deployment] |
 |                  | [17.04.2025]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-client/commit/22d032a808a2413bdc7309c079abe95475aef7da] | [Delete Account api integration, Profile page UI fixes, Main page UI fixes, Filters UI Fixes] | [Users now can delete their account] |
 |                  | [17.04.2025]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-client/commit/7f727f1e8c1e46ab9bfa9980206dc4f3470f5a32] | [Rendering issues fixed] | [Rendiring issues are fixed in Main page and student filters page] |
 |                  | [17.04.2025]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-client/commit/e05df6bd919582ff0fe551c3936d7ae7cab17b33] | [Refactored Main page] | [Main page code is refactored] |
