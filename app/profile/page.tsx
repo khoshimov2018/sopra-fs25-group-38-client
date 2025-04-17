@@ -379,12 +379,12 @@ const ProfilePage = () => {
       console.log("📦 Final payload for PUT:", JSON.stringify(profileUpdate, null, 2));
 
       // Update user profile and fetch updated data
-      await userService.updateUser(currentUser.id, profileUpdate);
-      const updatedUser = await userService.getUserById(currentUser.id);
+      await apiService.userService?.updateUser(currentUser.id, profileUpdate);
+      const updatedUser = await apiService.userService?.getUserById(currentUser.id);
       
       // Process the updated user properly
       const processedUser = processUpdatedUserData(
-        updatedUser, 
+        updatedUser ?? currentUser, // Fallback to current user if update fails
         currentUser.token, 
         editableUser.profileImage,
         editableUser.profilePicture
