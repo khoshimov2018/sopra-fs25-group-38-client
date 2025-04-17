@@ -1,5 +1,5 @@
 import { User, UserAvailability, ProfileKnowledgeLevel } from './user';
-import { CourseSelection } from './course';
+import { CourseSelectionDTO } from './course';
 
 // Matches Profile.java entity
 export interface Profile {
@@ -21,7 +21,7 @@ export interface UserProfile extends User {
     level: string;
   }[];
   // Align with server-side structure
-  courseSelections?: CourseSelection[];
+  courseSelections?: CourseSelectionDTO[];
   profileImage?: string;
 }
 
@@ -33,5 +33,5 @@ export interface ProfileUpdate {
   availability?: UserAvailability;
   studyLevel?: string;
   studyGoals?: string[];
-  courses: CourseSelection[];
+  courseSelections: CourseSelectionDTO[];
 }

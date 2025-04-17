@@ -262,13 +262,13 @@ export class ApiService {
     }
   }
 
-  /**
+   /**
    * PUT request.
    * @param endpoint - The API endpoint (e.g. "/users/123").
    * @param data - The payload to update.
    * @returns JSON data of type T.
    */
-  public async put<T>(endpoint: string, data: unknown): Promise<T> {
+   public async put<T>(endpoint: string, data: unknown): Promise<T> {
     const url = `${this.baseURL}${endpoint}`;
     console.log(`Making PUT request to: ${url}`);
     const headers = this.getHeaders();
@@ -302,6 +302,7 @@ export class ApiService {
       throw new Error(`Network error: Unable to connect to server at ${url}. Please check your connection.`);
     }
   }
+
 
   /**
    * DELETE request.

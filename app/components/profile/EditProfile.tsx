@@ -167,63 +167,48 @@ const EditProfile: React.FC<EditProfileProps> = ({
   };
 
   // Handle course selection change
-  const handleCourseChange = (index: number, value: number) => {
-    // Find course name for the selected ID
-    const selectedCourse = availableCourses.find(c => c.id === value);
+  const handleCourseChange = (index: number, courseId: number) => {
+    const selectedCourse = availableCourses.find(c => c.id === courseId);
     const courseName = selectedCourse?.courseName || '';
-    
-    // First update the study level (for backward compatibility)
-    onStudyLevelChange(index, 'subject', courseName);
-    
-    // Then directly update the userCourses array if it exists
-    if (user.userCourses && user.userCourses[index]) {
-      // Create a synthetic event to set both courseId and courseName
-      const fakeEvent = {
-        target: {
-          name: `userCourses[${index}]`,
-          value: {
-            ...user.userCourses[index],
-            courseId: value,
-            courseName: courseName
-          }
-        }
-      } as any;
-      
-      onInputChange(fakeEvent);
-    }
+  
+    const updatedUserCourses = [...(user.userCourses || [])];
+    updatedUserCourses[index] = {
+      ...updatedUserCourses[index],
+      courseId,
+      courseName
+    };
+  
+    onInputChange({
+      target: {
+        name: "userCourses",
+        value: updatedUserCourses
+      }
+    } as any);
   };
+  
+  
+  
 
   // Handle knowledge level change
   const handleKnowledgeLevelChange = (index: number, value: ProfileKnowledgeLevel) => {
-    // Convert enum value to string for studyLevels (backward compatibility)
     let levelString = 'Beginner';
-    switch (value) {
-      case ProfileKnowledgeLevel.INTERMEDIATE:
-        levelString = 'Intermediate';
-        break;
-      case ProfileKnowledgeLevel.ADVANCED:
-        levelString = 'Advanced';
-        break;
-    }
-    
-    // Update the studyLevel
+    if (value === ProfileKnowledgeLevel.INTERMEDIATE) levelString = 'Intermediate';
+    else if (value === ProfileKnowledgeLevel.ADVANCED) levelString = 'Advanced';
+
     onStudyLevelChange(index, 'level', levelString);
-    
-    // Also update the userCourses array directly if it exists
-    if (user.userCourses && user.userCourses[index]) {
-      // Create a synthetic event to update knowledge level
-      const fakeEvent = {
-        target: {
-          name: `userCourses[${index}]`,
-          value: {
-            ...user.userCourses[index],
-            knowledgeLevel: value
-          }
-        }
-      } as any;
-      
-      onInputChange(fakeEvent);
-    }
+
+    const updatedUserCourses = [...(user.userCourses || [])];
+    updatedUserCourses[index] = {
+      ...updatedUserCourses[index],
+      knowledgeLevel: value
+    };
+
+    onInputChange({
+      target: {
+        name: 'userCourses',
+        value: updatedUserCourses
+      }
+    } as any);
   };
 
   return (
