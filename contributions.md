@@ -110,6 +110,11 @@ From Zhidian: Sorry for the inconvenience. For the commit after the email, I hav
 ## Contributions Week 4 - [Begin Date] to [End Date]
 
 | **[@notsofun]** | [16.04.2025]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-client/commit/85e3ff0eae9119e597dfcca124077b5aaff4dc7f] | [Fixed bugs in chatting and creating groups] | [This is a key user story in our project] |
+| **[@RomanticSilence]** | [13/04/2025]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-server/commit/9c7535753d8a29ce48790c19c5281d48c6ca383c] | [entity & controller & service  for Chat typing indicator & user status - implementation of S16] | [essential for implementing user story 16] |
+|                    | [14/04/2025]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-server/commit/73d2a4bf3bec16564fc9a9f8fa9a9db4adc263dd] | [test suite for typing indicator & user status for user story 16] | [To make sure the api and logic work as expected] |
+|                    | [15/04/2025]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-server/commit/f1a1c5d304a3382376fc336c94bd65b1296a4589] | [implement a method for deleting the existing channel between users after block & a test suite for it] | [Essential logic for block functionality] |
+|                    | [16/04/2025]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-server/actions/runs/14500780897] | [fixed a logical issue, avoid creating multiple individual channel between the same users] | [Essential for the correct behavior of creating a chat]|
+|                    | [17/04/2025]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-server/commit/0eeb1b11c4efbb753c42c5c83967a3012a7eac1e] | [design a new endpoints & write a logic to update a group channel & write a test suite for it] | [Important to build a functioning group chat system as required in user story 14]|
 
 _Continue with the same table format as above._
 
