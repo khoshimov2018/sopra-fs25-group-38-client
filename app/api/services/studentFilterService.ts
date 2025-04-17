@@ -26,17 +26,36 @@ export class StudentFilterService {
     // Build query parameters
     const params = new URLSearchParams();
     
+    const hasCourses = courseIds && courseIds.length > 0;
+    const hasAvailability = availability && availability.length > 0;
+
     // Add course IDs if provided
-    if (courseIds && courseIds.length > 0) {
-      courseIds.forEach(id => params.append('courseIds', id.toString()));
+    if (hasCourses) {
+      courseIds!.forEach(id => params.append("courseIds", id.toString()));
+
+      // Automatically use matchAny if filtering ONLY by courses (and multiple selected)
+      if (!hasAvailability && courseIds!.length > 1) {
+        params.append("matchAny", "true");
+      }
     }
-    
+
     // Add availability if provided
     if (availability && availability.length > 0) {
       // Server expects each value as a separate parameter with the same name
       // e.g., availability=MORNING&availability=EVENING
       availability.forEach(avail => params.append('availability', avail.toString()));
+
     }
+
+    // // Add course IDs if provided
+    // if (courseIds && courseIds.length > 0) {
+    //   courseIds.forEach(id => params.append('courseIds', id.toString()));
+    // }
+    
+    // // Add availability if provided
+    // if (availability && availability.length > 0) {
+    //   availability.forEach(avail => params.append('availability', avail.toString()));
+    // }
 
     // params.append('requireCourses', 'true');
     
@@ -58,6 +77,11 @@ export class StudentFilterService {
 
     const params = new URLSearchParams();
     courseIds.forEach(id => params.append('courseIds', id.toString()));
+
+    if (courseIds.length > 1) {
+      params.append("matchAny", "true");
+    }
+
     return this.apiService.get<UserGetDTO[]>(`/students?${params.toString()}`);
   }
 
