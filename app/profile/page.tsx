@@ -123,7 +123,7 @@ const ProfilePage = () => {
     if (!editableUser?.studyLevels) return;
     const newLevels = [...editableUser.studyLevels];
     newLevels[index] = { ...newLevels[index], [field]: value };
-    const newUserCourses = [...(editableUser.userCourses || [])];
+    const newUserCourses = [...(editableUser.userCourses ?? [])];
     if (field === 'level') {
       let knowledgeLevel: ProfileKnowledgeLevel = ProfileKnowledgeLevel.BEGINNER;
       if (value.toLowerCase() === 'intermediate') knowledgeLevel = ProfileKnowledgeLevel.INTERMEDIATE;
@@ -369,7 +369,7 @@ const ProfilePage = () => {
     }
     
     // Process profile image
-    const profileImageToSave = await processProfileImage(editableUser.profileImage || "");
+    const profileImageToSave = await processProfileImage(editableUser.profileImage ?? "");
     console.log("Final image size for upload:", profileImageToSave.length, "bytes");
 
     // Create the profile update object

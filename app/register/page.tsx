@@ -436,8 +436,8 @@ const Register: React.FC = () => {
                       if (!value || !value.includes('@')) return Promise.resolve();
                       
                       try {
-                        // Check if the email exists using optional chaining
-                        const exists = await apiService.userService?.emailExists(value);
+                        // Check if the email exists
+                        const exists = await apiService.userService?.emailExists(value) ?? false;
                         
                         if (exists) {
                           return Promise.reject(new Error('This email is already registered. Please use a different email.'));
