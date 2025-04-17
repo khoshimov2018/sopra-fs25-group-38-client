@@ -6,7 +6,7 @@
   
   /* Background Colors */
   --bg-page: white;
-  --bg-gradient: linear-gradient(180deg, #E3D1D1 11%, #E3D1D1 20%, #2F76C3 80%, #2F76C3 100%);
+  --bg-gradient: linear-gradient(180deg, rgba(227, 209, 209, 0.06) 11%, rgba(47, 118, 195, 0.3) 79.5%);
   --bg-card: #FFFFFF;
   --bg-input: #FFFFFF;
   --bg-modal: #FFFFFF;
@@ -77,14 +77,19 @@ html,
 body {
   max-width: 100vw;
   overflow-x: hidden;
+  height: 100%;
+  margin: 0;
+  padding: 0;
 }
 
 body {
   color: var(--foreground);
-  background: var(--background);
+  background: var(--bg-gradient);
+  background-attachment: fixed;
   font-family: Arial, Helvetica, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
 }
 
 * {
@@ -109,7 +114,6 @@ a {
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background-color: var(--bg-page);
 }
 
 .login-button, .register-button {
@@ -157,23 +161,23 @@ input:focus, .ant-input:focus, .ant-input-password:focus {
   color: var(--text-dark) !important;
 }
 
-/* Message styling - consistent styling with dark theme */
+/* Message styling - consistent styling with black text */
 .ant-message-notice-content {
   background-color: var(--bg-card) !important;
-  color: var(--text-light) !important;
+  color: var(--text-dark) !important;
   font-weight: 500;
   border-radius: 4px;
   box-shadow: 0 3px 6px var(--shadow-color) !important;
 }
 
-/* Force all Ant Design message text to be light color */
+/* Force all Ant Design message text to be dark color */
 .ant-message-custom-content {
-  color: var(--text-light) !important;
+  color: var(--text-dark) !important;
 }
 
 /* Target the actual text span inside messages */
 .ant-message-custom-content span {
-  color: var(--text-light) !important;
+  color: var(--text-dark) !important;
 }
 
 /* Success message styling */
@@ -186,7 +190,7 @@ input:focus, .ant-input:focus, .ant-input-password:focus {
   border-left: 4px solid var(--success);
   margin-bottom: 8px;
   font-size: 14px;
-  color: var(--text-light) !important;
+  color: var(--text-dark) !important;
 }
 
 /* Info message styling */
@@ -199,7 +203,7 @@ input:focus, .ant-input:focus, .ant-input-password:focus {
   border-left: 4px solid var(--info);
   margin-bottom: 8px;
   font-size: 14px;
-  color: var(--text-light) !important;
+  color: var(--text-dark) !important;
 }
 
 /* Loading message styling */
@@ -208,11 +212,11 @@ input:focus, .ant-input:focus, .ant-input-password:focus {
   padding: 12px 16px;
   border-radius: 4px;
   box-shadow: 0 3px 6px var(--shadow-color);
-  background-color: rgba(50, 50, 50, 0.7) !important;
+  background-color: rgba(50, 50, 50, 0.15) !important;
   border-left: 4px solid var(--info);
   margin-bottom: 8px;
   font-size: 14px;
-  color: var(--text-light) !important;
+  color: var(--text-dark) !important;
 }
 
 /* Error message styling - make errors prominent */
@@ -221,16 +225,16 @@ input:focus, .ant-input:focus, .ant-input-password:focus {
   padding: 12px 16px;
   border-radius: 4px;
   box-shadow: 0 3px 6px var(--shadow-color);
-  background-color: rgba(255, 77, 79, 0.1) !important;
+  background-color: rgba(255, 77, 79, 0.15) !important;
   border-left: 4px solid var(--error);
   margin-bottom: 8px;
   font-size: 14px;
-  color: var(--text-light) !important;
+  color: var(--text-dark) !important;
 }
 
-/* Force message text to be light */
+/* Force message icons to be dark */
 .ant-message .anticon {
-  color: var(--text-light) !important;
+  color: var(--text-dark) !important;
 }
 
 /* Form validation error messages */
@@ -250,7 +254,6 @@ input:focus, .ant-input:focus, .ant-input-password:focus {
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background-color: var(--bg-page);
 }
 
 /* Button styling */

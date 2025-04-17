@@ -5,7 +5,13 @@ import { useRouter } from "next/navigation";
 import { useApi } from "@/hooks/useApi";
 import useLocalStorage from "@/hooks/useLocalStorage";
 import { User } from "@/types/user";
-import { Button, Card, Table, Tag, message, Typography } from "antd";
+// Import components individually to avoid chunk loading issues
+import Button from "antd/lib/button";
+import Card from "antd/lib/card";
+import Table from "antd/lib/table";
+import Tag from "antd/lib/tag"; 
+import message from "antd/lib/message";
+import Typography from "antd/lib/typography";
 import type { TableProps } from "antd";
 import { formatDate } from "@/utils/date";
 

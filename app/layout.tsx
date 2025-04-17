@@ -22,7 +22,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.variable}`}>
+      <body className={`${inter.variable}`} style={{ background: 'var(--bg-gradient)', backgroundAttachment: 'fixed', minHeight: '100vh' }}>
         <ConfigProvider
           theme={{
             algorithm: theme.defaultAlgorithm,

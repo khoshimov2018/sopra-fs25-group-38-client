@@ -23,10 +23,10 @@ export default function Home() {
       <Logo />
       <main className={styles.main}>
         <div className={styles.heading}>
-          <h1 style={{ fontSize: '2.5rem', margin: '20px 0', textAlign: 'center' }}>
+          <h1 style={{ fontSize: '2rem', margin: '10px 0', textAlign: 'center' }}>
             Welcome to StudyBuddy!
           </h1>
-          <p style={{ fontSize: '1.2rem', marginBottom: '40px', textAlign: 'center', maxWidth: '600px' }}>
+          <p style={{ fontSize: '1.1rem', marginBottom: '20px', textAlign: 'center', maxWidth: '600px' }}>
             Find your perfect study match
           </p>
         </div>
@@ -60,12 +60,9 @@ export default function Home() {
           </Button>
         </div>
       </main>
-      <footer className={styles.footer} style={{ marginTop: '40px' }}>
+      <footer className={styles.footer}>
         <div style={{ textAlign: 'center' }}>
-          <p>© 2025 Study Matchmaking System - SoPra FS25</p>
-          <p style={{ fontSize: '0.8rem', marginTop: '10px', color: '#888' }}>
-            Created by Group 38
-          </p>
+          <p style={{ fontSize: '0.8rem', margin: 0 }}>© 2025 SoPra FS25 - Group 38</p>
         </div>
       </footer>
     </div>

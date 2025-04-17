@@ -341,18 +341,17 @@ const MainPage: React.FC = () => {
     try {
       message.success("Logging out...");
       // In production, call the logout endpoint
-      if (currentUser && currentUser.id) {
-        try {
-          // Use the userService from the hooks result
-          const { userService } = apiService;
-          if (userService) {
-            await userService.logoutUser(Number(currentUser.id));
-          } else {
-            console.warn("User service not available");
-          }
-        } catch (error) {
-          console.warn("Logout API call failed, but proceeding with local logout", error);
+      try {
+        // Use the userService from the hooks result
+        const { userService } = apiService;
+        if (userService) {
+          // Use token-based logout instead of user ID-based logout
+          await userService.logoutUserByToken();
+        } else {
+          console.warn("User service not available");
         }
+      } catch (error) {
+        console.warn("Logout API call failed, but proceeding with local logout", error);
       }
       
       // Clear token and redirect to login

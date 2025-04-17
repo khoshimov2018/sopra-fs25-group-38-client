@@ -48,7 +48,8 @@ export class UserService {
    * @aligns with UserService.logoutUser()
    */
   async logoutUser(userId: number): Promise<void> {
-    await this.apiService.post<void>(`/users/${userId}/logout`, {});
+    // Call the correct endpoint (/users/logout) which uses the token in the header
+    await this.apiService.post<void>(`/users/logout`, {});
   }
 
   /**
@@ -221,7 +222,8 @@ export class UserService {
       await this.apiService.get<UserGetDTO>(`/users/check-email?email=${encodeURIComponent(email)}`);
       return true;
     } catch (error: any) {
-      if (error.status === 404) {
+      // Accept both 404 (Not Found) and 400 (Bad Request) as indications that the email doesn't exist
+      if (error.status === 404 || error.status === 400) {
         return false;
       }
       throw error;

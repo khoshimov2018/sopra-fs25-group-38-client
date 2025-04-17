@@ -6,14 +6,14 @@
   --button-primary-hover: #383838;
   --button-secondary-hover: #f2f2f2;
 
-  display: grid;
-  grid-template-rows: 20px 1fr 20px;
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-items: center;
-  min-height: 100svh;
-  padding: 80px;
-  gap: 64px;
+  justify-content: space-between;
+  height: 100vh; /* Use exact viewport height */
+  padding: 10px 20px; /* Further reduced padding */
   font-family: var(--font-geist-sans);
+  overflow: hidden; /* Prevent scrolling */
 }
 
 @media (prefers-color-scheme: dark) {
@@ -30,11 +30,13 @@
 .main {
   display: flex;
   flex-direction: column;
-  gap: 32px;
+  gap: 15px;
   justify-content: center;
   align-items: center;
   text-align: center;
-  grid-row-start: 2;
+  flex: 1;
+  margin: 0;
+  padding: 0;
 }
 
 .main ol {
@@ -93,9 +95,10 @@ a.secondary {
 }
 
 .footer {
-  grid-row-start: 3;
   display: flex;
-  gap: 24px;
+  gap: 10px;
+  margin-bottom: 5px;
+  padding: 0;
 }
 
 .footer a {

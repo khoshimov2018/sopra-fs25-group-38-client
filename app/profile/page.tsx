@@ -251,10 +251,11 @@ const ProfilePage = () => {
       const { userService } = apiService;
       
       // In production, call the logout endpoint
-      if (currentUser && currentUser.id && userService) {
+      if (userService) {
         try {
           // Use the userService to logout instead of direct API call
-          await userService.logoutUser(Number(currentUser.id));
+          // The token is automatically included in the request header by apiService
+          await userService.logoutUserByToken();
           message.success("Logged out successfully!");
         } catch (error) {
           console.warn("Logout API call failed, but proceeding with local logout", error);

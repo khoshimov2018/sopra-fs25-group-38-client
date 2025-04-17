@@ -307,14 +307,21 @@ const Register: React.FC = () => {
                           return Promise.resolve();
                         }
                         
-                        // Check if the email exists
-                        const exists = await userService.emailExists(value);
-                        
-                        if (exists) {
-                          return Promise.reject('This email is already registered. Please use a different email.');
+                        try {
+                          // Check if the email exists
+                          const exists = await userService.emailExists(value);
+                          
+                          if (exists) {
+                            return Promise.reject('This email is already registered. Please use a different email.');
+                          }
+                          
+                          return Promise.resolve();
+                        } catch (apiError) {
+                          // Log the error but continue with form submission
+                          console.warn("Email validation API error:", apiError);
+                          // Don't block registration if email check fails
+                          return Promise.resolve();
                         }
-                        
-                        return Promise.resolve();
                       } catch (error) {
                         // If the API call fails, we still allow the form submission
                         // The server-side validation will catch duplicate emails

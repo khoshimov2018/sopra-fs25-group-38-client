@@ -13,6 +13,7 @@
 /* Page background modifiers */
 .loginBackground {
   background: var(--bg-gradient);
+  background-attachment: fixed;
   min-height: 100vh;
   margin: 0;
   padding: 0;
