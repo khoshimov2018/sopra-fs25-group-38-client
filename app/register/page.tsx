@@ -433,7 +433,7 @@ const Register: React.FC = () => {
                   { type: 'email', message: "Please enter a valid email address!" },
                   { 
                     validator: async (_, value) => {
-                      if (!value || !value.includes('@')) return Promise.resolve();
+                      if (!value?.includes('@')) return Promise.resolve();
                       
                       // Using optional chaining with a more concise approach
                       const exists = await apiService.apiService?.userService?.emailExists(value);
