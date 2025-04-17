@@ -7,7 +7,7 @@ import { UserGetDTO } from "@/types";
  * Aligns with the StudentFilterController.java in the backend
  */
 export class StudentFilterService {
-  private apiService: ApiService;
+  private readonly apiService: ApiService;
 
   constructor(apiService: ApiService) {
     this.apiService = apiService;

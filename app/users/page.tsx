@@ -68,14 +68,14 @@ const UsersList: React.FC = () => {
       // Get current user ID from one of the users that matches the stored token
       if (users && token) {
         const currentUser = users.find(user => user.token === token);
-        if (currentUser && currentUser.id) {
+        if (currentUser?.id) {
           try {
-          // Call logout endpoint
-          await apiService.apiService.post(`/users/${currentUser.id}/logout`, {});
-          message.success("Logged out successfully!");
-        } catch (error) {
-          console.warn("Logout API call failed, but proceeding with local logout", error);
-        }
+            // Call logout endpoint
+            await apiService.apiService.post(`/users/${currentUser.id}/logout`, {});
+            message.success("Logged out successfully!");
+          } catch (error) {
+            console.warn("Logout API call failed, but proceeding with local logout", error);
+          }
         }
       }
       

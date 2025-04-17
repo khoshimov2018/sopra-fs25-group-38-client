@@ -7,7 +7,7 @@ import { UserGetDTO, UserLoginDTO, UserPostDTO, UserPutDTO, CourseSelectionDTO }
  * Aligns with the UserService.java in the backend
  */
 export class UserService {
-  private apiService: ApiService;
+  private readonly apiService: ApiService;
 
   constructor(apiService: ApiService) {
     this.apiService = apiService;

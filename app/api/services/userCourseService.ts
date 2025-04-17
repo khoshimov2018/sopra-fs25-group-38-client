@@ -7,7 +7,7 @@ import { CourseSelectionDTO } from "@/types";
  * Aligns with the UserCourseRepository.java in the backend and related controller endpoints
  */
 export class UserCourseService {
-  private apiService: ApiService;
+  private readonly apiService: ApiService;
 
   constructor(apiService: ApiService) {
     this.apiService = apiService;

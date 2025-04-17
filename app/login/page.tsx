@@ -31,11 +31,10 @@ const Login: React.FC = () => {
       message.loading("Connecting to server...");
       
       // Call the API service to login
-      const { userService } = apiService;
-      if (!userService) {
+      const response = await apiService.userService?.loginUser(values);
+      if (!response) {
         throw new Error("User service not available");
       }
-      const response = await userService.loginUser(values);
 
       // Store token and redirect
       if (response && response.token) {

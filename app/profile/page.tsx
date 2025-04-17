@@ -32,7 +32,7 @@ const ProfilePage = () => {
   const [fileList, setFileList] = useState<any[]>([]);
   const [previewImage, setPreviewImage] = useState<string>("");
 
-  const isAdmin = (email: string | undefined): boolean => email === "admin@example.com";
+  // Admin check function for potential future use
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -46,13 +46,12 @@ const ProfilePage = () => {
           return;
         }
 
-        const { userService } = apiService;
-        if (!userService) return;
         const tokenValue = effectiveToken.startsWith('Bearer ') ? effectiveToken.substring(7) : effectiveToken;
-        const apiUser = await userService.getUserByToken(tokenValue);
+        const apiUser = await apiService.userService?.getUserByToken(tokenValue);
+        if (!apiUser) return;
 
-        if (!apiUser || !apiUser.id) return;
-        const fullDetails = await userService.getUserById(Number(apiUser.id));
+        if (!apiUser.id) return;
+        const fullDetails = await apiService.userService?.getUserById(Number(apiUser.id));
         if (!fullDetails) return;
 
         const userProfile: UserProfile = {
@@ -339,8 +338,8 @@ const ProfilePage = () => {
       <div>
         <div>Please fix the following errors:</div>
         <ul style={{ marginTop: '8px', marginBottom: 0, paddingLeft: '20px' }}>
-          {errors.map((error, index) => (
-            <li key={index}>{error}</li>
+          {errors.map((error) => (
+            <li key={`error-${error}`}>{error}</li>
           ))}
         </ul>
       </div>
@@ -353,8 +352,6 @@ const ProfilePage = () => {
   const handleSaveProfile = async () => {
     // Early returns for missing data
     if (!editableUser || !currentUser?.id) return;
-    const { userService } = apiService;
-    if (!userService) return;
 
     // Validate all required fields
     const validationErrors = validateProfile();
@@ -448,7 +445,7 @@ const ProfilePage = () => {
       const reader = new FileReader();
       reader.readAsDataURL(file);
       reader.onload = () => resolve(reader.result as string);
-      reader.onerror = (error) => reject(error);
+      reader.onerror = (error) => reject(new Error(String(error)));
     });
     
   // Function to resize image for better performance and smaller payload size
@@ -472,11 +469,9 @@ const ProfilePage = () => {
             height *= maxWidth / width;
             width = maxWidth;
           }
-        } else {
-          if (height > maxHeight) {
-            width *= maxHeight / height;
-            height = maxHeight;
-          }
+        } else if (height > maxHeight) {
+          width *= maxHeight / height;
+          height = maxHeight;
         }
         
         canvas.width = width;

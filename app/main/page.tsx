@@ -141,12 +141,12 @@ const MainPage: React.FC = () => {
 
       /* -------- convert to UI model ---------- */
       const fetchedProfiles: UserProfile[] = filtered.map(u => {
-        const tags =
-          typeof u.studyGoals === "string"
-            ? u.studyGoals.split(",").map(t => t.trim()).filter(Boolean)
-            : Array.isArray(u.studyGoals)
-            ? u.studyGoals
-            : [];
+        let tags = [];
+      if (typeof u.studyGoals === "string") {
+        tags = u.studyGoals.split(",").map(t => t.trim()).filter(Boolean);
+      } else if (Array.isArray(u.studyGoals)) {
+        tags = u.studyGoals;
+      }
 
         const studyLevels =
           u.userCourses?.map(c => ({
@@ -435,8 +435,8 @@ const MainPage: React.FC = () => {
                 <div className={styles.cardSection}>
                   <div className={styles.detailsLabel}>Study Goals</div>
                   <div className={styles.tagContainer}>
-                    {currentProfile.tags?.map((t, i) => (
-                      <span key={i} className={styles.tag}>
+                    {currentProfile.tags?.map((t) => (
+                      <span key={`tag-${t}`} className={styles.tag}>
                         {t}
                       </span>
                     ))}
@@ -461,8 +461,8 @@ const MainPage: React.FC = () => {
 
                 <div className={styles.cardSection}>
                   <div className={styles.cardTitle}>Courses</div>
-                  {currentProfile.studyLevels?.map((lvl, i) => (
-                    <div key={i} className={styles.studyLevelRow}>
+                  {currentProfile.studyLevels?.map((lvl) => (
+                    <div key={`level-${lvl.subject}-${lvl.level}`} className={styles.studyLevelRow}>
                       <div className={styles.studyLevelLeft}>
                         <div className={styles.studyLevelGrade}>{lvl.grade}</div>
                         <div className={styles.studyLevelSubject}>

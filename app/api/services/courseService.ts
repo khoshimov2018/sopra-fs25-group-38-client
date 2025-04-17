@@ -7,7 +7,7 @@ import { UserAvailability } from "@/types/user";
  * Aligns with the CourseService.java and CourseController.java in the backend
  */
 export class CourseService {
-  private apiService: ApiService;
+  private readonly apiService: ApiService;
 
   constructor(apiService: ApiService) {
     this.apiService = apiService;

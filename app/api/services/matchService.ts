@@ -6,7 +6,7 @@ import { MatchGetDTO, MatchPostDTO } from "@/types";
  * Aligns with the MatchService.java and MatchController.java in the backend.
  */
 export class MatchService {
-  private apiService: ApiService;
+  private readonly apiService: ApiService;
 
   constructor(apiService: ApiService) {
     this.apiService = apiService;

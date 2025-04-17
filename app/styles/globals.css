@@ -418,12 +418,7 @@ input:focus, .ant-input:focus, .ant-input-password:focus {
 }
 
 /* Target the close button specifically */
-.black-theme-modal .ant-modal-close-x {
-  background-color: var(--bg-modal) !important;
-  border-radius: 0 !important;
-  height: 55px !important; /* Match the header height */
-  width: 55px !important;
-}
+/* Combined styles for close button X */
 
 /* Override any remaining backgrounds in the modal close button */
 .black-theme-modal .ant-modal-close,
