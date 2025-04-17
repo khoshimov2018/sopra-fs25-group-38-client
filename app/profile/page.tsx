@@ -17,6 +17,7 @@ import styles from "@/styles/profile.module.css";
 import mainStyles from "@/styles/main.module.css";
 import backgroundStyles from "@/styles/theme/backgrounds.module.css";
 import ProfileContent from "@/components/profile";
+import { getApiDomain } from "@/utils/domain";
 
 const ProfilePage = () => {
   const router = useRouter();
@@ -584,11 +585,28 @@ const ProfilePage = () => {
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    const token = localStorage.getItem("token");
+  
+    try {
+      if (token) {
+        const response = await fetch(`${getApiDomain()}/users/logout`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        
+      }
+    } catch (error) {
+      console.warn("Logout API failed, proceeding with local logout:", error);
+    }
+  
     localStorage.removeItem("token");
     clearToken();
     router.push("/login");
   };
+  
 
   if (loading || !currentUser) return <div>Loading...</div>;
 

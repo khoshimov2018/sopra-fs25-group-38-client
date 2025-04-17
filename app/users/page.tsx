@@ -14,6 +14,7 @@ import message from "antd/lib/message";
 import Typography from "antd/lib/typography";
 import type { TableProps } from "antd";
 import { formatDate } from "@/utils/date";
+import { getApiDomain } from "@/utils/domain";
 
 const { Title } = Typography;
 
@@ -64,31 +65,31 @@ const UsersList: React.FC = () => {
   const { value: token, clear: clearToken } = useLocalStorage<string>("token", "");
 
   const handleLogout = async (): Promise<void> => {
+    const token = localStorage.getItem("token");
+    console.log("Logging out from users page with token:", token);
+  
     try {
-      // Get current user ID from one of the users that matches the stored token
-      if (users && token) {
-        const currentUser = users.find(user => user.token === token);
-        if (currentUser?.id) {
-          try {
-            // Call logout endpoint
-            await apiService.apiService.post(`/users/${currentUser.id}/logout`, {});
-            message.success("Logged out successfully!");
-          } catch (error) {
-            console.warn("Logout API call failed, but proceeding with local logout", error);
-          }
-        }
+      if (token) {
+        const response = await fetch(`${getApiDomain()}/users/logout`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        message.success("Logged out successfully!");
       }
-      
-      // Clear token and redirect to login
-      clearToken();
-      router.push("/login");
     } catch (error) {
-      console.error("Error during logout:", error);
-      // Even if the API call fails, clear the token and redirect to login
-      clearToken();
-      router.push("/login");
+      console.warn("Logout API call failed:", error);
     }
+  
+    localStorage.removeItem("token");
+    localStorage.removeItem("userId");
+    clearToken(); 
+    router.push("/login");
   };
+  
+  
+  
 
   const handleProfileView = (userId: string) => {
     router.push(`/users/${userId}`);
