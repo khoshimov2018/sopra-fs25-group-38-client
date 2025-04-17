@@ -135,54 +135,108 @@ export class UserService {
    */
   async authenticateByToken(token: string): Promise<UserGetDTO | null> {
     try {
-      // Print token length and first few characters for debugging (not full token for security)
-      const tokenPreview = token.substring(0, 10) + '...';
-      const tokenLength = token.length;
-      console.log(`Attempting to authenticate with token: ${tokenPreview} (length: ${tokenLength})`);
-      
-      // Try to get user info via /users/me endpoint
-      // The token will be sent in the Authorization header by the apiService
-      return await this.apiService.get<UserGetDTO>(`/users/me`);
+      return await this.authenticateWithEndpoint(token);
     } catch (error) {
       console.error("Error authenticating token:", error);
+      return this.authenticateWithTokenDecode(token);
+    }
+  }
+
+  /**
+   * Helper method to authenticate using the /users/me endpoint
+   * @param token Authentication token
+   * @returns User data or throws an error
+   * @private
+   */
+  private async authenticateWithEndpoint(token: string): Promise<UserGetDTO> {
+    // Print token length and first few characters for debugging (not full token for security)
+    const tokenPreview = token.substring(0, 10) + '...';
+    const tokenLength = token.length;
+    console.log(`Attempting to authenticate with token: ${tokenPreview} (length: ${tokenLength})`);
+    
+    // Try to get user info via /users/me endpoint
+    // The token will be sent in the Authorization header by the apiService
+    return await this.apiService.get<UserGetDTO>(`/users/me`);
+  }
+
+  /**
+   * Helper method to authenticate by decoding the JWT token
+   * @param token Authentication token
+   * @returns User data or null if decoding fails
+   * @private
+   */
+  private async authenticateWithTokenDecode(token: string): Promise<UserGetDTO | null> {
+    if (!this.isValidTokenFormat(token)) {
+      return null;
+    }
+    
+    const cleanToken = this.cleanTokenString(token);
+    const userId = this.extractUserIdFromToken(cleanToken);
+    
+    if (!userId) {
+      return null;
+    }
+    
+    try {
+      return await this.getUserById(Number(userId));
+    } catch (error) {
+      console.error("Failed to get user by ID extracted from token:", error);
+      return null;
+    }
+  }
+
+  /**
+   * Check if token has valid format
+   * @param token Authentication token
+   * @returns True if token format is valid
+   * @private
+   */
+  private isValidTokenFormat(token: string): boolean {
+    if (!token || token.length < 10) {
+      console.error("Invalid token format - too short or missing");
+      return false;
+    }
+    return true;
+  }
+
+  /**
+   * Remove Bearer prefix from token if present
+   * @param token Authentication token
+   * @returns Cleaned token string
+   * @private
+   */
+  private cleanTokenString(token: string): string {
+    return token.startsWith('Bearer ') ? token.substring(7) : token;
+  }
+
+  /**
+   * Extract user ID from JWT token
+   * @param token Cleaned token string
+   * @returns User ID or null if extraction fails
+   * @private
+   */
+  private extractUserIdFromToken(token: string): string | null {
+    const tokenParts = token.split('.');
+    
+    if (tokenParts.length !== 3) {
+      console.error("Invalid JWT token format - doesn't have 3 parts separated by dots");
+      return null;
+    }
+    
+    try {
+      const payload = JSON.parse(atob(tokenParts[1]));
+      console.log("Successfully decoded token payload:", payload);
       
-      // Try an alternative approach if the /users/me endpoint fails
-      try {
-        // Make sure we have a token to work with
-        if (!token || token.length < 10) {
-          console.error("Invalid token format - too short or missing");
-          return null;
-        }
-        
-        // Strip 'Bearer ' prefix if it's still there
-        const cleanToken = token.startsWith('Bearer ') ? token.substring(7) : token;
-        
-        // Try to decode the JWT token to extract the user ID
-        const tokenParts = cleanToken.split('.');
-        if (tokenParts.length === 3) {
-          try {
-            const payload = JSON.parse(atob(tokenParts[1]));
-            console.log("Successfully decoded token payload:", payload);
-            
-            if (payload.sub || payload.id) {
-              const userId = payload.sub || payload.id;
-              console.log("Extracted user ID from token:", userId);
-              
-              // Try to get user by ID
-              return await this.getUserById(Number(userId));
-            } else {
-              console.error("Token payload doesn't contain user ID (sub or id fields)");
-            }
-          } catch (parseError) {
-            console.error("Failed to parse token payload:", parseError);
-          }
-        } else {
-          console.error("Invalid JWT token format - doesn't have 3 parts separated by dots");
-        }
-      } catch (decodeError) {
-        console.error("Failed to decode token:", decodeError);
-      }
+      if (payload.sub || payload.id) {
+        const userId = payload.sub || payload.id;
+        console.log("Extracted user ID from token:", userId);
+        return userId;
+      } 
       
+      console.error("Token payload doesn't contain user ID (sub or id fields)");
+      return null;
+    } catch (parseError) {
+      console.error("Failed to parse token payload:", parseError);
       return null;
     }
   }
