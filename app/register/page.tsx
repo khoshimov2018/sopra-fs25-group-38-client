@@ -435,21 +435,13 @@ const Register: React.FC = () => {
                     validator: async (_, value) => {
                       if (!value || !value.includes('@')) return Promise.resolve();
                       
-                      try {
-                        // Check if the email exists
-                        const exists = await apiService.userService?.emailExists(value) ?? false;
-                        
-                        if (exists) {
-                          return Promise.reject(new Error('This email is already registered. Please use a different email.'));
-                        }
-                        
-                        return Promise.resolve();
-                      } catch (error) {
-                        // If the API call fails, we still allow the form submission
-                        // The server-side validation will catch duplicate emails
-                        console.warn("Could not validate email:", error);
-                        return Promise.resolve();
+                      // Using optional chaining with a more concise approach
+                      const exists = await apiService.apiService?.userService?.emailExists(value);
+                      if (exists) {
+                        return Promise.reject(new Error('This email is already registered. Please use a different email.'));
                       }
+                      
+                      return Promise.resolve();
                     },
                     validateTrigger: 'onBlur' // Only validate when field loses focus
                   }
