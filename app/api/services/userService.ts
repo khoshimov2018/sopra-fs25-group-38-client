@@ -227,8 +227,8 @@ export class UserService {
       const payload = JSON.parse(atob(tokenParts[1]));
       console.log("Successfully decoded token payload:", payload);
       
-      if (payload.sub || payload.id) {
-        const userId = payload.sub || payload.id;
+      if (payload.sub ?? payload.id) {
+        const userId = payload.sub ?? payload.id;
         console.log("Extracted user ID from token:", userId);
         return userId;
       } 
@@ -271,6 +271,7 @@ export class UserService {
       await this.apiService.get<void>(`/users/${userId}/authorize`);
       return true;
     } catch (error) {
+      console.error(`Authorization check failed for user ${userId}:`, error);
       return false;
     }
   }

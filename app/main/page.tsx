@@ -276,7 +276,7 @@ const MainPage: React.FC = () => {
   /*  Rendering: empty list variant                                     */
   /* ------------------------------------------------------------------ */
 
-  const currentProfile = profiles[currentProfileIndex] || null;
+  const currentProfile = profiles[currentProfileIndex] ?? null;
 
   if (!currentProfile) {
     return (
@@ -428,7 +428,7 @@ const MainPage: React.FC = () => {
                 <div className={styles.cardSection}>
                   <div className={styles.detailsLabel}>Study Level</div>
                   <div className={styles.detailsValue}>
-                    {currentProfile.studyLevel || "Not specified"}
+                    {currentProfile.studyLevel ?? "Not specified"}
                   </div>
                 </div>
 

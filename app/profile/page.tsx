@@ -114,8 +114,8 @@ const ProfilePage = () => {
   
     setEditableUser({
       ...editableUser,
-      studyLevels: [...(editableUser.studyLevels || []), newStudyLevel],
-      userCourses: [...(editableUser.userCourses || []), newUserCourse]
+      studyLevels: [...(editableUser.studyLevels ?? []), newStudyLevel],
+      userCourses: [...(editableUser.userCourses ?? []), newUserCourse]
     });
   };
   
@@ -135,15 +135,15 @@ const ProfilePage = () => {
 
   const handleAddTag = () => {
     if (!editableUser) return;
-    const tags = [...(editableUser.tags || []), ""];
+    const tags = [...(editableUser.tags ?? []), ""];
     setEditableUser({ ...editableUser, tags });
   };
   
   const handleRemoveStudyLevel = (index: number) => {
     if (!editableUser) return;
   
-    const studyLevels = [...(editableUser.studyLevels || [])];
-    const userCourses = [...(editableUser.userCourses || [])];
+    const studyLevels = [...(editableUser.studyLevels ?? [])];
+    const userCourses = [...(editableUser.userCourses ?? [])];
   
     studyLevels.splice(index, 1);
     userCourses.splice(index, 1);
@@ -176,7 +176,7 @@ const ProfilePage = () => {
     // Check study goals
     const studyGoals = typeof editableUser.studyGoals === 'string'
       ? editableUser.studyGoals.split(',').map(g => g.trim()).filter(Boolean)
-      : editableUser.studyGoals || [];
+      : editableUser.studyGoals ?? [];
     
     if (!studyGoals.length) {
       errors.push('At least one Study Goal is required');
@@ -188,7 +188,7 @@ const ProfilePage = () => {
     }
 
     // Check courses
-    const validCourses = (editableUser.userCourses || []).filter(c => c.courseId !== 0);
+    const validCourses = (editableUser.userCourses ?? []).filter(c => c.courseId !== 0);
     if (!validCourses.length) {
       errors.push('At least one Course is required');
     }
@@ -205,7 +205,7 @@ const ProfilePage = () => {
     // Map and filter courses
     const courseSelections = userCourses.map((course) => ({
       courseId: course.courseId,
-      knowledgeLevel: course.knowledgeLevel || 'BEGINNER'
+      knowledgeLevel: course.knowledgeLevel ?? 'BEGINNER'
     })).filter(c => c.courseId !== 0); // skip empty courses
     
     // Check for duplicate courses

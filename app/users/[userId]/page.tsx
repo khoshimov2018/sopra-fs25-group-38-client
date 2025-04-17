@@ -236,14 +236,17 @@ const UserProfile: React.FC = () => {
     setIsEditing(true);
   };
 
-  const prepareUpdateData = (values: EditFormValues, user: User) => ({
-    id: user.id,
-    email: values.email,
-    name: user.name ?? "",
-    status: user.status,
-    birthday: values.birthday ? values.birthday.format("YYYY-MM-DD") : null,
-    password: "PROTECTED"
-  });
+  const prepareUpdateData = (values: EditFormValues, user: User) => {
+    // Create the update object without including password
+    return {
+      id: user.id,
+      email: values.email,
+      name: user.name ?? "",
+      status: user.status,
+      birthday: values.birthday ? values.birthday.format("YYYY-MM-DD") : null
+      // Password is excluded from updates when not changing it
+    };
+  };
 
   const handleUpdateError = (err: unknown) => {
     console.error("Error updating profile:", err);
