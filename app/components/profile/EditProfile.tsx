@@ -19,6 +19,34 @@ interface EditProfileProps {
   onSave: () => void;
 }
 
+/**
+ * Extract study goals from various formats
+ */
+const getStudyGoalsArray = (user: UserProfile): string[] => {
+  if (Array.isArray(user.studyGoals)) {
+    return user.studyGoals;
+  } else if (typeof user.studyGoals === 'string') {
+    return user.studyGoals.split(',').map(g => g.trim());
+  }
+  return [];
+};
+
+/**
+ * Get study levels for display
+ */
+const getStudyLevelsToDisplay = (user: UserProfile) => {
+  if (user.studyLevels && user.studyLevels.length > 0) {
+    return user.studyLevels;
+  } else if (user.userCourses && user.userCourses.length > 0) {
+    return user.userCourses.map(course => ({
+      subject: course.courseName ?? String(course.courseId),
+      grade: "N/A",
+      level: course.knowledgeLevel ?? "Beginner"
+    }));
+  }
+  return [];
+};
+
 const EditProfile: React.FC<EditProfileProps> = ({ 
   user,
   onInputChange,
@@ -54,57 +82,27 @@ const EditProfile: React.FC<EditProfileProps> = ({
   // Apply form values from user object
   useEffect(() => {
     if (user) {
+      // Extract study goals from various formats
+      let studyGoals = [];
+      if (Array.isArray(user.studyGoals)) {
+        studyGoals = user.studyGoals;
+      } else if (typeof user.studyGoals === 'string') {
+        studyGoals = user.studyGoals.split(',').map(g => g.trim());
+      }
+      
       form.setFieldsValue({
         name: user.name,
         email: user.email,
         bio: user.bio,
         studyLevel: user.studyLevel,
-        studyGoals: Array.isArray(user.studyGoals) 
-          ? user.studyGoals 
-          : typeof user.studyGoals === 'string' 
-            ? user.studyGoals.split(',').map(g => g.trim()) 
-            : [],
+        studyGoals,
         availability: user.availability,
         // No need to set courses as they are handled separately
       });
     }
   }, [user, form]);
 
-  // Prepare course selections for display
-  const getCourseSelections = () => {
-    // Prefer userCourses if available, otherwise use studyLevels
-    if (user.userCourses && user.userCourses.length > 0) {
-      return user.userCourses.map(course => ({
-        courseId: course.courseId,
-        knowledgeLevel: course.knowledgeLevel
-      }));
-    } else if (user.studyLevels && user.studyLevels.length > 0) {
-      return user.studyLevels.map(level => {
-        // Try to find matching course by name
-        const courseId = availableCourses.find(c => 
-          c.courseName.toLowerCase() === level.subject.toLowerCase()
-        )?.id || 0;
-        
-        // Convert level string to enum value
-        let knowledgeLevel = ProfileKnowledgeLevel.BEGINNER;
-        switch (level.level.toLowerCase()) {
-          case 'intermediate':
-            knowledgeLevel = ProfileKnowledgeLevel.INTERMEDIATE;
-            break;
-          case 'advanced':
-          case 'expert':
-            knowledgeLevel = ProfileKnowledgeLevel.ADVANCED;
-            break;
-        }
-        
-        return {
-          courseId,
-          knowledgeLevel
-        };
-      });
-    }
-    return [];
-  };
+  // Removed unused function
 
   // Handle study goals change
   const handleStudyGoalsChange = (values: string[]) => {
@@ -172,25 +170,23 @@ const EditProfile: React.FC<EditProfileProps> = ({
     // Skip validation if selecting empty course (courseId = 0)
     if (courseId !== 0) {
       // Check if this course is already selected in another row
-      const isDuplicate = (user.userCourses || []).some((course, i) => 
+      const isDuplicate = (user.userCourses ?? []).some((course, i) => 
         i !== index && course.courseId === courseId
       );
       
       if (isDuplicate) {
         // Find the course name for better error message
-        const courseName = availableCourses.find(c => c.id === courseId)?.courseName || `Course #${courseId}`;
+        const courseName = availableCourses.find(c => c.id === courseId)?.courseName ?? `Course #${courseId}`;
         
         // Use antdMessage instead of potentially undefined message
         const antdMessage = require('antd').message;
         antdMessage.error(`"${courseName}" is already selected. Please choose a different course.`);
         
         // Reset the selection to the previous value or empty (0)
-        const previousCourseId = user.userCourses && user.userCourses[index] 
-          ? user.userCourses[index].courseId 
-          : 0;
+        const previousCourseId = user.userCourses?.[index]?.courseId ?? 0;
           
         // If the previous value was also a duplicate somehow, just reset to empty
-        if ((user.userCourses || []).some((course, i) => 
+        if ((user.userCourses ?? []).some((course, i) => 
             i !== index && course.courseId === previousCourseId && previousCourseId !== 0)) {
           courseId = 0;
         } else {
@@ -200,9 +196,9 @@ const EditProfile: React.FC<EditProfileProps> = ({
     }
     
     const selectedCourse = availableCourses.find(c => c.id === courseId);
-    const courseName = selectedCourse?.courseName || '';
+    const courseName = selectedCourse?.courseName ?? '';
   
-    const updatedUserCourses = [...(user.userCourses || [])];
+    const updatedUserCourses = [...(user.userCourses ?? [])];
     updatedUserCourses[index] = {
       ...updatedUserCourses[index],
       courseId,
@@ -228,7 +224,7 @@ const EditProfile: React.FC<EditProfileProps> = ({
 
     onStudyLevelChange(index, 'level', levelString);
 
-    const updatedUserCourses = [...(user.userCourses || [])];
+    const updatedUserCourses = [...(user.userCourses ?? [])];
     updatedUserCourses[index] = {
       ...updatedUserCourses[index],
       knowledgeLevel: value
@@ -263,7 +259,7 @@ const EditProfile: React.FC<EditProfileProps> = ({
         style={{ width: '100%' }}
         onFinish={() => {
           // Validate for duplicate courses before proceeding
-          const userCourses = user.userCourses || [];
+          const userCourses = user.userCourses ?? [];
           const validCourses = userCourses.filter(course => course.courseId !== 0);
           
           // Check for duplicate course IDs
@@ -273,7 +269,7 @@ const EditProfile: React.FC<EditProfileProps> = ({
           validCourses.forEach(course => {
             if (uniqueCourseIds.has(course.courseId)) {
               duplicateCourses.push(
-                availableCourses.find(c => c.id === course.courseId)?.courseName || `Course #${course.courseId}`
+                availableCourses.find(c => c.id === course.courseId)?.courseName ?? `Course #${course.courseId}`
               );
             } else {
               uniqueCourseIds.add(course.courseId);
@@ -287,7 +283,7 @@ const EditProfile: React.FC<EditProfileProps> = ({
                 <div>You have selected some courses multiple times:</div>
                 <ul style={{ marginTop: '8px', marginBottom: 0, paddingLeft: '20px' }}>
                   {duplicateCourses.map((course, idx) => (
-                    <li key={idx}>{course}</li>
+                    <li key={`duplicate-course-${idx}-${course}`}>{course}</li>
                   ))}
                 </ul>
                 <div style={{ marginTop: '8px' }}>Please select each course only once.</div>
@@ -331,7 +327,7 @@ const EditProfile: React.FC<EditProfileProps> = ({
             className={componentStyles.input}
             onChange={onInputChange}
             name="name"
-            value={user.name || ''}
+            value={user.name ?? ''}
             size="large"
           />
         </Form.Item>
@@ -351,7 +347,7 @@ const EditProfile: React.FC<EditProfileProps> = ({
             className={componentStyles.input}
             onChange={onInputChange}
             name="email"
-            value={user.email || ''}
+            value={user.email ?? ''}
             disabled // Email shouldn't be changeable
             size="large"
             style={{ backgroundColor: '#f5f5f5' }}
@@ -370,7 +366,7 @@ const EditProfile: React.FC<EditProfileProps> = ({
             className={componentStyles.input}
             onChange={handleStudyLevelSelectChange}
             popupMatchSelectWidth={false}
-            value={user.studyLevel || undefined}
+            value={user.studyLevel ?? undefined}
             size="large"
           >
             <Option value="Bachelor">Bachelor</Option>
@@ -398,11 +394,7 @@ const EditProfile: React.FC<EditProfileProps> = ({
             maxTagTextLength={10}
             maxTagPlaceholder={(omittedValues) => `+ ${omittedValues.length} more`}
             popupMatchSelectWidth={false}
-            value={Array.isArray(user.studyGoals) 
-              ? user.studyGoals 
-              : typeof user.studyGoals === 'string' 
-                ? user.studyGoals.split(',').map(g => g.trim()) 
-                : []}
+            value={getStudyGoalsArray(user)}
             size="large"
           >
             <Option value="Pass exams">Pass exams</Option>
@@ -424,7 +416,7 @@ const EditProfile: React.FC<EditProfileProps> = ({
             placeholder="When are you available to study?"
             className={componentStyles.input}
             onChange={handleAvailabilityChange}
-            value={user.availability || undefined}
+            value={user.availability ?? undefined}
             size="large"
           >
             <Option value="MORNING">Morning</Option>
@@ -444,7 +436,7 @@ const EditProfile: React.FC<EditProfileProps> = ({
             className={componentStyles.input}
             onChange={onInputChange}
             name="bio"
-            value={user.bio || ''}
+            value={user.bio ?? ''}
             autoSize={{ minRows: 3, maxRows: 6 }}
             style={{ 
               padding: '12px', 
@@ -470,18 +462,9 @@ const EditProfile: React.FC<EditProfileProps> = ({
             Please select courses and your knowledge level
           </div>
           
-          {(user.studyLevels && user.studyLevels.length > 0 ? user.studyLevels : 
-            user.userCourses && user.userCourses.length > 0 ? 
-              user.userCourses.map(course => ({
-                subject: course.courseName || String(course.courseId),
-                grade: "N/A",
-                level: course.knowledgeLevel || "Beginner"
-              })) : []
-          ).map((level, index) => {
+          {getStudyLevelsToDisplay(user).map((level, index) => {
             // Find course ID if available
-            const courseId = user.userCourses && user.userCourses[index] 
-              ? user.userCourses[index].courseId 
-              : availableCourses.find(c => c.courseName.toLowerCase() === level.subject.toLowerCase())?.id || 0;
+            const courseId = user.userCourses?.[index]?.courseId ?? (availableCourses.find(c => c.courseName.toLowerCase() === level.subject.toLowerCase())?.id ?? 0);
               
             // Map level string to enum value
             let knowledgeLevel = ProfileKnowledgeLevel.BEGINNER;
@@ -489,13 +472,13 @@ const EditProfile: React.FC<EditProfileProps> = ({
               knowledgeLevel = ProfileKnowledgeLevel.INTERMEDIATE;
             } else if (level.level.toLowerCase().includes('advanced') || level.level.toLowerCase().includes('expert')) {
               knowledgeLevel = ProfileKnowledgeLevel.ADVANCED;
-            } else if (user.userCourses && user.userCourses[index]) {
+            } else if (user.userCourses?.[index]?.knowledgeLevel) {
               knowledgeLevel = user.userCourses[index].knowledgeLevel as ProfileKnowledgeLevel;
             }
               
             return (
               <Row 
-                key={index} 
+                key={`course-level-${index}-${courseId}`} 
                 gutter={[8, 16]} 
                 style={{ marginBottom: 16 }}
                 align="middle"
@@ -503,7 +486,7 @@ const EditProfile: React.FC<EditProfileProps> = ({
                 <Col span={11}>
                   <Select
                     placeholder="Select Course"
-                    value={courseId || undefined}
+                    value={courseId ?? undefined}
                     onChange={(value) => handleCourseChange(index, value)}
                     style={{ width: '100%' }}
                     className={componentStyles.input}
@@ -516,7 +499,7 @@ const EditProfile: React.FC<EditProfileProps> = ({
                   >
                     {availableCourses.map(course => {
                       // Check if this course is already selected in any other row
-                      const isSelected = (user.userCourses || []).some((userCourse, i) => 
+                      const isSelected = (user.userCourses ?? []).some((userCourse, i) => 
                         i !== index && userCourse.courseId === course.id
                       );
                       

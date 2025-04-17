@@ -33,6 +33,92 @@ interface EditFormValues {
 
 const { Title } = Typography;
 
+/**
+ * Component for rendering user profile content
+ */
+const UserProfileContent: React.FC<{
+  loading: boolean;
+  error: string | null;
+  user: User | null;
+  isOwnProfile: boolean;
+  isEditing: boolean;
+  onBackClick: () => void;
+  onEditClick: () => void;
+}> = ({ loading, error, user, isOwnProfile, isEditing, onBackClick, onEditClick }) => {
+  // Loading state
+  if (loading) {
+    return (
+      <div style={{ textAlign: 'center', padding: '40px 0' }}>
+        <Spin size="large" />
+        <div style={{ marginTop: '10px' }}>Loading user profile...</div>
+      </div>
+    );
+  }
+  
+  // Error state
+  if (error) {
+    return (
+      <div className="error-container" style={{ textAlign: 'center', padding: '20px' }}>
+        <Typography.Text type="danger" style={{ fontSize: '16px' }}>
+          {error}
+        </Typography.Text>
+        <div style={{ marginTop: '20px' }}>
+          <Button type="primary" onClick={onBackClick}>
+            Return to Users List
+          </Button>
+        </div>
+      </div>
+    );
+  }
+  
+  // No user data state
+  if (!user) {
+    return (
+      <div style={{ textAlign: 'center', padding: '20px' }}>
+        <Typography.Text>No user data available</Typography.Text>
+      </div>
+    );
+  }
+  
+  // User profile content
+  return (
+    <>
+      <Descriptions
+        bordered
+        column={1}
+        labelStyle={{ fontWeight: 'bold', width: '150px', color: 'white' }}
+        contentStyle={{ whiteSpace: 'pre-wrap' }}
+      >
+        <Descriptions.Item label="Email">{user.email}</Descriptions.Item>
+        <Descriptions.Item label="Name">{user.name ?? "N/A"}</Descriptions.Item>
+        <Descriptions.Item label="Status">
+          <Tag color={user.status === "ONLINE" ? "green" : "red"}>
+            {user.status ?? "UNKNOWN"}
+          </Tag>
+        </Descriptions.Item>
+        <Descriptions.Item label="Creation Date">
+          {user.creationDate ? formatDate(user.creationDate, true) : "N/A"}
+        </Descriptions.Item>
+        <Descriptions.Item label="Birth Date">
+          {user.birthday ? formatDate(user.birthday) : "Not provided"}
+        </Descriptions.Item>
+      </Descriptions>
+      {isOwnProfile && !isEditing && (
+        <div style={{ marginTop: '20px', textAlign: 'center' }}>
+          <Button
+            onClick={onEditClick}
+            type="primary"
+            size="large"
+            icon={<EditOutlined />}
+          >
+            Edit My Profile
+          </Button>
+        </div>
+      )}
+    </>
+  );
+};
+
 const UserProfile: React.FC = () => {
   const router = useRouter();
   const params = useParams();
@@ -56,6 +142,10 @@ const UserProfile: React.FC = () => {
       return false;
     }
     return true;
+  };
+
+  const handleBackToUsers = () => {
+    router.push("/users");
   };
 
   const fetchCurrentUser = async (effectiveToken: string) => {
@@ -90,27 +180,32 @@ const UserProfile: React.FC = () => {
     }
   };
 
+  const mergeWithCachedData = (userData: User): User => {
+    const cachedStr = localStorage.getItem(localStorageKey);
+    if (!cachedStr) return userData;
+    
+    try {
+      const cached = JSON.parse(cachedStr) as User;
+      return {
+        ...userData,
+        email: cached.email ?? userData.email,
+        birthday: cached.birthday ?? userData.birthday
+      };
+    } catch {
+      console.error("Error parsing cached user data");
+      return userData;
+    }
+  };
+
   const fetchUserProfile = async () => {
     const effectiveToken = token ?? localStorage.getItem("token") ?? "";
     try {
       setLoading(true);
       setError(null);
       const userData = await apiService.get<User>(`/users/${userId}`);
-      const cachedStr = localStorage.getItem(localStorageKey);
-      let mergedUser = userData;
-      if (cachedStr) {
-        try {
-          const cached = JSON.parse(cachedStr) as User;
-          mergedUser = {
-            ...userData,
-            email: cached.email ?? userData.email,
-            birthday: cached.birthday ?? userData.birthday
-          };
-        } catch {
-          console.error("Error parsing cached user data");
-        }
-      }
+      const mergedUser = mergeWithCachedData(userData);
       setUser(mergedUser);
+      
       if (effectiveToken) {
         await fetchCurrentUser(effectiveToken);
       }
@@ -130,10 +225,6 @@ const UserProfile: React.FC = () => {
     () => String(currentUserId) === String(userId),
     [currentUserId, userId]
   );
-
-  const handleBackToUsers = () => {
-    router.push("/users");
-  };
 
   const handleEditClick = () => {
     if (user) {
@@ -231,62 +322,15 @@ const UserProfile: React.FC = () => {
         }
         style={{ width: '80%', maxWidth: 800 }}
       >
-        {loading ? (
-          <div style={{ textAlign: 'center', padding: '40px 0' }}>
-            <Spin size="large" />
-            <div style={{ marginTop: '10px' }}>Loading user profile...</div>
-          </div>
-        ) : error ? (
-          <div className="error-container" style={{ textAlign: 'center', padding: '20px' }}>
-            <Typography.Text type="danger" style={{ fontSize: '16px' }}>
-              {error}
-            </Typography.Text>
-            <div style={{ marginTop: '20px' }}>
-              <Button type="primary" onClick={handleBackToUsers}>
-                Return to Users List
-              </Button>
-            </div>
-          </div>
-        ) : user ? (
-          <>
-            <Descriptions
-              bordered
-              column={1}
-              labelStyle={{ fontWeight: 'bold', width: '150px', color: 'white' }}
-              contentStyle={{ whiteSpace: 'pre-wrap' }}
-            >
-              <Descriptions.Item label="Email">{user.email}</Descriptions.Item>
-              <Descriptions.Item label="Name">{user.name ?? "N/A"}</Descriptions.Item>
-              <Descriptions.Item label="Status">
-                <Tag color={user.status === "ONLINE" ? "green" : "red"}>
-                  {user.status ?? "UNKNOWN"}
-                </Tag>
-              </Descriptions.Item>
-              <Descriptions.Item label="Creation Date">
-                {user.creationDate ? formatDate(user.creationDate, true) : "N/A"}
-              </Descriptions.Item>
-              <Descriptions.Item label="Birth Date">
-                {user.birthday ? formatDate(user.birthday) : "Not provided"}
-              </Descriptions.Item>
-            </Descriptions>
-            {isOwnProfile && !isEditing && (
-              <div style={{ marginTop: '20px', textAlign: 'center' }}>
-                <Button
-                  onClick={handleEditClick}
-                  type="primary"
-                  size="large"
-                  icon={<EditOutlined />}
-                >
-                  Edit My Profile
-                </Button>
-              </div>
-            )}
-          </>
-        ) : (
-          <div style={{ textAlign: 'center', padding: '20px' }}>
-            <Typography.Text>No user data available</Typography.Text>
-          </div>
-        )}
+        <UserProfileContent 
+          loading={loading}
+          error={error}
+          user={user}
+          isOwnProfile={isOwnProfile}
+          isEditing={isEditing}
+          onBackClick={handleBackToUsers}
+          onEditClick={handleEditClick}
+        />
       </Card>
       <Modal
         title="Edit Profile"
