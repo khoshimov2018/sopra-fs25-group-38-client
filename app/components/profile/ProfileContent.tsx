@@ -11,6 +11,7 @@ interface ProfileContentProps {
   editableUser: UserProfile | null;
   isEditing: boolean;
   onEditToggle: () => void;
+  onDeleteAccount: () => void;
   onImageUpload: () => void;
   onInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
   onTagChange: (index: number, value: string) => void;
@@ -26,6 +27,7 @@ const ProfileContent: React.FC<ProfileContentProps> = ({
   editableUser,
   isEditing,
   onEditToggle,
+  onDeleteAccount,
   onImageUpload,
   onInputChange,
   onTagChange,
@@ -37,7 +39,11 @@ const ProfileContent: React.FC<ProfileContentProps> = ({
 }) => {
   return (
     <div className={styles.content}>
-      <ProfileHeader isEditing={isEditing} onEditToggle={onEditToggle} />
+      <ProfileHeader 
+        isEditing={isEditing} 
+        onEditToggle={onEditToggle} 
+        onDeleteAccount={onDeleteAccount} 
+      />
       
       <div className={styles.profileGrid}>
         <div className={styles.profileCard}>

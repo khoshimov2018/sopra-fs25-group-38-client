@@ -33,6 +33,8 @@ export class StudentFilterService {
     
     // Add availability if provided
     if (availability && availability.length > 0) {
+      // Server expects each value as a separate parameter with the same name
+      // e.g., availability=MORNING&availability=EVENING
       availability.forEach(avail => params.append('availability', avail.toString()));
     }
 
@@ -40,7 +42,7 @@ export class StudentFilterService {
     
     // Construct URL with query parameters
     const url = `/students${params.toString() ? '?' + params.toString() : ''}`;
-    console.log("Fetching filtered students with URL:", url);
+    // No need to log the URL for every request
     return this.apiService.get<UserGetDTO[]>(url);
   }
 

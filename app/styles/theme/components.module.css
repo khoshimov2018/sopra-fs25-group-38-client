@@ -94,6 +94,38 @@
   background: var(--primary-light);
 }
 
+.secondaryButton {
+  background: #F5F5F5;
+  border: 1px solid #D9D9D9;
+  color: #1E1E1E;
+}
+
+.secondaryButton:hover {
+  background: #E0E0E0;
+  border: 1px solid #C0C0C0;
+}
+
+.dangerButton {
+  background: #e06464;
+  border: 1px solid #e06464;
+  color: white;
+}
+
+.dangerButton:hover {
+  background: #d45252;
+  border: 1px solid #d45252;
+}
+
+.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.disabled:hover {
+  background: #e06464;
+  border: 1px solid #e06464;
+}
+
 /* Links */
 
 .linkContainer {

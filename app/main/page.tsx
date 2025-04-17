@@ -22,11 +22,9 @@ import {UserService} from "@/api/services/userService";
 
 
 
-// Mocked user profile data for now
-// This would be replaced with API data in production
+// User profile data with extended properties
 interface UserProfile extends User {
   studyStyle?: string;
-  goal?: string;
   bio?: string;
   studyLevel?: string;
   tags?: string[];
@@ -53,10 +51,10 @@ const MainPage: React.FC = () => {
   const [isUserLoaded, setIsUserLoaded] = useState(false);
   const [filters, setFilters] = useState<{
     selectedCourses: number[];
-    availability: UserAvailability | null;
+    availabilities: UserAvailability[];
   }>({
     selectedCourses: [],
-    availability: null
+    availabilities: []
   });
 
   // This will be populated from API when fetchUsers is called
@@ -84,7 +82,7 @@ const MainPage: React.FC = () => {
   //     console.log("All fetched users:", users.map(u => ({ id: u.id, name: u.name })));
     const fetchUsers = async (
         courseIds?: number[],                     // courseIds passed directly
-        availability?: UserAvailability[],        // availability passed directly
+        availability?: UserAvailability[],        // availability passed as an array, matching server expectations
         currentUserId?: number
       ) => {
         try {
@@ -96,11 +94,11 @@ const MainPage: React.FC = () => {
             return;
           }
       
-          console.log("Current user:", currentUser);
+          // No need to log current user details
       
       // Called with provided values
       const users = await studentFilterService.getFilteredStudents(courseIds, availability);
-      console.log("All fetched users:", users.map(u => ({ id: u.id, name: u.name })));
+      // No need to log all fetched users
   
 
       if (users && users.length > 0) {
@@ -119,11 +117,11 @@ const MainPage: React.FC = () => {
         
         // Convert UserGetDTO to UserProfile format
         const fetchedProfiles: UserProfile[] = filteredUsers.map(user => {
-          // Extract study goals as tags (splitting by comma if it's a string)
+          // Extract study goals as tags - properly handling comma-separated values
           const tags = user.studyGoals ? 
             typeof user.studyGoals === 'string' ? 
-              user.studyGoals.split(',').map(tag => tag.trim()) : 
-              [user.studyGoals] : 
+              user.studyGoals.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0) : 
+              Array.isArray(user.studyGoals) ? user.studyGoals : [user.studyGoals] : 
             [];
             
           // Convert userCourses to studyLevels format
@@ -134,9 +132,8 @@ const MainPage: React.FC = () => {
               grade: "N/A", // Grade information isn't available in the DTO
               level: course.knowledgeLevel || "BEGINNER"
             }));
-            console.log("Mapped study levels from userCourses:", studyLevels);
+            // No need to log study levels for every user
           } else {
-            console.log("No userCourses found for user:", user.id);
             studyLevels = [];
           }
           
@@ -165,7 +162,6 @@ const MainPage: React.FC = () => {
             token: user.token,
             status: user.status,
             studyStyle: formattedAvailability,
-            goal: user.studyGoals || "Not specified",
             bio: user.bio || "",
             studyLevel: user.studyLevel || "",
             tags: tags,
@@ -174,7 +170,7 @@ const MainPage: React.FC = () => {
           };
         });
         
-        console.log("Fetched profiles:", fetchedProfiles);
+        // No need to log all fetched profiles
         setProfiles(fetchedProfiles);
         message.success(`Loaded ${fetchedProfiles.length} profiles`);
       } else {
@@ -259,10 +255,10 @@ const MainPage: React.FC = () => {
     setFilterModalVisible(true);
   };
   
-  const handleFilterSave = async (selectedCourses: number[], availability: UserAvailability | null) => {
+  const handleFilterSave = async (selectedCourses: number[], availabilities: UserAvailability[]) => {
     setFilters({
       selectedCourses,
-      availability
+      availabilities
     });
     
     try {
@@ -275,26 +271,26 @@ const MainPage: React.FC = () => {
       message.loading("Applying filters...");
       
       // Get filtered students using the service
+      // The server expects a list of availability values, which we now support
       const filteredStudents = await studentFilterService.getFilteredStudents(
         selectedCourses.length > 0 ? selectedCourses : undefined,
-        availability ? [availability] : undefined
+        availabilities.length > 0 ? availabilities : undefined
       );
       
       // Filter out the current user - ensure we use number comparison
       const currentUserId = Number(currentUser.id);
       const withoutCurrentUser = filteredStudents.filter(user => Number(user.id) !== currentUserId);
-      console.log("Filter - current user ID:", currentUserId);
-      console.log("Filter - filtered users:", withoutCurrentUser.map(u => ({ id: u.id, name: u.name })));
+      // No need to log filtering details
       
       // Update the profiles with the filtered students
       if (withoutCurrentUser && withoutCurrentUser.length > 0) {
         // Convert filtered students to profiles
         const filteredProfiles: UserProfile[] = withoutCurrentUser.map(user => {
-          // Extract study goals as tags
+          // Extract study goals as tags - properly handling comma-separated values
           const tags = user.studyGoals ? 
             typeof user.studyGoals === 'string' ? 
-              user.studyGoals.split(',').map(tag => tag.trim()) : 
-              [user.studyGoals] : 
+              user.studyGoals.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0) : 
+              Array.isArray(user.studyGoals) ? user.studyGoals : [user.studyGoals] : 
             [];
             
           // Convert userCourses to studyLevels format  
@@ -305,9 +301,8 @@ const MainPage: React.FC = () => {
               grade: "N/A", // Grade information isn't available in the DTO
               level: course.knowledgeLevel || "BEGINNER"
             }));
-            console.log("Mapped study levels from userCourses for filtered user:", studyLevels);
+            // No need to log study levels for every filtered user
           } else {
-            console.log("No userCourses found for filtered user:", user.id);
             studyLevels = [];
           }
           
@@ -336,7 +331,6 @@ const MainPage: React.FC = () => {
             token: user.token,
             status: user.status,
             studyStyle: formattedAvailability,
-            goal: user.studyGoals || "Not specified",
             bio: user.bio || "",
             studyLevel: user.studyLevel || "",
             tags: tags,
@@ -365,8 +359,11 @@ const MainPage: React.FC = () => {
         filterParts.push(`${selectedCourses.length} courses`);
       }
       
-      if (availability) {
-        filterParts.push(`${availability.toLowerCase()} availability`);
+      if (availabilities && availabilities.length > 0) {
+        const availText = availabilities.length === 1 
+          ? `${availabilities[0].toLowerCase()} availability` 
+          : `${availabilities.length} availability options`;
+        filterParts.push(availText);
       }
       
       if (filterParts.length > 0) {
@@ -394,13 +391,10 @@ const MainPage: React.FC = () => {
       return;
     }
   
-    console.log("Calling fetchUsers with:", {
-      courseIds: filters.selectedCourses,
-      availability: filters.availability
-    });    
+    // No need to log fetch parameters    
     fetchUsers(
       filters.selectedCourses.length > 0 ? filters.selectedCourses : undefined,
-      filters.availability ? [filters.availability] : undefined,
+      filters.availabilities.length > 0 ? filters.availabilities : undefined,
       currentUser.id
     );
   }, [filters, currentUser, isUserLoaded]);
@@ -581,7 +575,7 @@ const MainPage: React.FC = () => {
                       // Reset filters
                       setFilters({
                         selectedCourses: [],
-                        availability: null
+                        availabilities: []
                       });
                       fetchUsers();
                       setCurrentProfileIndex(0);
@@ -672,18 +666,22 @@ const MainPage: React.FC = () => {
                   <div className={styles.detailsValue}>{currentProfile.studyLevel || "Not specified"}</div>
                 </div>
 
+                {/* Study Goals */}
+                <div className={styles.cardSection}>
+                  <div className={styles.detailsLabel}>Study Goals</div>
+                  <div className={styles.tagContainer}>
+                    {currentProfile.tags?.map((tag, index) => (
+                      <span key={index} className={styles.tag}>{tag}</span>
+                    ))}
+                  </div>
+                </div>
+
                 {/* Availability */}
                 <div className={styles.cardSection}>
                   <div className={styles.detailsLabel}>Availability</div>
                   <div className={styles.detailsValue}>{currentProfile.studyStyle}</div>
                 </div>
 
-                {/* Goal */}
-                <div className={styles.cardSection}>
-                  <div className={styles.detailsLabel}>Goal</div>
-                  <div className={styles.detailsValue}>{currentProfile.goal}</div>
-                </div>
-                
                 {/* Bio */}
                 {currentProfile.bio && (
                   <div className={styles.cardSection}>
@@ -692,18 +690,9 @@ const MainPage: React.FC = () => {
                   </div>
                 )}
 
-                {/* Tags */}
+                {/* Courses Section */}
                 <div className={styles.cardSection}>
-                  <div className={styles.tagContainer}>
-                    {currentProfile.tags?.map((tag, index) => (
-                      <span key={index} className={styles.tag}>{tag}</span>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Study Level Section */}
-                <div className={styles.cardSection}>
-                  <div className={styles.cardTitle}>Study Level</div>
+                  <div className={styles.cardTitle}>Courses</div>
                   {currentProfile.studyLevels?.map((level, index) => (
                     <div key={index} className={styles.studyLevelRow}>
                       <div className={styles.studyLevelLeft}>

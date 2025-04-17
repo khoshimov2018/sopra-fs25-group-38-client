@@ -273,6 +273,9 @@ export class ApiService {
     console.log(`Making PUT request to: ${url}`);
     const headers = this.getHeaders();
     
+    // Log request payload for debugging
+    console.log("PUT request payload:", JSON.stringify(data, null, 2));
+    
     try {
       const res = await fetch(url, {
         method: "PUT",

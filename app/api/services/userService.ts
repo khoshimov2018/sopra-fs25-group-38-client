@@ -12,6 +12,15 @@ export class UserService {
   constructor(apiService: ApiService) {
     this.apiService = apiService;
   }
+  
+  /**
+   * Delete user account (self-deletion)
+   * @returns void
+   * @aligns with UserService.deleteUserByToken()
+   */
+  async deleteAccount(): Promise<void> {
+    await this.apiService.delete<void>('/users/me');
+  }
 
   /**
    * Get all users

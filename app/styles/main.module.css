@@ -201,6 +201,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
+  margin-top: 0.5rem;
 }
 
 .tag {
@@ -223,6 +224,9 @@
   line-height: 20px;
   letter-spacing: 0.1px;
   white-space: nowrap;
+  margin: 0.25rem;
+  flex-grow: 0;
+  flex-shrink: 0;
 }
 
 /* STUDY LEVEL ROWS */

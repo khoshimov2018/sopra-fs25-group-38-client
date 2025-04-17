@@ -109,10 +109,11 @@ const EditProfile: React.FC<EditProfileProps> = ({
   // Handle study goals change
   const handleStudyGoalsChange = (values: string[]) => {
     // Create a synthetic event to use with onInputChange
+    // If values array is empty, set to empty string to avoid leading comma issue
     const fakeEvent = {
       target: {
         name: 'studyGoals',
-        value: values.join(', ')
+        value: values.length > 0 ? values.join(', ') : ''
       }
     } as React.ChangeEvent<HTMLInputElement>;
     
@@ -230,15 +231,26 @@ const EditProfile: React.FC<EditProfileProps> = ({
         form={form}
         layout="vertical"
         style={{ width: '100%' }}
-        onFinish={onSave}
+        onFinish={() => {
+          form.validateFields()
+            .then(() => {
+              onSave();
+            })
+            .catch(info => {
+              console.log('Validation Failed:', info);
+            });
+        }}
         autoComplete="off"
-        requiredMark={false} // Cleaner look without asterisks
+        requiredMark={false} // We'll handle our own required markers with *
         scrollToFirstError // Auto-scroll to first validation error
       >
+        <div style={{ marginBottom: '16px', color: '#ff4d4f' }}>
+          Fields marked with * are required
+        </div>
         {/* Name input */}
         <Form.Item 
           name="name" 
-          label={<span style={{ fontWeight: 'bold' }}>Name</span>}
+          label={<span style={{ fontWeight: 'bold' }}>Name <span style={{ color: '#ff4d4f' }}>*</span></span>}
           rules={[{ required: true, message: "Please input your name!" }]}
           help="Your full name will be visible to other students"
         >
@@ -277,7 +289,7 @@ const EditProfile: React.FC<EditProfileProps> = ({
         {/* Study Level dropdown */}
         <Form.Item
           name="studyLevel"
-          label={<span style={{ fontWeight: 'bold' }}>Study Level</span>}
+          label={<span style={{ fontWeight: 'bold' }}>Study Level <span style={{ color: '#ff4d4f' }}>*</span></span>}
           rules={[{ required: true, message: "Please select your study level!" }]}
           help="Your current academic or study level"
         >
@@ -299,7 +311,7 @@ const EditProfile: React.FC<EditProfileProps> = ({
         {/* Study Goals multi-select */}
         <Form.Item
           name="studyGoals"
-          label={<span style={{ fontWeight: 'bold' }}>Study Goals</span>}
+          label={<span style={{ fontWeight: 'bold' }}>Study Goals <span style={{ color: '#ff4d4f' }}>*</span></span>}
           rules={[{ required: true, message: "Please select at least one study goal!" }]}
           help="What do you want to achieve with your studies?"
         >
@@ -332,8 +344,9 @@ const EditProfile: React.FC<EditProfileProps> = ({
         {/* Availability dropdown */}
         <Form.Item
           name="availability"
-          label={<span style={{ fontWeight: 'bold' }}>Availability</span>}
+          label={<span style={{ fontWeight: 'bold' }}>Availability <span style={{ color: '#ff4d4f' }}>*</span></span>}
           help="When are you typically available to study with partners?"
+          rules={[{ required: true, message: "Please select your availability!" }]}
         >
           <Select
             placeholder="When are you available to study?"
@@ -372,7 +385,7 @@ const EditProfile: React.FC<EditProfileProps> = ({
         
         {/* Course Selection Section - Matching registration form */}
         <Form.Item 
-          label={<span style={{ fontWeight: 'bold' }}>Courses</span>}
+          label={<span style={{ fontWeight: 'bold' }}>Courses <span style={{ color: '#ff4d4f' }}>*</span></span>}
           required 
           style={{ marginBottom: 0 }}
           help="Select courses that you're interested in studying"
@@ -385,7 +398,14 @@ const EditProfile: React.FC<EditProfileProps> = ({
             Please select courses and your knowledge level
           </div>
           
-          {user.studyLevels && user.studyLevels.map((level, index) => {
+          {(user.studyLevels && user.studyLevels.length > 0 ? user.studyLevels : 
+            user.userCourses && user.userCourses.length > 0 ? 
+              user.userCourses.map(course => ({
+                subject: course.courseName || String(course.courseId),
+                grade: "N/A",
+                level: course.knowledgeLevel || "Beginner"
+              })) : []
+          ).map((level, index) => {
             // Find course ID if available
             const courseId = user.userCourses && user.userCourses[index] 
               ? user.userCourses[index].courseId 
@@ -441,7 +461,7 @@ const EditProfile: React.FC<EditProfileProps> = ({
                   </Select>
                 </Col>
                 <Col span={4} style={{ display: 'flex', alignItems: 'center' }}>
-                  {user.studyLevels && user.studyLevels.length > 1 && (
+                  {(user.studyLevels?.length > 1 || user.userCourses?.length > 1) && (
                     <Button 
                       type="button" 
                       onClick={() => onRemoveStudyLevel(index)}
@@ -465,6 +485,17 @@ const EditProfile: React.FC<EditProfileProps> = ({
         </Form.Item>
         
         <Divider style={{ margin: '24px 0' }} />
+        
+        {/* Submit button for form */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginTop: '24px', marginBottom: '16px' }}>
+          <button
+            type="submit"
+            className={componentStyles.button}
+            style={{ maxWidth: '200px' }}
+          >
+            Save Changes
+          </button>
+        </div>
       </Form>
     </div>
   );

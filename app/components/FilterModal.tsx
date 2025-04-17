@@ -7,22 +7,20 @@ import styles from '@/styles/theme/components.module.css';
 
 const { Text, Title } = Typography;
 
-// Extended course interface for UI display
-interface CourseDisplay extends Course {
-  description?: string;
-  students?: number;
-}
+// We'll use the Course interface directly without extending it
+import { Course } from '@/types/course';
 
 interface FilterModalProps {
   visible: boolean;
   onClose: () => void;
-  onSave: (selectedCourses: number[], availability: UserAvailability | null) => void;
+  onSave: (selectedCourses: number[], availabilities: UserAvailability[]) => void;
+  // Server expects a list of availability values, and now our UI supports multiple selections
 }
 
 const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose, onSave }) => {
-  const [courses, setCourses] = useState<CourseDisplay[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
   const [selectedCourses, setSelectedCourses] = useState<number[]>([]);
-  const [availability, setAvailability] = useState<UserAvailability | null>(null);
+  const [selectedAvailabilities, setSelectedAvailabilities] = useState<UserAvailability[]>([]);
   const [loading, setLoading] = useState(false);
   
   const apiService = useApi();
@@ -45,22 +43,17 @@ const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose, onSave }) =
       
       const response = await courseService.getCourses();
       
-      // Convert Course[] to CourseDisplay[] by adding UI-specific fields
-      const coursesWithDisplay = (response || []).map(course => ({
-        ...course,
-        description: `${course.courseName} course description`,
-        students: Math.floor(Math.random() * 200) + 50 // Mock student count
-      }));
-      setCourses(coursesWithDisplay);
+      // Just use the courses as they come from the API without adding mock data
+      setCourses(response || []);
     } catch (error) {
       console.error('Failed to fetch courses:', error);
-      // Use mock data if the API fails
+      // Use simplified mock data if the API fails
       setCourses([
-        { id: 1, courseName: 'Mathematics', description: 'Advanced mathematics courses', students: 120 },
-        { id: 2, courseName: 'Computer Science', description: 'Programming and algorithms', students: 150 },
-        { id: 3, courseName: 'Physics', description: 'Theoretical and applied physics', students: 80 },
-        { id: 4, courseName: 'Chemistry', description: 'Organic and inorganic chemistry', students: 90 },
-        { id: 5, courseName: 'Biology', description: 'Life sciences and ecology', students: 110 },
+        { id: 1, courseName: 'Mathematics' },
+        { id: 2, courseName: 'Computer Science' },
+        { id: 3, courseName: 'Physics' },
+        { id: 4, courseName: 'Chemistry' },
+        { id: 5, courseName: 'Biology' },
       ]);
     } finally {
       setLoading(false);
@@ -78,73 +71,87 @@ const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose, onSave }) =
   };
 
   const handleAvailabilityChange = (value: UserAvailability) => {
-    setAvailability(value);
+    setSelectedAvailabilities(prev => {
+      if (prev.includes(value)) {
+        return prev.filter(item => item !== value);
+      } else {
+        return [...prev, value];
+      }
+    });
   };
 
   const handleSave = () => {
     // Convert filters to the format expected by the StudentFilterController
-    onSave(selectedCourses, availability);
+    onSave(selectedCourses, selectedAvailabilities);
     onClose();
   };
 
   const handleCancel = () => {
     // Reset selections
     setSelectedCourses([]);
-    setAvailability(null);
+    setSelectedAvailabilities([]);
     onClose();
   };
 
   return (
     <Modal
-      title={<Title level={4}>Filter Students</Title>}
+      title={<Title level={4} style={{ textAlign: 'center', marginBottom: '20px' }}>Filter Students</Title>}
       open={visible}
       onCancel={handleCancel}
       footer={null}
-      width={500}
+      width={450}
+      styles={{
+        body: { padding: '24px 32px' }
+      }}
     >
-      <div style={{ maxHeight: '60vh', overflowY: 'auto', paddingRight: 10 }}>
+      <div style={{ maxHeight: '60vh', overflowY: 'auto' }}>
         <div style={{ marginBottom: 24 }}>
-          <Title level={5}>Availability</Title>
-          <Radio.Group 
-            onChange={(e) => handleAvailabilityChange(e.target.value)} 
-            value={availability}
-          >
-            <Space direction="vertical">
-              <Radio value={UserAvailability.MORNING}>Morning</Radio>
-              <Radio value={UserAvailability.AFTERNOON}>Afternoon</Radio>
-              <Radio value={UserAvailability.EVENING}>Evening</Radio>
-            </Space>
-          </Radio.Group>
+          <Title level={5} style={{ fontSize: '18px', marginBottom: '16px' }}>
+            When are you available to study?
+          </Title>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', paddingLeft: '8px' }}>
+            <Checkbox 
+              checked={selectedAvailabilities.includes(UserAvailability.MORNING)}
+              onChange={() => handleAvailabilityChange(UserAvailability.MORNING)}
+              style={{ fontSize: '16px' }}
+            >
+              Morning
+            </Checkbox>
+            <Checkbox 
+              checked={selectedAvailabilities.includes(UserAvailability.AFTERNOON)}
+              onChange={() => handleAvailabilityChange(UserAvailability.AFTERNOON)}
+              style={{ fontSize: '16px' }}
+            >
+              Afternoon
+            </Checkbox>
+            <Checkbox 
+              checked={selectedAvailabilities.includes(UserAvailability.EVENING)}
+              onChange={() => handleAvailabilityChange(UserAvailability.EVENING)}
+              style={{ fontSize: '16px' }}
+            >
+              Evening
+            </Checkbox>
+          </div>
         </div>
 
-        <Divider />
+        <Divider style={{ margin: '24px 0' }} />
 
         <div>
-          <Title level={5}>Select Courses</Title>
+          <Title level={5} style={{ fontSize: '18px', marginBottom: '16px' }}>
+            Which courses are you interested in?
+          </Title>
           <List
             loading={loading}
             dataSource={courses}
+            style={{ paddingLeft: '8px' }}
             renderItem={(course) => (
-              <List.Item>
+              <List.Item style={{ padding: '8px 0', borderBottom: 'none' }}>
                 <Checkbox 
                   checked={selectedCourses.includes(course.id)}
                   onChange={() => handleCourseChange(course.id)}
+                  style={{ fontSize: '16px' }}
                 >
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <div style={{ display: 'flex', alignItems: 'center' }}>
-                      <Text style={{ marginRight: 10 }}>{course.courseName}</Text>
-                      {course.students && (
-                        <Text type="secondary" style={{ fontSize: '12px' }}>
-                          {course.students}+ students
-                        </Text>
-                      )}
-                    </div>
-                    {course.description && (
-                      <Text type="secondary" style={{ fontSize: '14px' }}>
-                        {course.description}
-                      </Text>
-                    )}
-                  </div>
+                  <Text style={{ fontSize: '16px' }}>{course.courseName}</Text>
                 </Checkbox>
               </List.Item>
             )}
@@ -153,17 +160,23 @@ const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose, onSave }) =
       </div>
 
       <div style={{ 
-        marginTop: 24, 
+        marginTop: 32, 
         display: 'flex', 
-        justifyContent: 'flex-end',
-        gap: 12
+        justifyContent: 'center',
+        gap: 16
       }}>
-        <Button onClick={handleCancel}>Cancel</Button>
+        <Button 
+          onClick={handleCancel}
+          style={{ minWidth: '100px' }}
+        >
+          Cancel
+        </Button>
         <Button 
           type="primary" 
           onClick={handleSave}
+          style={{ minWidth: '100px', background: '#6750A4' }}
         >
-          Save
+          Apply Filters
         </Button>
       </div>
     </Modal>
