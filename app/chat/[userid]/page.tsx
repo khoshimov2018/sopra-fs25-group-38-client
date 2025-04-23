@@ -105,6 +105,11 @@ const ChatPage: React.FC = () => {
       channelType:'individual'
     }
   ]);
+  const [isMessagesLoading, setIsMessagesLoading] = useState(false); // 控制消息加载状态
+  const [isBlockPanelVisible, setIsBlockPanelVisible] = useState(false); // 控制 Block Panel 显示
+  const [isReportPanelVisible, setIsReportPanelVisible] = useState(false); // 控制 Report Panel 显示
+  const [selectedParticipant, setSelectedParticipant] = useState<number | null>(null); // 当前选中的对方用户 ID
+  const [reportReason, setReportReason] = useState<string>(""); // 存储用户输入的举报理由
   const [channelMessages, setChannelMessages] = useState<Record<string, { id: number; text: string; sender: string; timeStamp: number; avatar: string | null }[]>>({});
   const [inputValue, setInputValue] = useState("");
   const apiService = new ApiService();
@@ -118,7 +123,7 @@ const ChatPage: React.FC = () => {
   const [typingStatus, setTypingStatus] = useState(false); // 存储对方的 typing 状态
   const [groupModalMode, setGroupModalMode] = useState<"create" | "update">("create"); // 区分创建和更新模式
 
-  // 引用用于滚动到最新消息
+  // Used for scrolling to the latest message.
   const messagesEndRef = useRef<HTMLDivElement | null >(null);
   const { userid : rawUserId} = useParams();
   const parsedUserId = Array.isArray(rawUserId)
@@ -128,6 +133,7 @@ const ChatPage: React.FC = () => {
     : undefined;
   const { message, contextHolder } = useMessage();
   const { clear: clearToken } = useLocalStorage<string>("token", "");
+  const [isLoading, setIsLoading] = useState(false); // 控制加载状态
 
   // 定义 ChatParticipantGetDTO 类型
   interface ChatParticipantGetDTO {
@@ -178,6 +184,78 @@ const ChatPage: React.FC = () => {
       console.log(`Typing status updated to ${isTyping} for user ${parsedUserId}`);
     } catch (error) {
       console.error("Failed to update typing status:", error);
+    }
+  };
+
+  const handleBlock = () => {
+    const currentChannel = channels.find(
+      (channel) => String(channel.channelId) === String(selectedChannel)
+    );
+  
+    if (!currentChannel || !currentChannel.participants) {
+      console.error("Selected channel does not exist or has no participants.");
+      return;
+    }
+  
+    const participant = currentChannel.participants.find((p) => p.userId !== parsedUserId);
+    if (!participant) {
+      console.error("No participant found to block.");
+      return;
+    }
+  
+    setSelectedParticipant(participant.userId); // 设置对方用户 ID
+    setIsBlockPanelVisible(true); // 打开 Block Panel
+    console.log("I am trying to open the block panel",isBlockPanelVisible)
+  };
+
+  const handleSubmitBlock = async () => {
+    if (!parsedUserId || !selectedParticipant) {
+      console.error("Blocker ID or Blocked User ID is not defined.");
+      return;
+    }
+  
+    const blockDTO = {
+      blockerId: parsedUserId,
+      blockedUserId: selectedParticipant,
+    };
+  
+    try {
+      await apiService.post("/blocks", blockDTO);
+      message.success("User blocked successfully!");
+      setIsBlockPanelVisible(false); // 关闭 Block Panel
+      setSelectedParticipant(null); // 清空选中用户
+    } catch (error) {
+      console.error("Failed to block user:", error);
+      message.error("Failed to block user, please try again later.");
+    }
+  };
+
+  const handleReport = () => {
+    setIsBlockPanelVisible(false); // 关闭 Block Panel
+    setIsReportPanelVisible(true); // 打开 Report Panel
+  };
+
+  const handleSubmitReport = async () => {
+    if (!parsedUserId || !selectedParticipant || !reportReason.trim()) {
+      message.error("Please provide a valid reason for reporting.");
+      return;
+    }
+  
+    const reportDTO = {
+      reporterId: parsedUserId,
+      reportedId: selectedParticipant,
+      reason: reportReason.trim(),
+    };
+  
+    try {
+      await apiService.post("/reports", reportDTO);
+      message.success("Report submitted successfully!");
+      setIsReportPanelVisible(false); // 关闭 Report Panel
+      setReportReason(""); // 清空输入框
+      setSelectedParticipant(null); // 清空选中用户
+    } catch (error) {
+      console.error("Failed to submit report:", error);
+      message.error("Failed to submit report, please try again later.");
     }
   };
 
@@ -271,22 +349,23 @@ const handleSubmitGroupModal = async (selectedUsers: number[], channelName?: str
 };
 
   useEffect(() => {
+    if (parsedUserId === undefined) return;
+
     const fetchMatchedUsers = async (userid: number) => {
       try {
         if (userid) {
           const response = await apiService.get<ChatChannelGetDTO[]>(`/chat/channels/user/${userid}`);
-          // const response = await apiService.get<ChatChannelGetDTO[]>(`/chat/channels`);
           console.log("Fetched chat channels:", response);
           const data = response;
-    
+
           const mappedData = data.map((channel) => {
             const latestMessage = channel.updatedAt
               ? `Last message at ${new Date(channel.updatedAt).toLocaleString()}`
               : "No messages yet";
-    
+
             // 处理 participants，移除当前用户
             const participants = channel.participants.filter((p) => p.userId !== userid);
-    
+
             return {
               channelId: channel.channelId, // 频道 ID
               channelName: channel.channelType === "individual" && participants.length > 0
@@ -297,7 +376,7 @@ const handleSubmitGroupModal = async (selectedUsers: number[], channelName?: str
               participants, // 存储移除当前用户后的参与者列表
             };
           });
-    
+
           setChannels(mappedData as { channelId: number; channelName: string; supportingText?: string; channelType: string; participants: ChatParticipantGetDTO[] }[]);
           console.log("Mapped matched users:", mappedData);
         } else {
@@ -307,55 +386,64 @@ const handleSubmitGroupModal = async (selectedUsers: number[], channelName?: str
         console.error("Failed to fetch chat channels:", error);
       }
     };
-  
-    if (parsedUserId !== undefined) {
-      fetchMatchedUsers(parsedUserId);
-    }
-  }, [parsedUserId]);
+
+  // 每 200ms 调用一次 fetchMatchedUsers
+  const interval = setInterval(() => {
+    fetchMatchedUsers(parsedUserId);
+  }, 200);
+
+  // 清除定时器
+  return () => clearInterval(interval);
+}, [parsedUserId]);
 
   // Fetching messages for selected channel
+  const fetchMessages = async (channelId: string) => {
+    try {
+      // setIsMessagesLoading(true); // 开始加载消息
+      const currentChannel = channels.find((channel) => String(channel.channelId) === channelId);
+      if (!currentChannel) {
+        console.error("Channel not found!");
+        return;
+      }
+  
+      const url1 = `/chat/channels/${channelId}`;
+      const response = await apiService.get<MessageGetDTO[]>(url1);
+      console.log("Messages", response);
+  
+      if (!Array.isArray(response)) {
+        console.error("Expected an array of messages but got:", response);
+        return;
+      }
+  
+      const mappedMessages = response.map((message) => ({
+        id: Number(message.messageId),
+        text: String(message.context),
+        sender: String(message.senderId),
+        timeStamp: new Date(String(message.timestamp)).getTime(),
+        avatar: String(message.senderProfileImage) || null,
+      }));
+  
+      setChannelMessages((prevMessages) => ({
+        ...prevMessages,
+        [String(channelId)]: mappedMessages, // 将消息存储到对应的频道
+      }));
+    } catch (error) {
+      console.error("Failed to fetch messages:", error);
+      } 
+    // finally {
+    //   setIsMessagesLoading(false); // 加载完成
+    // }
+  };
+
   useEffect(() => {
     if (!selectedChannel) return;
-
-    const fetchMessages = async () => {
-      try {
-        const currentChannel = channels.find((channel) => String(channel.channelId) === String(selectedChannel));
-        if (!currentChannel) {
-          console.error("Channel not found!");
-          return;
-        }
-
-        const channelId = currentChannel.channelId;
-        console.log('current channelId', channelId);
-        const url1 = `/chat/channels/${channelId}`;
-        const response = await apiService.get<MessageGetDTO[]>(url1);
-        console.log('Messages', response);
-        console.log("message URL",url1);
-        const data = response;
-
-        if (!Array.isArray(response)) {
-          console.error("Expected an array of messages but got:", response);
-          return;
-        }
-
-        const mappedMessages = data.map((message) => ({
-          id: Number(message.messageId),
-          text: String(message.context),
-          sender: String(message.senderId),
-          timeStamp: new Date(String(message.timestamp)).getTime(),
-          avatar: String(message.senderProfileImage) || null,
-        }));
-
-        setChannelMessages((prevMessages) => ({
-          ...prevMessages,
-          [String(channelId)]: mappedMessages, // 将消息存储到对应的频道
-        }));
-      } catch (error) {
-        console.error("Failed to fetch messages:", error);
-      }
-    };
-
-    fetchMessages();
+  
+    const interval = setInterval(() => {
+      fetchMessages(selectedChannel); // 每 200ms 调用一次 fetchMessages
+    }, 200);
+  
+    // 清除定时器
+    return () => clearInterval(interval);
   }, [selectedChannel]);
 
   useEffect(() => {
@@ -407,6 +495,7 @@ const handleSubmitGroupModal = async (selectedUsers: number[], channelName?: str
     // 如果是 AI Advisor 的会话
     if (selectedChannel === "AI Advisor") {
       try {
+        setIsLoading(true); // 开始加载
         const prompt = customPrompt || `
           You are a professional study advisor with a PhD in diverse fields. Please answer in an academic way and briefly. Your answer should be less than 100 words.
           The conversation so far:
@@ -438,6 +527,8 @@ const handleSubmitGroupModal = async (selectedUsers: number[], channelName?: str
         }));
       } catch (error) {
         console.error("AI Advisor message generation failed:", error);
+      } finally {
+        setIsLoading(false); // 加载完成
       }
       return;
     }
@@ -451,21 +542,13 @@ const handleSubmitGroupModal = async (selectedUsers: number[], channelName?: str
   
     const channelId = currentChannel.channelId;
   
-    // 将消息添加到当前频道的消息列表中
-    setChannelMessages((prevMessages) => ({
-      ...prevMessages,
-      [String(channelId)]: [
-        ...(prevMessages[String(channelId)] || []),
-        userMessage, // 添加用户消息
-      ],
-    }));
-  
     try {
       const messagePostDTO = {
         senderId: parsedUserId, // 当前用户 ID
         context: messageText,
       };
   
+      // 发送消息到服务端
       const response = await apiService.post<MessageGetDTO>(
         `/chat/${channelId}/message`, // 使用 channelId
         messagePostDTO
@@ -481,6 +564,7 @@ const handleSubmitGroupModal = async (selectedUsers: number[], channelName?: str
         avatar: data.senderProfileImage ? String(data.senderProfileImage) : null,
       };
   
+      // 将服务端返回的消息添加到当前频道的消息列表中
       setChannelMessages((prevMessages) => ({
         ...prevMessages,
         [String(channelId)]: [
@@ -518,7 +602,7 @@ const handleSubmitGroupModal = async (selectedUsers: number[], channelName?: str
   const handleQuickReplySuggestion = () => {
     const quickReplyMessage = "Can you give me a suggestion on study?";
     const prompt = `
-      You have many experiences in instructing study so you know how to advise intuitively by asking sutdents which course they want to take if you do not know.
+      You have many experiences in instructing study so you know how to advise intuitively.
       Please answer briefly and directly.
       The conversation so far:
       ${[...otherMessages, ...userMessages]
@@ -532,9 +616,8 @@ const handleSubmitGroupModal = async (selectedUsers: number[], channelName?: str
   const handleQuickReplySchedule = () => {
     const quickReplyMessage = "Can you help me schedule my study?";
     const prompt = `
-      You are a great planner and you know how to schedule students's study based on their weaknesses and strengths.
-      You could generate a result based on some simple questions and modify it based on students' requirements.
-      Please give a table if you are sure it is a perfect timeslot for students' study.
+      You are a great planner and you know how to schedule one student's study based on his or her weaknesses and strengths.
+      Please give a table if you are sure it is a perfect timeslot for one individual student's study.
       The conversation so far:
       ${[...otherMessages, ...userMessages]
         .map((msg) => `${msg.sender}: ${msg.text}`)
@@ -547,7 +630,9 @@ const handleSubmitGroupModal = async (selectedUsers: number[], channelName?: str
   // 处理选择聊天对象
 
   const handleSelectChat = (chatName: string | number) => {
-    setSelectedChannel(chatName.toString());
+    const channelId = chatName.toString();
+    setSelectedChannel(channelId);
+    fetchMessages(channelId); // 点击时立即加载消息
   };
 
   const actualLogout = async () => {
@@ -563,6 +648,12 @@ const handleSubmitGroupModal = async (selectedUsers: number[], channelName?: str
       window.location.href = "/login";
     }
   };
+
+  useEffect(() => {
+    console.log("isBlockPanelVisible:", isBlockPanelVisible);
+    console.log("isReportPanelVisible:", isReportPanelVisible);
+    console.log("selectedParticipant:", selectedParticipant);
+  }, [isBlockPanelVisible, isReportPanelVisible, selectedParticipant]);
 
   return (
     <App>
@@ -654,26 +745,7 @@ const handleSubmitGroupModal = async (selectedUsers: number[], channelName?: str
                             {/* 删除聊天按钮 */}
                             <button
                               className="icon-button"
-                              onClick={() => {
-                                const currentChannel = channels.find(
-                                  (channel) => String(channel.channelId) === String(selectedChannel)
-                                );
-
-                                if (!currentChannel) {
-                                  console.error("Selected channel does not exist.");
-                                  return;
-                                }
-
-                                // 删除 individual 聊天逻辑
-                                const confirmDelete = window.confirm("Are you sure you want to delete this chat?");
-                                if (confirmDelete) {
-                                  setChannels((prevChannels) =>
-                                    prevChannels.filter((channel) => channel.channelId !== currentChannel.channelId)
-                                  );
-                                  setSelectedChannel(null); // 清空选中频道
-                                  message.success("Chat deleted successfully!");
-                                }
-                              }}
+                              onClick={handleBlock} // 点击时调用 handleBlock
                             >
                               <div className="icon icon-clear"></div>
                             </button>
@@ -732,27 +804,45 @@ const handleSubmitGroupModal = async (selectedUsers: number[], channelName?: str
                   </div>
                 )}
 
-                {/* 渲染所有消息 */}
-                {[...(selectedChannel ? channelMessages[selectedChannel] || [] : [])]
-                  .sort((a, b) => a.timeStamp - b.timeStamp) // 按时间戳排序
-                  .map((message) => (
-                    <div key={message.id} className={`chat-message ${message.sender === String(parsedUserId) ? "you" : ""}`}>
-                      {message.sender !== String(parsedUserId) && (
-                        <img
-                          className="avatar"
-                          src={
-                            message.sender === "AI Advisor"
-                              ? aiAvatar // AI Advisor 使用固定头像
-                              : channels.find((channel) => String(channel.channelId) === String(selectedChannel))?.participants?.find(
-                                  (p) => String(p.userId) === message.sender
-                                )?.userProfileImage || "/default-avatar.png" // 普通用户从服务端读取头像
-                          }
-                          alt="Avatar"
-                        />
-                      )}
-                      <div className="message-bubble">{renderMarkdown(message.text)}</div>
+                {isMessagesLoading ? (
+                    <div className="chat-loading">
+                      <div className="spinner"></div>
+                      <span>Loading Messages...</span>
                     </div>
-                  ))}
+                  ) : (
+                    <>
+                      {/* 渲染所有消息 */}
+                      {[...(selectedChannel ? channelMessages[selectedChannel] || [] : [])]
+                        .sort((a, b) => a.timeStamp - b.timeStamp) // 按时间戳排序
+                        .map((message) => (
+                          <div key={message.id} className={`chat-message ${message.sender === String(parsedUserId) ? "you" : ""}`}>
+                            {message.sender !== String(parsedUserId) && (
+                              <img
+                                className="avatar"
+                                src={
+                                  message.sender === "AI Advisor"
+                                    ? aiAvatar // AI Advisor 使用固定头像
+                                    : channels.find((channel) => String(channel.channelId) === String(selectedChannel))?.participants?.find(
+                                        (p) => String(p.userId) === message.sender
+                                      )?.userProfileImage || "/default-avatar.png" // 普通用户从服务端读取头像
+                                }
+                                alt="Avatar"
+                              />
+                            )}
+                            <div className="message-bubble">{renderMarkdown(message.text)}</div>
+                          </div>
+                        ))}
+                      <div ref={messagesEndRef}></div>
+                    </>
+                  )}
+                
+                {/* 加载指示器 */}
+                {isLoading && (
+                  <div className="chat-loading">
+                    <div className="spinner"></div>
+                    <span>AI is thinking...</span>
+                  </div>
+                )}
                 <div ref={messagesEndRef}></div>
               </div>
                 {selectedChannel && (
@@ -813,6 +903,39 @@ const handleSubmitGroupModal = async (selectedUsers: number[], channelName?: str
                   userName: channel.channelName,
                 }))}
             />
+          )}
+          {isBlockPanelVisible && (
+            <div className="block-panel">
+              <div className="card">
+                <button className="close-button" onClick={() => setIsBlockPanelVisible(false)}>×</button>
+                <h3>Block User</h3>
+                <p>Are you sure you want to block this user?</p>
+                <div className="button-group">
+                  <button className="report-reasons" onClick={handleReport}>Report Reasons</button>
+                  <button className="submit-button" onClick={handleSubmitBlock}>OK</button>
+                </div>
+              </div>
+            </div>
+          )}
+          {isReportPanelVisible && (
+            <div className="report-panel">
+              <div className="form-forgot-password">
+                <h3>Report User</h3>
+                <div className="input-field">
+                  <label className="label">Reason</label>
+                  <textarea
+                    className="input"
+                    placeholder="Enter your reason here..."
+                    value={reportReason}
+                    onChange={(e) => setReportReason(e.target.value)}
+                  />
+                </div>
+                <div className="button-group">
+                  <button className="cancel-button" onClick={() => setIsReportPanelVisible(false)}>Cancel</button>
+                  <button className="submit-button" onClick={handleSubmitReport}>Submit</button>
+                </div>
+              </div>
+            </div>
           )}
         </div>
       </div>
