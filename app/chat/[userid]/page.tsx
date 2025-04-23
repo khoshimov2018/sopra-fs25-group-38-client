@@ -168,6 +168,26 @@ const ChatPage: React.FC = () => {
     typing: boolean;
   }
 
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+  
+    const storedToken = localStorage.getItem("token");
+    if (!storedToken) {
+      console.error("Token is missing. Redirecting to /main.");
+      window.location.href = "/main"; // 重定向到 /main
+      return;
+    }
+  
+    if (!parsedUserId) {
+      console.error("User ID is missing. Redirecting to /main.");
+      window.location.href = "/main"; // 重定向到 /main
+      return;
+    }
+  
+    console.log("Token and User ID are valid. Proceeding with ChatPage.");
+  }, [parsedUserId]);
+
   const handleTypingStatus = async (isTyping: boolean) => {
     if (!parsedUserId || !selectedChannel) {
       console.error("User ID or selected channel is not defined.");
