@@ -414,4 +414,16 @@
   .cardTitle {
     margin-bottom: 10px;
   }
+
+  /* admin page table style*/
+  .adminTableRow {
+    color: black !important;
+  }
+  
+  .ant-modal-content,
+  .ant-modal-title,
+  .ant-modal-body {
+    color: black !important;
+    background-color: white;
+  }
 }

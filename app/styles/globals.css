@@ -578,3 +578,18 @@ input:focus, .ant-input:focus, .ant-input-password:focus {
   background-color: var(--bg-modal) !important;
   border-top: 1px solid var(--border-color) !important;
 }
+
+/* AdminPage Table text color */
+.adminTableWrapper .ant-table-cell {
+  color: black !important;
+}
+
+.adminTableWrapper .ant-table-thead > tr > th {
+  color: black !important;
+  background-color: white !important;
+}
+
+.adminTableWrapper .ant-table-tbody > tr > td {
+  color: black !important;
+  background-color: white !important;
+}

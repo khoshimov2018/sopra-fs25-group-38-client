@@ -50,8 +50,13 @@ const Login: React.FC = () => {
         
         // Navigate to main page
         setTimeout(() => {
-          message.loading("Redirecting to main page...");
-          window.location.href = "/main";
+          if (response.email === "admin@example.com") {
+            message.loading("Redirecting to admin page...");
+            window.location.href = "/admin";
+          } else {
+            message.loading("Redirecting to main page...");
+            window.location.href = "/main";
+          }
         }, 500);
       } else {
         // This would only happen if the server didn't include a token in the response
