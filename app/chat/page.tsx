@@ -18,13 +18,13 @@ import { marked } from "marked"; // 导入 marked 库
 
 const GroupModal: React.FC<{
   visible: boolean;
-  mode: "create" | "update"; // 区分创建和更新模式
+  mode: "create" | "update";
   onClose: () => void;
   onSubmit: (selectedUsers: number[], channelName?: string) => void;
-  existingUsers?: number[]; // 已有用户的 ID 列表（仅更新模式需要）
-  allUsers: { userId: number; userName: string }[]; // 所有匹配用户
+  existingUsers?: number[];
+  allUsers: { userId: number; userName: string }[];
 }> = ({ visible, mode, onClose, onSubmit, existingUsers = [], allUsers }) => {
-  const [selectedUsers, setSelectedUsers] = useState<number[]>(existingUsers);
+  const [selectedUsers, setSelectedUsers] = useState<number[]>([]); // 初始化为空数组
   const [channelName, setChannelName] = useState<string>("");
 
   useEffect(() => {
@@ -36,13 +36,16 @@ const GroupModal: React.FC<{
   }, [mode, existingUsers]);
 
   const handleUserSelect = (userId: number) => {
-    if (!existingUsers.includes(userId)) {
-      setSelectedUsers((prevSelected) =>
-        prevSelected.includes(userId)
-          ? prevSelected.filter((id) => id !== userId) // 如果已选中则取消选择
-          : [...prevSelected, userId] // 否则添加到选中列表
-      );
+    if (existingUsers.includes(userId)) {
+      // 如果用户已经是 existingUsers 的一员，则禁止点击
+      return;
     }
+
+    setSelectedUsers((prevSelected) =>
+      prevSelected.includes(userId)
+        ? prevSelected.filter((id) => id !== userId) // 如果已选中则取消选择
+        : [...prevSelected, userId] // 否则添加到选中列表
+    );
   };
 
   const handleSubmit = () => {
@@ -66,21 +69,28 @@ const GroupModal: React.FC<{
           />
         )}
         <div className="user-list">
-          {allUsers.map((user) => {
-            const isExistingUser = existingUsers.includes(user.userId);
-            return (
-              <div
-                key={user.userId}
-                className={`user-item ${isExistingUser ? "existing" : selectedUsers.includes(user.userId) ? "selected" : ""}`}
-                onClick={() => handleUserSelect(user.userId)}
-                style={isExistingUser ? { pointerEvents: "none", opacity: 0.5 } : {}}
-              >
-                <div className="content">
-                  <div className="headline">{user.userName}</div>
-                </div>
+          {allUsers.map((user) => (
+            <div
+              key={user.userId}
+              className={`user-item ${
+                existingUsers.includes(user.userId)
+                  ? "existing" // 已存在的用户
+                  : selectedUsers.includes(user.userId)
+                  ? "selected" // 新选中的用户
+                  : ""
+              }`}
+              onClick={() => handleUserSelect(user.userId)}
+              style={
+                existingUsers.includes(user.userId)
+                  ? { pointerEvents: "none", opacity: 0.5 } // 禁用已存在的用户
+                  : {}
+              }
+            >
+              <div className="content">
+                <div className="headline">{user.userName}</div>
               </div>
-            );
-          })}
+            </div>
+          ))}
         </div>
         <div className="group-modal-actions">
           <button className="cancel-button" onClick={onClose}>
@@ -255,6 +265,9 @@ const ChatPage: React.FC = () => {
       message.success("User blocked successfully!");
       setIsBlockPanelVisible(false); // 关闭 Block Panel
       setSelectedParticipant(null); // 清空选中用户
+      fetchMatchedUsers(parsedUserId);
+      setSelectedChannel(null);
+      console.log("current Channel", selectedChannel);
     } catch (error) {
       console.error("Failed to block user:", error);
       message.error("Failed to block user, please try again later.");
@@ -310,18 +323,6 @@ const ChatPage: React.FC = () => {
     avatar: userAvatar,
     channelType: 'individual' // Provide a default or appropriate value
   };
-
-// 打开创建群聊浮层
-const handleCreateGroup = () => {
-  setGroupModalMode("create");
-  setIsGroupModalVisible(true);
-};
-
-// 关闭创建群聊浮层
-const handleCloseGroupModal = () => {
-  setIsGroupModalVisible(false);
-  setSelectedUsers([]); // 清空选中的用户
-};
 
 const handleSubmitGroupModal = async (selectedUsers: number[], channelName?: string) => {
   if (groupModalMode === "create") {
@@ -379,53 +380,56 @@ const handleSubmitGroupModal = async (selectedUsers: number[], channelName?: str
   }
 };
 
+  const fetchMatchedUsers = async (userid: number) => {
+    try {
+      if (userid) {
+        const response = await apiService.get<ChatChannelGetDTO[]>(`/chat/channels/user/${userid}`);
+        console.log("Fetched chat channels:", response);
+        const data = response;
+
+        const mappedData = data.map((channel) => {
+          const latestMessage = channel.updatedAt
+            ? `Last message at ${new Date(channel.updatedAt).toLocaleString()}`
+            : "No messages yet";
+
+          // 处理 participants，移除当前用户
+          const participants = channel.participants.filter((p) => p.userId !== userid);
+
+          return {
+            channelId: channel.channelId, // 频道 ID
+            channelName: channel.channelType === "individual" && participants.length > 0
+              ? participants[0].userName // 私聊时显示对方的名字
+              : channel.channelName, // 群聊时显示群聊名称
+            supportingText: latestMessage,
+            channelType: channel.channelType,
+            participants, // 存储移除当前用户后的参与者列表
+          };
+        });
+
+        setChannels(mappedData as { channelId: number; channelName: string; supportingText?: string; channelType: string; participants: ChatParticipantGetDTO[] }[]);
+        console.log("Mapped matched users:", mappedData);
+      } else {
+        console.error("userId is undefined!");
+      }
+    } catch (error) {
+      console.error("Failed to fetch chat channels:", error);
+    }
+  };
+
   useEffect(() => {
     if (parsedUserId === undefined) return;
-
-    const fetchMatchedUsers = async (userid: number) => {
-      try {
-        if (userid) {
-          const response = await apiService.get<ChatChannelGetDTO[]>(`/chat/channels/user/${userid}`);
-          console.log("Fetched chat channels:", response);
-          const data = response;
-
-          const mappedData = data.map((channel) => {
-            const latestMessage = channel.updatedAt
-              ? `Last message at ${new Date(channel.updatedAt).toLocaleString()}`
-              : "No messages yet";
-
-            // 处理 participants，移除当前用户
-            const participants = channel.participants.filter((p) => p.userId !== userid);
-
-            return {
-              channelId: channel.channelId, // 频道 ID
-              channelName: channel.channelType === "individual" && participants.length > 0
-                ? participants[0].userName // 私聊时显示对方的名字
-                : channel.channelName, // 群聊时显示群聊名称
-              supportingText: latestMessage,
-              channelType: channel.channelType,
-              participants, // 存储移除当前用户后的参与者列表
-            };
-          });
-
-          setChannels(mappedData as { channelId: number; channelName: string; supportingText?: string; channelType: string; participants: ChatParticipantGetDTO[] }[]);
-          console.log("Mapped matched users:", mappedData);
-        } else {
-          console.error("userId is undefined!");
-        }
-      } catch (error) {
-        console.error("Failed to fetch chat channels:", error);
-      }
-    };
-
-  // 每 200ms 调用一次 fetchMatchedUsers
-  const interval = setInterval(() => {
+  
+    // 进入页面时立即调用一次
     fetchMatchedUsers(parsedUserId);
-  }, 200);
-
-  // 清除定时器
-  return () => clearInterval(interval);
-}, [parsedUserId]);
+  
+    // 每 200ms 调用一次 fetchMatchedUsers
+    const interval = setInterval(() => {
+      fetchMatchedUsers(parsedUserId);
+    }, 200);
+  
+    // 清除定时器
+    return () => clearInterval(interval);
+  }, [parsedUserId]);
 
   // Fetching messages for selected channel
   const fetchMessages = async (channelId: string) => {
@@ -468,9 +472,11 @@ const handleSubmitGroupModal = async (selectedUsers: number[], channelName?: str
 
   useEffect(() => {
     if (!selectedChannel) return;
+    if (parsedUserId === undefined) return;
   
     const interval = setInterval(() => {
       fetchMessages(selectedChannel); // 每 200ms 调用一次 fetchMessages
+      fetchMatchedUsers(parsedUserId); // 每 200ms 调用一次 fetchMatchedUsers
     }, 200);
   
     // 清除定时器
@@ -700,7 +706,7 @@ const handleSubmitGroupModal = async (selectedUsers: number[], channelName?: str
               <Link href="/profile">
                 <button className={styles.iconButton}><UserOutlined /></button>
               </Link>
-              <Link href={`/chat/${parsedUserId}`}>
+              <Link href={`/chat`}>
                 <button className={styles.iconButton}><MessageOutlined /></button>
               </Link>
               <button
@@ -926,7 +932,13 @@ const handleSubmitGroupModal = async (selectedUsers: number[], channelName?: str
               mode={groupModalMode}
               onClose={() => setIsGroupModalVisible(false)}
               onSubmit={handleSubmitGroupModal}
-              existingUsers={groupModalMode === "update" ? selectedUsers : []}
+              existingUsers={
+                groupModalMode === "update"
+                  ? channels
+                      .find((channel) => String(channel.channelId) === String(selectedChannel))
+                      ?.participants?.map((p) => p.userId) ?? [] // 获取当前群聊的 participants
+                  : []
+              }
               allUsers={channels
                 .filter((channel) => channel.channelType === "individual")
                 .map((channel) => ({
