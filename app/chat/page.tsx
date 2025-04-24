@@ -1,15 +1,16 @@
 'use client';
 
 import React, { useEffect, useState, useRef } from "react";
-import {useParams} from "next/navigation";
+import {useRouter} from "next/navigation";
 import { UserOutlined, MessageOutlined, FilterOutlined, LogoutOutlined } from "@ant-design/icons";
 import { useMessage } from "@/hooks/useMessage";
 import useLocalStorage from "@/hooks/useLocalStorage";
 import { App } from "antd";
+import { useApi } from "@/hooks/useApi";
 import Link from "next/link";
-import { ApiService } from "../../api/apiService";
+import { ApiService } from "../api/apiService";
 import Logo from "@/components/Logo";
-import "../../styles/chat.css";
+import "../styles/chat.css";
 import styles from "@/styles/main.module.css";
 import backgroundStyles from "@/styles/theme/backgrounds.module.css";
 import { GoogleGenerativeAI } from "@google/generative-ai";
@@ -113,6 +114,7 @@ const ChatPage: React.FC = () => {
   const [channelMessages, setChannelMessages] = useState<Record<string, { id: number; text: string; sender: string; timeStamp: number; avatar: string | null }[]>>({});
   const [inputValue, setInputValue] = useState("");
   const apiService = new ApiService();
+  const apiService_token = useApi();
   const [selectedChannel, setSelectedChannel] = useState<string | null>(null);  // Track selected chat
   const Your_API_Key = "AIzaSyAA9DyJQQeK-E9E1PIblN7ay-g4PlwKbVw"
   const genAI = new GoogleGenerativeAI(Your_API_Key);
@@ -125,15 +127,11 @@ const ChatPage: React.FC = () => {
 
   // Used for scrolling to the latest message.
   const messagesEndRef = useRef<HTMLDivElement | null >(null);
-  const { userid : rawUserId} = useParams();
-  const parsedUserId = Array.isArray(rawUserId)
-    ? parseInt(rawUserId[0], 10)
-    : rawUserId
-    ? parseInt(rawUserId, 10)
-    : undefined;
+  const [parsedUserId, setParsedUserId] = useState<number | undefined>(undefined); // 存储解析后的 userId
   const { message, contextHolder } = useMessage();
-  const { clear: clearToken } = useLocalStorage<string>("token", "");
   const [isLoading, setIsLoading] = useState(false); // 控制加载状态
+  const router = useRouter(); // 用于页面跳转
+  const { value: token, clear: clearToken } = useLocalStorage<string>("token", "");
 
   // 定义 ChatParticipantGetDTO 类型
   interface ChatParticipantGetDTO {
@@ -168,25 +166,38 @@ const ChatPage: React.FC = () => {
     typing: boolean;
   }
 
+    // 从 localStorage 获取 userId
+    useEffect(() => {
+      const fetchUserId = async () => {
+  
+        try {
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
+          const localStorageToken = localStorage.getItem("token");
+          const effectiveToken = token || localStorageToken;
+          if (!effectiveToken) {
+            message.error("Please login to access your profile");
+            router.push("/login");
+            return;
+          }
   
-    const storedToken = localStorage.getItem("token");
-    if (!storedToken) {
-      console.error("Token is missing. Redirecting to /main.");
-      window.location.href = "/main"; // 重定向到 /main
-      return;
-    }
+          const tokenValue = effectiveToken.startsWith('Bearer ') ? effectiveToken.substring(7) : effectiveToken;
+          const apiUser = await apiService_token.userService?.getUserByToken(tokenValue);
+          console.log('apiUser is like this ...', apiUser)
+
+          const userId = apiUser?.id;
+          if (!userId) {
+            throw new Error("Invalid token: userId not found");
+          }
+          setParsedUserId(userId);
+        } catch (error) {
+          console.error("Failed to parse token:", error);
+          message.error("Invalid token. Please login again.");
+          router.push("/login"); // 跳转到登录页面
+        }
+      };
   
-    if (!parsedUserId) {
-      console.error("User ID is missing. Redirecting to /main.");
-      window.location.href = "/main"; // 重定向到 /main
-      return;
-    }
-  
-    console.log("Token and User ID are valid. Proceeding with ChatPage.");
-  }, [parsedUserId]);
+      fetchUserId();
+    }, [router, message]);
 
   const handleTypingStatus = async (isTyping: boolean) => {
     if (!parsedUserId || !selectedChannel) {

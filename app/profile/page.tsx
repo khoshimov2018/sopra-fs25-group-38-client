@@ -49,6 +49,7 @@ const ProfilePage = () => {
 
         const tokenValue = effectiveToken.startsWith('Bearer ') ? effectiveToken.substring(7) : effectiveToken;
         const apiUser = await apiService.userService?.getUserByToken(tokenValue);
+        console.log('apiUser is like this ...', apiUser)
         if (!apiUser) return;
 
         if (!apiUser.id) return;
@@ -619,7 +620,7 @@ const ProfilePage = () => {
             <Link href="/main" className={mainStyles.logoLink}><Logo className={mainStyles.headerLogo} /></Link>
             <div className={mainStyles.headerRight}>
               <Link href="/profile"><button className={mainStyles.iconButton}><UserOutlined /></button></Link>
-              <Link href={`/chat/${currentUser?.id}`}><button className={mainStyles.iconButton}><MessageOutlined /></button></Link>
+              <Link href={`/chat`}><button className={mainStyles.iconButton}><MessageOutlined /></button></Link>
               <button className={mainStyles.iconButton} onClick={handleLogout}><LogoutOutlined /></button>
             </div>
           </div>

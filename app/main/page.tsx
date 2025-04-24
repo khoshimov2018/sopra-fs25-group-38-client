@@ -295,13 +295,14 @@ const MainPage: React.FC = () => {
                     <UserOutlined />
                   </button>
                 </Link>
+                <Link href={`/chat`}>
                 <button
                   className={styles.iconButton}
-                  disabled
-                  id="chat-button"
+                  id="chat-button-main"
                 >
                   <MessageOutlined />
                 </button>
+                </Link>
                 <button
                   className={styles.iconButton}
                   onClick={() => setFilterModalVisible(true)}
@@ -376,7 +377,7 @@ const MainPage: React.FC = () => {
                   <UserOutlined />
                 </button>
               </Link>
-              <Link href={`/chat/${currentUser?.id}`}>
+              <Link href={`/chat`}>
               <button
                 className={styles.iconButton}
                 id="chat-button-main"
