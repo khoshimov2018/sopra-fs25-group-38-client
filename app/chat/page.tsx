@@ -23,28 +23,19 @@ const GroupModal: React.FC<{
   onSubmit: (selectedUsers: number[], channelName?: string) => void;
   existingUsers?: number[];
   allUsers: { userId: number; userName: string }[];
-}> = ({ visible, mode, onClose, onSubmit, existingUsers = [], allUsers }) => {
-  const [selectedUsers, setSelectedUsers] = useState<number[]>([]); // 初始化为空数组
+  selectedUsers: number[];
+  setSelectedUsers: React.Dispatch<React.SetStateAction<number[]>>;
+}> = ({ visible, mode, onClose, onSubmit, existingUsers = [], allUsers, selectedUsers, setSelectedUsers }) => {
   const [channelName, setChannelName] = useState<string>("");
 
-  useEffect(() => {
-    if (mode === "update") {
-      setSelectedUsers(existingUsers); // 更新模式下初始化选中已有用户
-    } else {
-      setSelectedUsers([]); // 创建模式下清空选中用户
-    }
-  }, [mode, existingUsers]);
-
   const handleUserSelect = (userId: number) => {
-    if (existingUsers.includes(userId)) {
-      // 如果用户已经是 existingUsers 的一员，则禁止点击
+    if (mode === "update" && existingUsers.includes(userId)) {
       return;
     }
-
     setSelectedUsers((prevSelected) =>
       prevSelected.includes(userId)
-        ? prevSelected.filter((id) => id !== userId) // 如果已选中则取消选择
-        : [...prevSelected, userId] // 否则添加到选中列表
+        ? prevSelected.filter((id) => id !== userId)
+        : [...prevSelected, userId]
     );
   };
 
@@ -69,28 +60,32 @@ const GroupModal: React.FC<{
           />
         )}
         <div className="user-list">
-          {allUsers.map((user) => (
-            <div
-              key={user.userId}
-              className={`user-item ${
-                existingUsers.includes(user.userId)
-                  ? "existing" // 已存在的用户
-                  : selectedUsers.includes(user.userId)
-                  ? "selected" // 新选中的用户
-                  : ""
-              }`}
-              onClick={() => handleUserSelect(user.userId)}
-              style={
-                existingUsers.includes(user.userId)
-                  ? { pointerEvents: "none", opacity: 0.5 } // 禁用已存在的用户
-                  : {}
-              }
-            >
-              <div className="content">
-                <div className="headline">{user.userName}</div>
+          {allUsers.length === 0 ? (
+            <div className="no-users-message">No selectable users.</div>
+          ) : (
+            allUsers.map((user) => (
+              <div
+                key={user.userId}
+                className={`user-item ${
+                  existingUsers.includes(user.userId)
+                    ? "existing"
+                    : selectedUsers.includes(user.userId)
+                    ? "selected"
+                    : ""
+                }`}
+                onClick={() => handleUserSelect(user.userId)}
+                style={
+                  mode === "update" && existingUsers.includes(user.userId)
+                    ? { pointerEvents: "none", opacity: 0.5 }
+                    : {}
+                }
+              >
+                <div className="content">
+                  <div className="headline">{user.userName}</div>
+                </div>
               </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
         <div className="group-modal-actions">
           <button className="cancel-button" onClick={onClose}>
@@ -108,7 +103,7 @@ const GroupModal: React.FC<{
 const ChatPage: React.FC = () => {
   const [userMessages, setUserMessages] = useState<{ id: number; text: string; sender: string; timeStamp: number; avatar: string| null }[]>([]);
   const [otherMessages, setOtherMessages] = useState<{ id: number; text: string; sender: string; timeStamp: number; avatar: string| null}[]>([]);
-  const [channels, setChannels] = useState<{ channelId: number; channelName: string; supportingText?: string; channelType:string; participants?: ChatParticipantGetDTO[] }[]>([
+  const [channels, setChannels] = useState<{ channelId: number; channelName: string; supportingText?: string; channelType:string; participants?: ChatParticipantGetDTO[]; channelProfileImage?: string }[]>([
     {
       channelId: -1, // 特殊 ID 表示 AI Advisor
       channelName: "AI Advisor",
@@ -128,8 +123,9 @@ const ChatPage: React.FC = () => {
   const [selectedChannel, setSelectedChannel] = useState<string | null>(null);  // Track selected chat
   const Your_API_Key = "AIzaSyAA9DyJQQeK-E9E1PIblN7ay-g4PlwKbVw"
   const genAI = new GoogleGenerativeAI(Your_API_Key);
-  const [userAvatar, setUserAvatar] = useState("/default-user-avatar.png"); // 默认头像
   const aiAvatar = "/AI-Icon.svg";  // 你可以使用本地或外部的头像路径
+  const defaultGroupicon = '/Group_icon.svg';
+  const defaulindividualicon = '/defaultIndividualIcon.svg'; 
   const [isGroupModalVisible, setIsGroupModalVisible] = useState(false); // 控制浮层显示
   const [selectedUsers, setSelectedUsers] = useState<number[]>([]); // 存储选中的用户 ID
   const [typingStatus, setTypingStatus] = useState(false); // 存储对方的 typing 状态
@@ -138,6 +134,7 @@ const ChatPage: React.FC = () => {
   // Used for scrolling to the latest message.
   const messagesEndRef = useRef<HTMLDivElement | null >(null);
   const [parsedUserId, setParsedUserId] = useState<number | undefined>(undefined); // 存储解析后的 userId
+  const [currentUserImage, setCurrentUserImage] = useState<string | null>(null);
   const { message, contextHolder } = useMessage();
   const [isLoading, setIsLoading] = useState(false); // 控制加载状态
   const router = useRouter(); // 用于页面跳转
@@ -178,36 +175,51 @@ const ChatPage: React.FC = () => {
 
     // 从 localStorage 获取 userId
     useEffect(() => {
-      const fetchUserId = async () => {
-  
-        try {
+      // const refreshToken = async () => {
+      //   try {
+      //     const response = await apiService.post("/auth/refresh", { token });
+      //     const newToken = (response as { token: string }).token;
+      //     localStorage.setItem("token", newToken);
+      //     return newToken;
+      //   } catch (error) {
+      //     console.error("Failed to refresh token:", error);
+      //     // actualLogout();
+      //     return null;
+      //   }
+      // };
 
-          const localStorageToken = localStorage.getItem("token");
-          const effectiveToken = token || localStorageToken;
-          if (!effectiveToken) {
-            message.error("Please login to access your profile");
-            router.push("/login");
-            return;
-          }
-  
-          const tokenValue = effectiveToken.startsWith('Bearer ') ? effectiveToken.substring(7) : effectiveToken;
-          const apiUser = await apiService_token.userService?.getUserByToken(tokenValue);
-          console.log('apiUser is like this ...', apiUser)
+    const fetchUserId = async () => {
+      try {
+        const localStorageToken = localStorage.getItem("token");
+        const effectiveToken = token || localStorageToken;
+        console.log("What is effectiveToken", effectiveToken);
+        console.log("What is Token", token);
+        console.log("What is localStorageToken", localStorageToken);
 
-          const userId = apiUser?.id;
-          if (!userId) {
-            throw new Error("Invalid token: userId not found");
-          }
-          setParsedUserId(userId);
-        } catch (error) {
-          console.error("Failed to parse token:", error);
-          message.error("Invalid token. Please login again.");
-          router.push("/login"); // 跳转到登录页面
+    
+        if (!effectiveToken) {
+          message.error("Invalid token format. Please login again.123");
+          actualLogout();
+          return;
         }
-      };
-  
-      fetchUserId();
-    }, [router, message]);
+    
+        const tokenValue = effectiveToken.startsWith('Bearer ') ? effectiveToken.substring(7) : effectiveToken;
+        const apiUser = await apiService_token.userService?.getUserByToken(tokenValue);
+    
+        if (!apiUser || !apiUser.id) {
+          throw new Error("Invalid token: userId not found");
+        }
+    
+        setParsedUserId(apiUser.id);
+        setCurrentUserImage(apiUser.profilePicture);
+      } catch (error) {
+          message.error("Network error. Please check your connection.");
+          // actualLogout();
+        }
+    };
+
+    fetchUserId();
+  }, [router, message]);
 
   const handleTypingStatus = async (isTyping: boolean) => {
     if (!parsedUserId || !selectedChannel) {
@@ -320,7 +332,7 @@ const ChatPage: React.FC = () => {
     text: "Hello! How can I assist you?",
     sender: "AI Advisor",
     timeStamp: Date.now(),
-    avatar: userAvatar,
+    avatar: aiAvatar,
     channelType: 'individual' // Provide a default or appropriate value
   };
 
@@ -336,7 +348,7 @@ const handleSubmitGroupModal = async (selectedUsers: number[], channelName?: str
       channelName: channelName || "New Group",
       channelType: "group",
       participantIds: [parsedUserId, ...selectedUsers],
-      channelProfileImage: "/default-group-avatar.png", // 默认群聊头像
+      channelProfileImage: defaultGroupicon, // 默认群聊头像
     };
 
     try {
@@ -395,6 +407,13 @@ const handleSubmitGroupModal = async (selectedUsers: number[], channelName?: str
           // 处理 participants，移除当前用户
           const participants = channel.participants.filter((p) => p.userId !== userid);
 
+          // 设置头像逻辑
+        const channelProfileImage =
+          channel.channelType === "individual" && participants.length > 0
+            ? participants[0].userProfileImage // 对方用户的头像
+            : defaultGroupicon; // 默认群聊头像
+
+        
           return {
             channelId: channel.channelId, // 频道 ID
             channelName: channel.channelType === "individual" && participants.length > 0
@@ -403,10 +422,12 @@ const handleSubmitGroupModal = async (selectedUsers: number[], channelName?: str
             supportingText: latestMessage,
             channelType: channel.channelType,
             participants, // 存储移除当前用户后的参与者列表
+            channelProfileImage, // Storing Channel icon
           };
         });
-
-        setChannels(mappedData as { channelId: number; channelName: string; supportingText?: string; channelType: string; participants: ChatParticipantGetDTO[] }[]);
+        console.log("Current selected users after fetching Matched Users", selectedUsers)
+        // Fixed bugs so that now only channles would be updated
+        setChannels(mappedData /* as { channelId: number; channelName: string; supportingText?: string; channelType: string; participants: ChatParticipantGetDTO[] } []*/);
         console.log("Mapped matched users:", mappedData);
       } else {
         console.error("userId is undefined!");
@@ -416,20 +437,7 @@ const handleSubmitGroupModal = async (selectedUsers: number[], channelName?: str
     }
   };
 
-  useEffect(() => {
-    if (parsedUserId === undefined) return;
-  
-    // 进入页面时立即调用一次
-    fetchMatchedUsers(parsedUserId);
-  
-    // 每 200ms 调用一次 fetchMatchedUsers
-    const interval = setInterval(() => {
-      fetchMatchedUsers(parsedUserId);
-    }, 200);
-  
-    // 清除定时器
-    return () => clearInterval(interval);
-  }, [parsedUserId]);
+  console.log("currentChannels are ", channels);
 
   // Fetching messages for selected channel
   const fetchMessages = async (channelId: string) => {
@@ -455,7 +463,7 @@ const handleSubmitGroupModal = async (selectedUsers: number[], channelName?: str
         text: String(message.context),
         sender: String(message.senderId),
         timeStamp: new Date(String(message.timestamp)).getTime(),
-        avatar: String(message.senderProfileImage) || null,
+        avatar: String(message.senderProfileImage) || defaulindividualicon,
       }));
   
       setChannelMessages((prevMessages) => ({
@@ -470,13 +478,30 @@ const handleSubmitGroupModal = async (selectedUsers: number[], channelName?: str
     // }
   };
 
+  // Controlling fetching matched users
   useEffect(() => {
-    if (!selectedChannel) return;
     if (parsedUserId === undefined) return;
+
+    // To fetch Matched users once entering.
+    fetchMatchedUsers(parsedUserId);
   
     const interval = setInterval(() => {
-      fetchMessages(selectedChannel); // 每 200ms 调用一次 fetchMessages
       fetchMatchedUsers(parsedUserId); // 每 200ms 调用一次 fetchMatchedUsers
+    }, 200);
+  
+    // 清除定时器
+    return () => clearInterval(interval);
+  }, [parsedUserId]);
+
+  // controlling fetching messages
+  useEffect(() => {
+    if (!selectedChannel) return;
+
+    // To fetch Matched users once entering.
+    fetchMessages(selectedChannel);
+
+    const interval = setInterval(() => {
+      fetchMessages(selectedChannel); // 每 200ms 调用一次 fetchMessages
     }, 200);
   
     // 清除定时器
@@ -492,23 +517,33 @@ const handleSubmitGroupModal = async (selectedUsers: number[], channelName?: str
   }, [channelMessages]);
 
   useEffect(() => {
-    if (!selectedChannel) return;
+      const fetchTyping = async () => {
+          if (!selectedChannel) return;
+  
+          // 获取当前频道的参与者（排除当前用户）
+          const currentChannel = channels.find((channel) => String(channel.channelId) === String(selectedChannel));
+          if (!currentChannel || currentChannel.channelType !== "individual") return;
+  
+          const participant = currentChannel.participants?.find((p) => p.userId !== parsedUserId);
+          if (!participant) return;
+  
+          const participantId = participant.userId;
+  
+          const isTyping = await fetchTypingStatus(participantId);
+          setTypingStatus(isTyping);
+  
+          const interval = setInterval(async () => {
+            const isTyping = await fetchTypingStatus(participantId);
+            setTypingStatus(isTyping);
+          }, 200);
 
-    // 获取当前频道的参与者（排除当前用户）
-    const currentChannel = channels.find((channel) => String(channel.channelId) === String(selectedChannel));
-    if (!currentChannel || currentChannel.channelType !== "individual") return;
+          console.log("selected users after fetching typing",selectedUsers);
+  
+          return () => clearInterval(interval); // 清除定时器
 
-    const participant = currentChannel.participants?.find((p) => p.userId !== parsedUserId);
-    if (!participant) return;
-
-    const participantId = participant.userId;
-
-    const interval = setInterval(async () => {
-      const isTyping = await fetchTypingStatus(participantId);
-      setTypingStatus(isTyping);
-    }, 200);
-
-    return () => clearInterval(interval); // 清除定时器
+      };
+  
+      fetchTyping();
   }, [selectedChannel, channels, parsedUserId]);
  
 
@@ -521,7 +556,7 @@ const handleSubmitGroupModal = async (selectedUsers: number[], channelName?: str
       text: messageText,
       sender: String(parsedUserId), // 使用 parsedUserId 作为 sender
       timeStamp: Date.now(),
-      avatar: userAvatar,
+      avatar: currentUserImage,
     };
   
     // 清空输入框
@@ -598,7 +633,7 @@ const handleSubmitGroupModal = async (selectedUsers: number[], channelName?: str
         text: String(data.context),
         sender: String(data.senderId),
         timeStamp: new Date(String(data.timestamp)).getTime(),
-        avatar: data.senderProfileImage ? String(data.senderProfileImage) : null,
+        avatar: data.senderProfileImage ? String(data.senderProfileImage) : defaulindividualicon,
       };
   
       // 将服务端返回的消息添加到当前频道的消息列表中
@@ -617,7 +652,7 @@ const handleSubmitGroupModal = async (selectedUsers: number[], channelName?: str
         text: "Failed in sending messages, please try again later",
         sender: "Server",
         timeStamp: Date.now(),
-        avatar: null,
+        avatar: defaulindividualicon,
       };
   
       setChannelMessages((prevMessages) => ({
@@ -725,7 +760,7 @@ const handleSubmitGroupModal = async (selectedUsers: number[], channelName?: str
               <div className="message-list">
                 {/* AI Advisor 始终置顶 */}
                 <div className="message-item" onClick={() => handleSelectChat("AI Advisor")}>
-                  <div className="avatar" style={{ backgroundImage: `url(${aiAvatar})` }}></div>
+                  <img className="avatar" src={aiAvatar} alt="AI Avatar" />
                   <div className="content">
                     <div className="headline">AI Advisor</div>
                     <div className="supporting-text">
@@ -747,7 +782,7 @@ const handleSubmitGroupModal = async (selectedUsers: number[], channelName?: str
                     className={`message-item ${String(selectedChannel) === String(user.channelId) ? "selected" : ""}`}
                     onClick={() => setSelectedChannel(String(user.channelId))}
                   >
-                    <div className="avatar"></div>
+                    <img className="avatar" src ={user.channelProfileImage || defaulindividualicon} alt ='User Image'/>
                     <div className="content">
                       <div className="headline">{user.channelName}</div>
                       <div className="supporting-text">
@@ -861,7 +896,7 @@ const handleSubmitGroupModal = async (selectedUsers: number[], channelName?: str
                                     ? aiAvatar // AI Advisor 使用固定头像
                                     : channels.find((channel) => String(channel.channelId) === String(selectedChannel))?.participants?.find(
                                         (p) => String(p.userId) === message.sender
-                                      )?.userProfileImage || "/default-avatar.png" // 普通用户从服务端读取头像
+                                      )?.userProfileImage || defaulindividualicon // 普通用户从服务端读取头像
                                 }
                                 alt="Avatar"
                               />
@@ -945,6 +980,8 @@ const handleSubmitGroupModal = async (selectedUsers: number[], channelName?: str
                   userId: channel.participants?.[0]?.userId ?? -1,
                   userName: channel.channelName,
                 }))}
+                selectedUsers={selectedUsers}
+                setSelectedUsers={setSelectedUsers}
             />
           )}
           {isBlockPanelVisible && (
