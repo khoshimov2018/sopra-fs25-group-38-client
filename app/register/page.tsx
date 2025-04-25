@@ -23,7 +23,6 @@ interface FormFieldProps {
   password: string;
   studyLevel: string;
   studyGoals: string[];
-  // Note: courseSelections are handled separately via state
 }
 
 interface Course {
@@ -60,14 +59,12 @@ const Register: React.FC = () => {
     
     fetchCourses();
     
-    // Removed dependencies to prevent infinite loop
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   /**
    * Validate course selections
-   * @param selections Course selections to validate
-   * @returns Object containing validation results
+   * @param selections 
+   * @returns
    */
   const validateCourseSelections = (selections: CourseSelection[]) => {
     // Filter out any course selections with courseId = 0 (unselected)
@@ -111,9 +108,9 @@ const Register: React.FC = () => {
 
   /**
    * Create registration payload
-   * @param values Form values
-   * @param filteredSelections Validated course selections
-   * @returns Registration payload
+   * @param values 
+   * @param filteredSelections 
+   * @returns 
    */
   const createRegistrationPayload = (values: FormFieldProps, filteredSelections: CourseSelection[]): UserRegistration => {
     return {
@@ -121,15 +118,15 @@ const Register: React.FC = () => {
       email: values.email,
       password: values.password,
       studyLevel: values.studyLevel,
-      studyGoals: values.studyGoals, // Send as array, not as string
+      studyGoals: values.studyGoals,
       courseSelections: filteredSelections
     };
   };
 
   /**
    * Process successful registration
-   * @param response Registration response
-   * @param credentials Login credentials
+   * @param response 
+   * @param credentials 
    */
   const processSuccessfulRegistration = async (
     response: User, 
@@ -170,8 +167,8 @@ const Register: React.FC = () => {
 
   /**
    * Handle successful login process
-   * @param token Authentication token
-   * @param successMessage Message to display to the user
+   * @param token 
+   * @param successMessage
    */
   const handleSuccessfulLogin = (token: string, successMessage: string) => {
     console.log("Setting token and redirecting");
@@ -186,7 +183,7 @@ const Register: React.FC = () => {
 
   /**
    * Handle registration error
-   * @param error Error object
+   * @param error
    */
   const handleRegistrationError = (error: unknown) => {
     console.error("Registration error:", error);
@@ -221,7 +218,7 @@ const Register: React.FC = () => {
 
   /**
    * Display user-friendly error based on error message
-   * @param errorMessage Error message from API
+   * @param errorMessage 
    */
   const displayUserFriendlyError = (errorMessage: string) => {
     if (errorMessage.includes("409") || errorMessage.includes("Conflict") || errorMessage.includes("already exists")) {
@@ -239,13 +236,10 @@ const Register: React.FC = () => {
     }
   };
 
-  /**
-   * Handle email already exists error
-   */
   const handleEmailAlreadyExists = () => {
     message.error("Email already taken. Please use a different email address.");
     
-    // Focus the email field for better UX
+    
     form.setFields([
       {
         name: 'email',
@@ -256,7 +250,7 @@ const Register: React.FC = () => {
 
   /**
    * Handle bad request errors with specific field messages
-   * @param errorMessage Error message from API
+   * @param errorMessage 
    */
   const handleBadRequestError = (errorMessage: string) => {
     const lowerCaseError = errorMessage.toLowerCase();
@@ -279,9 +273,6 @@ const Register: React.FC = () => {
     }
   };
 
-  /**
-   * Main handler for user registration
-   */
   const handleRegister = async (values: FormFieldProps) => {
     try {
       setIsLoading(true);
@@ -336,7 +327,6 @@ const Register: React.FC = () => {
       // Reset the selection to the previous value or empty
       const previousValue = courseSelections[index].courseId;
       
-      // If the previous value was also a duplicate somehow, just reset to empty (0)
       if (courseSelections.some((course, i) => 
           i !== index && course.courseId === previousValue && previousValue !== 0)) {
         value = 0;
@@ -357,7 +347,6 @@ const Register: React.FC = () => {
   };
 
   const addCourseSelection = () => {
-    // Check if there are any unselected courses (courseId === 0)
     const hasUnselectedCourse = courseSelections.some(course => course.courseId === 0);
     
     if (hasUnselectedCourse) {
@@ -443,7 +432,7 @@ const Register: React.FC = () => {
                       
                       return Promise.resolve();
                     },
-                    validateTrigger: 'onBlur' // Only validate when field loses focus
+                    validateTrigger: 'onBlur'
                   }
                 ]}
               >

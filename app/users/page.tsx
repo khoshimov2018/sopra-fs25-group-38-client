@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { useApi } from "@/hooks/useApi";
 import useLocalStorage from "@/hooks/useLocalStorage";
 import { User } from "@/types/user";
-// Import components individually to avoid chunk loading issues
 import Button from "antd/lib/button";
 import Card from "antd/lib/card";
 import Table from "antd/lib/table";

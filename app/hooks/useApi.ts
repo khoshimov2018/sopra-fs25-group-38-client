@@ -2,7 +2,6 @@ import { ApiService } from "@/api/apiService";
 import { createServices, Services } from "@/api/services";
 import { useMemo } from "react";
 
-// Create a single instance of ApiService to be reused
 let apiServiceInstance: ApiService | null = null;
 let servicesInstance: Services | null = null;
 

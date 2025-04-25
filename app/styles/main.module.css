@@ -8,7 +8,7 @@
   flex-direction: column;
   align-items: center;
   position: relative;
-  padding-top: 120px; /* Leaves space for the fixed header */
+  padding-top: 120px; 
   padding-bottom: 20px;
 }
 
@@ -102,9 +102,9 @@
 
 /* REUSABLE CARD STYLING */
 .card {
-  background-color: #F7F2FA; /* M3/sys/light/surface-container-low */
+  background-color: #F7F2FA; 
   border-radius: 28px;
-  box-shadow: 0px 4px 8px 3px rgba(0, 0, 0, 0.15), 0px 1px 3px rgba(0, 0, 0, 0.3); /* M3/Elevation Light/3 */
+  box-shadow: 0px 4px 8px 3px rgba(0, 0, 0, 0.15), 0px 1px 3px rgba(0, 0, 0, 0.3); 
   padding: 1.5rem;
   margin-bottom: 1.5rem;
   color: #333;
@@ -157,7 +157,7 @@
 .dragHandle {
   width: 32px;
   height: 4px;
-  background: #79747E; /* M3/sys/light/outline */
+  background: #79747E; 
   border-radius: 100px;
 }
 
@@ -259,8 +259,8 @@
   font-weight: 500;
   line-height: 24px;
   letter-spacing: 0.15px;
-  background: #EADDFF; /* M3/sys/light/primary-container */
-  color: #4F378A; /* M3/sys/light/on-primary-container */
+  background: #EADDFF; 
+  color: #4F378A; 
   border-radius: 100px;
   text-align: center;
 }

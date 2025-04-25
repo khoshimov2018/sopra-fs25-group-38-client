@@ -33,8 +33,6 @@ const ProfilePage = () => {
   const [fileList, setFileList] = useState<any[]>([]);
   const [previewImage, setPreviewImage] = useState<string>("");
 
-  // Admin check function for potential future use
-
   useEffect(() => {
     const fetchUserProfile = async () => {
       try {
@@ -99,7 +97,7 @@ const ProfilePage = () => {
   const handleAddStudyLevel = () => {
     if (!editableUser) return;
   
-    // Check if there are any unselected courses (courseId === 0)
+    // Check if there are any unselected courses 
     const hasUnselectedCourse = editableUser.userCourses?.some(course => course.courseId === 0);
     
     if (hasUnselectedCourse) {
@@ -111,7 +109,7 @@ const ProfilePage = () => {
     const newUserCourse = {
       courseId: 0,
       courseName: '',
-      knowledgeLevel: ProfileKnowledgeLevel.BEGINNER // <-- required
+      knowledgeLevel: ProfileKnowledgeLevel.BEGINNER 
     };
   
     setEditableUser({
@@ -200,15 +198,15 @@ const ProfilePage = () => {
 
   /**
    * Prepare course selections from user data
-   * @param userCourses User's selected courses
-   * @returns Object containing course selections and any duplicate course IDs
+   * @param userCourses 
+   * @returns 
    */
   const prepareCourseSelections = (userCourses = []) => {
     // Map and filter courses
     const courseSelections = userCourses.map((course) => ({
       courseId: course.courseId,
       knowledgeLevel: course.knowledgeLevel ?? 'BEGINNER'
-    })).filter(c => c.courseId !== 0); // skip empty courses
+    })).filter(c => c.courseId !== 0);
     
     // Check for duplicate courses
     const uniqueCourseIds = new Set();
@@ -227,11 +225,11 @@ const ProfilePage = () => {
 
   /**
    * Process image for upload, compressing if needed
-   * @param profileImage Original profile image
-   * @returns Processed image suitable for upload
+   * @param profileImage 
+   * @returns 
    */
   const processProfileImage = async (profileImage = "") => {
-    // If there's no image or it's not a data URL, return as is
+    
     if (!profileImage?.startsWith('data:image')) {
       return profileImage;
     }
@@ -263,10 +261,10 @@ const ProfilePage = () => {
 
   /**
    * Create profile update DTO from editable user data
-   * @param user User data to prepare
-   * @param courseSelections Prepared course selections
-   * @param profileImageToSave Processed profile image
-   * @returns UserPutDTO ready for API submission
+   * @param user 
+   * @param courseSelections 
+   * @param profileImageToSave
+   * @returns 
    */
   const createProfileUpdateDTO = (user, courseSelections, profileImageToSave) => {
     return {
@@ -284,10 +282,10 @@ const ProfilePage = () => {
 
   /**
    * Process updated user data after successful save
-   * @param updatedUser User data from API
-   * @param currentToken Current authentication token
-   * @param currentImage Current profile image
-   * @returns Processed user profile
+   * @param updatedUser 
+   * @param currentToken 
+   * @param currentImage 
+   * @returns 
    */
   const processUpdatedUserData = (updatedUser, currentToken, currentImage, currentPicture) => {
     return {
@@ -309,7 +307,7 @@ const ProfilePage = () => {
 
   /**
    * Handle API errors during profile save
-   * @param err Error from API
+   * @param err 
    */
   const handleProfileSaveError = (err) => {
     console.error("Save failed", err);
@@ -333,7 +331,7 @@ const ProfilePage = () => {
 
   /**
    * Display validation errors to user
-   * @param errors Array of validation error messages
+   * @param errors 
    */
   const displayValidationErrors = (errors) => {
     message.error(
@@ -348,9 +346,7 @@ const ProfilePage = () => {
     );
   };
   
-  /**
-   * Main handler for saving user profile
-   */
+
   const handleSaveProfile = async () => {
     // Early returns for missing data
     if (!editableUser || !currentUser?.id) return;
@@ -386,7 +382,7 @@ const ProfilePage = () => {
       
       // Process the updated user properly
       const processedUser = processUpdatedUserData(
-        updatedUser ?? currentUser, // Fallback to current user if update fails
+        updatedUser ?? currentUser, 
         currentUser.token, 
         editableUser.profileImage,
         editableUser.profilePicture
@@ -481,7 +477,6 @@ const ProfilePage = () => {
         const ctx = canvas.getContext('2d');
         if (ctx) {
           ctx.drawImage(img, 0, 0, width, height);
-          // Use lower quality (0.6) for much better compression
           const compressedImage = canvas.toDataURL('image/jpeg', 0.6);
           
           // If still too large, compress more aggressively
@@ -568,7 +563,6 @@ const ProfilePage = () => {
           message.warning('Image may be too large. If you have issues saving your profile, try a smaller image.');
         }
         
-        // Update the editableUser with the resized image
         setEditableUser({
           ...editableUser,
           profileImage: resizedImage,

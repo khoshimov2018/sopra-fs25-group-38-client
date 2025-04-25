@@ -11,7 +11,7 @@ const HeaderLogo: React.FC<HeaderLogoProps> = ({ className = '' }) => {
       display: 'flex', 
       alignItems: 'center', 
       justifyContent: 'flex-start',
-      marginTop: '-10px', // Move logo all the way to the top
+      marginTop: '-10px',
       position: 'relative',
       top: '-5px'
     }}>
@@ -24,7 +24,7 @@ const HeaderLogo: React.FC<HeaderLogoProps> = ({ className = '' }) => {
           objectFit: 'contain',
           width: 'auto',
           height: 'auto',
-          maxHeight: '50px' // Slightly smaller
+          maxHeight: '50px' 
         }}
         priority
       />

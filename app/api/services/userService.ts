@@ -1,11 +1,6 @@
 import { ApiService } from "../apiService";
 import { User } from "@/types/user";
 import { UserGetDTO, UserLoginDTO, UserPostDTO, UserPutDTO, CourseSelectionDTO } from "@/types";
-
-/**
- * Service for user-related API calls
- * Aligns with the UserService.java in the backend
- */
 export class UserService {
   private readonly apiService: ApiService;
 
@@ -15,8 +10,8 @@ export class UserService {
   
   /**
    * Delete user account (self-deletion)
-   * @returns void
-   * @aligns with UserService.deleteUserByToken()
+   * @returns
+   * @aligns
    */
   async deleteAccount(): Promise<void> {
     await this.apiService.delete<void>('/users/me');
@@ -24,8 +19,8 @@ export class UserService {
 
   /**
    * Get all users
-   * @returns List of users
-   * @aligns with UserService.getUsers()
+   * @returns
+   * @aligns 
    */
   async getUsers(): Promise<UserGetDTO[]> {
     return this.apiService.get<UserGetDTO[]>("/users");
@@ -33,9 +28,9 @@ export class UserService {
 
   /**
    * Get user by ID
-   * @param userId User ID
-   * @returns User data
-   * @aligns with UserService.getUserById()
+   * @param userId
+   * @returns 
+   * @aligns
    */
   async getUserById(userId: number): Promise<UserGetDTO> {
     return this.apiService.get<UserGetDTO>(`/users/${userId}`);
@@ -43,9 +38,9 @@ export class UserService {
 
   /**
    * Login user
-   * @param credentials Login credentials
-   * @returns Logged in user with token
-   * @aligns with UserService.loginUser()
+   * @param credentials 
+   * @returns 
+   * @aligns 
    */
   async loginUser(credentials: UserLoginDTO): Promise<UserGetDTO> {
     return this.apiService.post<UserGetDTO>("/login", credentials);
@@ -53,17 +48,16 @@ export class UserService {
 
   /**
    * Logout user
-   * @param userId User ID
-   * @aligns with UserService.logoutUser()
+   * @param userId
+   * @aligns
    */
   async logoutUser(userId: number): Promise<void> {
-    // Call the correct endpoint (/users/logout) which uses the token in the header
     await this.apiService.post<void>(`/users/logout`, {});
   }
 
   /**
    * Logout user using token
-   * @aligns with UserService.logoutUserByToken()
+   * @aligns
    */
   async logoutUserByToken(): Promise<void> {
     await this.apiService.post<void>(`/users/logout`, {});
@@ -71,9 +65,9 @@ export class UserService {
 
   /**
    * Register new user
-   * @param userData User registration data with course selections
-   * @returns Created user
-   * @aligns with UserService.createUser()
+   * @param userData 
+   * @returns 
+   * @aligns 
    */
   async createUser(userData: UserPostDTO): Promise<UserGetDTO> {
     return this.apiService.post<UserGetDTO>("/users/register", userData);
@@ -81,8 +75,8 @@ export class UserService {
 
   /**
    * Register new user (alias for backward compatibility)
-   * @param userData User registration data
-   * @returns Created user
+   * @param userData 
+   * @returns 
    */
   async registerUser(userData: UserPostDTO): Promise<UserGetDTO> {
     return this.createUser(userData);
@@ -90,9 +84,9 @@ export class UserService {
 
   /**
    * Update user profile
-   * @param userId User ID
-   * @param userData Updated user data
-   * @aligns with UserService.updateUser()
+   * @param userId 
+   * @param userData 
+   * @aligns 
    */
   async updateUser(userId: number, userData: UserPutDTO): Promise<void> {
     await this.apiService.put<void>(`/users/${userId}`, userData);
@@ -100,9 +94,9 @@ export class UserService {
 
   /**
    * Get IDs of users that have matched with the specified user
-   * @param userId User ID
-   * @returns List of partner user IDs
-   * @aligns with UserService.getAcceptedMatchPartnerIds()
+   * @param userId 
+   * @returns 
+   * @aligns 
    */
   async getAcceptedMatchPartnerIds(userId: number): Promise<number[]> {
     return this.apiService.get<number[]>(`/users/${userId}/accepted-matches`);
@@ -110,8 +104,8 @@ export class UserService {
 
   /**
    * Get accepted matches for a user (alias for backward compatibility)
-   * @param userId User ID
-   * @returns List of partner user IDs
+   * @param userId 
+   * @returns 
    */
   async getAcceptedMatches(userId: number): Promise<number[]> {
     return this.getAcceptedMatchPartnerIds(userId);
@@ -119,9 +113,9 @@ export class UserService {
 
   /**
    * Get all match IDs for a user
-   * @param userId User ID
-   * @returns List of match IDs
-   * @aligns with UserService.getMatchIdsForUser()
+   * @param userId 
+   * @returns 
+   * @aligns 
    */
   async getMatchIdsForUser(userId: number): Promise<number[]> {
     return this.apiService.get<number[]>(`/users/${userId}/matches`);
@@ -129,9 +123,9 @@ export class UserService {
 
   /**
    * Verify a user's authentication token
-   * @param token Authentication token (raw token without Bearer prefix)
-   * @returns User or null if not found
-   * @aligns with UserService.authenticateByToken()
+   * @param token 
+   * @returns 
+   * @aligns
    */
   async authenticateByToken(token: string): Promise<UserGetDTO | null> {
     try {
@@ -144,25 +138,22 @@ export class UserService {
 
   /**
    * Helper method to authenticate using the /users/me endpoint
-   * @param token Authentication token
-   * @returns User data or throws an error
+   * @param token
+   * @returns 
    * @private
    */
   private async authenticateWithEndpoint(token: string): Promise<UserGetDTO> {
-    // Print token length and first few characters for debugging (not full token for security)
+   
     const tokenPreview = token.substring(0, 10) + '...';
     const tokenLength = token.length;
     console.log(`Attempting to authenticate with token: ${tokenPreview} (length: ${tokenLength})`);
-    
-    // Try to get user info via /users/me endpoint
-    // The token will be sent in the Authorization header by the apiService
     return await this.apiService.get<UserGetDTO>(`/users/me`);
   }
 
   /**
    * Helper method to authenticate by decoding the JWT token
-   * @param token Authentication token
-   * @returns User data or null if decoding fails
+   * @param token 
+   * @returns 
    * @private
    */
   private async authenticateWithTokenDecode(token: string): Promise<UserGetDTO | null> {
@@ -187,8 +178,8 @@ export class UserService {
 
   /**
    * Check if token has valid format
-   * @param token Authentication token
-   * @returns True if token format is valid
+   * @param token 
+   * @returns 
    * @private
    */
   private isValidTokenFormat(token: string): boolean {
@@ -201,8 +192,8 @@ export class UserService {
 
   /**
    * Remove Bearer prefix from token if present
-   * @param token Authentication token
-   * @returns Cleaned token string
+   * @param token 
+   * @returns 
    * @private
    */
   private cleanTokenString(token: string): string {
@@ -211,8 +202,8 @@ export class UserService {
 
   /**
    * Extract user ID from JWT token
-   * @param token Cleaned token string
-   * @returns User ID or null if extraction fails
+   * @param token 
+   * @returns 
    * @private
    */
   private extractUserIdFromToken(token: string): string | null {
@@ -243,8 +234,8 @@ export class UserService {
 
   /**
    * Find user by token (alias for backward compatibility)
-   * @param token Authentication token
-   * @returns User or null if not found
+   * @param token
+   * @returns 
    */
   async getUserByToken(token: string): Promise<UserGetDTO | null> {
     return this.authenticateByToken(token);
@@ -252,9 +243,9 @@ export class UserService {
 
   /**
    * Assign courses with knowledge levels to a user
-   * @param userId User ID
-   * @param courseSelections List of course selections with knowledge levels
-   * @aligns with UserService.assignCoursesWithKnowledgeLevels()
+   * @param userId 
+   * @param courseSelections 
+   * @aligns 
    */
   async assignCoursesWithKnowledgeLevels(userId: number, courseSelections: CourseSelectionDTO[]): Promise<void> {
     await this.apiService.post<void>(`/users/${userId}/courses`, { courseSelections });
@@ -262,9 +253,9 @@ export class UserService {
 
   /**
    * Check if a token owner is authorized to modify a user
-   * @param userId User ID to check authorization for
-   * @returns True if authorized, throws error otherwise
-   * @aligns with UserService.checkAuthorizationById()
+   * @param userId 
+   * @returns 
+   * @aligns 
    */
   async checkAuthorizationById(userId: number): Promise<boolean> {
     try {
@@ -278,15 +269,14 @@ export class UserService {
 
   /**
    * Check if email exists
-   * @param email Email to check
-   * @returns True if email exists
+   * @param email
+   * @returns 
    */
   async emailExists(email: string): Promise<boolean> {
     try {
       await this.apiService.get<UserGetDTO>(`/users/check-email?email=${encodeURIComponent(email)}`);
       return true;
     } catch (error: any) {
-      // Accept both 404 (Not Found) and 400 (Bad Request) as indications that the email doesn't exist
       if (error.status === 404 || error.status === 400) {
         return false;
       }
@@ -296,12 +286,10 @@ export class UserService {
   
   /**
    * Get the current authenticated user using the token from storage
-   * @returns The current user or null if not authenticated
+   * @returns 
    */
   async getCurrentUser(): Promise<UserGetDTO | null> {
     try {
-      // Get the current user using the /users/me endpoint
-      // The token will be automatically included in headers by apiService
       return await this.apiService.get<UserGetDTO>('/users/me');
     } catch (error) {
       console.error("Error getting current user:", error);

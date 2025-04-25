@@ -7,8 +7,8 @@ import { StudentFilterService } from "./studentFilterService";
 
 /**
  * Creates service instances with the provided API service
- * @param apiService ApiService instance
- * @returns Object containing all service instances
+ * @param apiService 
+ * @returns 
  */
 export const createServices = (apiService: ApiService) => {
   return {
@@ -21,8 +21,6 @@ export const createServices = (apiService: ApiService) => {
 };
 
 export type Services = ReturnType<typeof createServices>;
-
-// Export individual service classes
 export { UserService } from "./userService";
 export { CourseService } from "./courseService";
 export { MatchService } from "./matchService";

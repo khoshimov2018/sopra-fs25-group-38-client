@@ -12,10 +12,6 @@ import componentStyles from "@/styles/theme/components.module.css";
 import Logo from "@/components/Logo";
 import Button from "@/components/Button";
 
-/**
- * Login page component
- * Displays a login form with email and password fields
- */
 const Login: React.FC = () => {
   const apiService = useApi();
   const [form] = Form.useForm();

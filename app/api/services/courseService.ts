@@ -15,8 +15,8 @@ export class CourseService {
 
   /**
    * Get all courses
-   * @returns List of courses
-   * @aligns with CourseService.getAllCourses()
+   * @returns
+   * @aligns
    */
   async getAllCourses(): Promise<CourseGetDTO[]> {
     return this.apiService.get<CourseGetDTO[]>("/courses");
@@ -24,7 +24,7 @@ export class CourseService {
 
   /**
    * Get all courses (alias for backward compatibility)
-   * @returns List of courses
+   * @returns
    */
   async getCourses(): Promise<CourseGetDTO[]> {
     return this.getAllCourses();
@@ -32,8 +32,8 @@ export class CourseService {
 
   /**
    * Get course by ID
-   * @param courseId Course ID
-   * @returns Course data
+   * @param courseId 
+   * @returns
    */
   async getCourseById(courseId: number): Promise<CourseGetDTO> {
     return this.apiService.get<CourseGetDTO>(`/courses/${courseId}`);
@@ -41,8 +41,8 @@ export class CourseService {
 
   /**
    * Get course by name
-   * @param courseName Course name
-   * @returns Course data or null if not found
+   * @param courseName
+   * @returns
    */
   async getCourseByName(courseName: string): Promise<CourseGetDTO | null> {
     try {
@@ -57,9 +57,9 @@ export class CourseService {
 
   /**
    * Find user IDs enrolled in all of the specified courses
-   * @param courseIds List of course IDs
-   * @returns List of user IDs
-   * @aligns with CourseService.findUserIdsEnrolledInAllCourses()
+   * @param courseIds
+   * @returns
+   * @aligns
    */
   async findUserIdsEnrolledInAllCourses(courseIds: number[]): Promise<number[]> {
     if (!courseIds || courseIds.length === 0) {
@@ -71,9 +71,9 @@ export class CourseService {
   }
 
   /**
-   * Get user IDs enrolled in specific courses (alias for backward compatibility)
-   * @param courseIds List of course IDs
-   * @returns List of user IDs
+   * Get user IDs enrolled in specific courses
+   * @param courseIds 
+   * @returns
    */
   async getUsersEnrolledInCourses(courseIds: number[]): Promise<number[]> {
     return this.findUserIdsEnrolledInAllCourses(courseIds);
@@ -81,9 +81,9 @@ export class CourseService {
 
   /**
    * Find user IDs with the specified availability preferences
-   * @param availability List of availability options
-   * @returns List of user IDs
-   * @aligns with CourseService.findUserIdsEnrolledInAllAvailability()
+   * @param availability 
+   * @returns 
+   * @aligns
    */
   async findUserIdsWithAvailability(availability: UserAvailability[]): Promise<number[]> {
     if (!availability || availability.length === 0) {
@@ -96,8 +96,8 @@ export class CourseService {
 
   /**
    * Get user IDs with specific availability (alias for backward compatibility)
-   * @param availability List of availability options
-   * @returns List of user IDs
+   * @param availability 
+   * @returns
    */
   async getUsersByAvailability(availability: UserAvailability[]): Promise<number[]> {
     return this.findUserIdsWithAvailability(availability);
@@ -105,8 +105,8 @@ export class CourseService {
 
   /**
    * Add courses to user
-   * @param userId User ID
-   * @param courseIds List of course IDs
+   * @param userId
+   * @param courseIds
    */
   async addCoursesToUser(userId: number, courseIds: number[]): Promise<void> {
     const coursePostDTO: CoursePostDTO = { courseIds };
@@ -115,8 +115,8 @@ export class CourseService {
 
   /**
    * Add courses with knowledge levels to user
-   * @param userId User ID
-   * @param courseSelections List of course selections with knowledge levels
+   * @param userId 
+   * @param courseSelections
    */
   async addCoursesWithKnowledgeLevels(userId: number, courseSelections: CourseSelectionDTO[]): Promise<void> {
     await this.apiService.post<void>(`/users/${userId}/courses`, { courseSelections });

@@ -23,10 +23,6 @@ import backgroundStyles from "@/styles/theme/backgrounds.module.css";
 import Button from "@/components/Button";
 import FilterModal from "@/components/FilterModal";
 
-/* ------------------------------------------------------------------ */
-/* Types                                                              */
-/* ------------------------------------------------------------------ */
-
 interface UserProfile extends User {
   studyStyle?: string;
   bio?: string;
@@ -36,9 +32,6 @@ interface UserProfile extends User {
   profileImage?: string;
 }
 
-/* ------------------------------------------------------------------ */
-/* Component                                                          */
-/* ------------------------------------------------------------------ */
 
 const MainPage: React.FC = () => {
   const router = useRouter();
@@ -51,8 +44,6 @@ const MainPage: React.FC = () => {
   const { value: token, clear: clearToken } =
     useLocalStorage<string>("token", "");
   const { message, contextHolder } = useMessage();
-
-  /* --------------------  component state  ------------------------- */
 
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [profiles, setProfiles] = useState<UserProfile[]>([]);
@@ -74,9 +65,6 @@ const MainPage: React.FC = () => {
     availabilities: []
   });
 
-  /* ------------------------------------------------------------------
-     LOAD CURRENT USER (once)                                          
-  ------------------------------------------------------------------ */
   useEffect(() => {
     if (typeof window === "undefined") return;
     const storedToken = localStorage.getItem("token");
@@ -99,18 +87,11 @@ const MainPage: React.FC = () => {
     })();
   }, []);
 
-  /* ------------------------------------------------------------------
-     FETCH PROFILES whenever filters OR currentUser load changes       
-  ------------------------------------------------------------------ */
   useEffect(() => {
     if (!isUserLoaded || !currentUser) return;
     fetchUsers(filters.selectedCourses, filters.availabilities);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters, currentUser, isUserLoaded]);
 
-  /* ------------------------------------------------------------------
-     fetchUsers – core logic                                           
-  ------------------------------------------------------------------ */
   const fetchUsers = async (
     courseIds?: number[],
     availability?: UserAvailability[]
@@ -129,7 +110,6 @@ const MainPage: React.FC = () => {
 
       if (!Array.isArray(users)) users = [];
 
-      /* -------- filter out seen / duplicate logic ---------- */
       const filtered = users
         .filter(u => Number(u.id) !== Number(currentUser.id))
         .filter(u => {
@@ -138,8 +118,6 @@ const MainPage: React.FC = () => {
           const disliked   = dislikedIds.includes(id);
           return showDislikedOnly ? disliked : !alreadySeen;
         });
-
-      /* -------- convert to UI model ---------- */
       const fetchedProfiles: UserProfile[] = filtered.map(u => {
         let tags = [];
       if (typeof u.studyGoals === "string") {
@@ -183,7 +161,6 @@ const MainPage: React.FC = () => {
       setProfiles(fetchedProfiles);
       setCurrentProfileIndex(fetchedProfiles.length > 0 ? 0 : -1);
 
-      /* ----- messaging ----- */
       if (fetchedProfiles.length > 0) {
         message.success(`Loaded ${fetchedProfiles.length} profiles`);
       } else {
@@ -202,9 +179,6 @@ const MainPage: React.FC = () => {
     }
   };
 
-  /* ------------------------------------------------------------------
-     Helpers                                                           
-  ------------------------------------------------------------------ */
 
   const skipUser = (id: number) => {
     // purely client‑side “skip”
@@ -213,9 +187,6 @@ const MainPage: React.FC = () => {
     setLikedIds(ids => ids.filter(l => l !== id));
   };
 
-  /* ------------------------------------------------------------------ */
-  /*  Handlers                                                          */
-  /* ------------------------------------------------------------------ */
 
   const handleFilterSave = (
     selectedCourses: number[],
@@ -247,34 +218,25 @@ const MainPage: React.FC = () => {
       } else {
         message.error("Failed to like user");
       }
-      skipUser(targetId); // still advance
+      skipUser(targetId);
       showNextProfile();
     }
   };
 
   const handleDislike = () => {
-    /* ---------------------------------------------------- *
-     *  FIX #1 ‑ “skip” is only local, do NOT call backend  *
-     * ---------------------------------------------------- */
     if (!currentUser || currentProfileIndex < 0) return;
     const targetId = profiles[currentProfileIndex].id;
     skipUser(targetId);
     showNextProfile();
   };
 
-  /* -------- refresh button (bring back ONLY disliked users) -------- */
   const handleRefreshUsers = () => {
-    /* ---------------------------------------------- *
-     *  FIX #2 – keep liked IDs hidden, show disliked *
-     * ---------------------------------------------- */
-    setSeenIds(likedIds);      // leave liked ones hidden
-    setShowDislikedOnly(true); // next fetch shows disliked
+
+    setSeenIds(likedIds);      
+    setShowDislikedOnly(true);
     fetchUsers(filters.selectedCourses, filters.availabilities);
   };
 
-  /* ------------------------------------------------------------------ */
-  /*  Rendering: empty list variant                                     */
-  /* ------------------------------------------------------------------ */
 
   const currentProfile = profiles[currentProfileIndex] ?? null;
 
@@ -284,7 +246,6 @@ const MainPage: React.FC = () => {
         {contextHolder}
         <div className={backgroundStyles.loginBackground}>
           <div className={styles.mainContainer}>
-            {/* -------- header -------- */}
             <div className={styles.header}>
               <Link href="/main" className={styles.logoLink}>
                 <Logo className={styles.headerLogo} />
@@ -321,7 +282,7 @@ const MainPage: React.FC = () => {
                 </button>
               </div>
             </div>
-            {/* -------- message + buttons -------- */}
+
             <div style={{ textAlign: "center", padding: 20 }}>
               <div
                 style={{
@@ -357,16 +318,12 @@ const MainPage: React.FC = () => {
     );
   }
 
-  /* ------------------------------------------------------------------ */
-  /*  Rendering: profile card                                           */
-  /* ------------------------------------------------------------------ */
 
   return (
     <App>
       {contextHolder}
       <div className={backgroundStyles.loginBackground}>
         <div className={styles.mainContainer}>
-          {/* ------------- header ------------- */}
           <div className={styles.header}>
             <Link href="/main" className={styles.logoLink}>
               <Logo className={styles.headerLogo} />
@@ -403,8 +360,6 @@ const MainPage: React.FC = () => {
               </button>
             </div>
           </div>
-
-          {/* ------------- profile card ------------- */}
           <div className={styles.profileContainer}>
             <div className={styles.profileImageContainer}>
               <img

@@ -59,11 +59,9 @@ const EditProfile: React.FC<EditProfileProps> = ({
   const [availableCourses, setAvailableCourses] = useState<{id: number, courseName: string}[]>([]);
   const [form] = Form.useForm();
   
-  // Fetch available courses
   useEffect(() => {
     const fetchCourses = async () => {
       try {
-        // Use courseService to fetch courses if available
         const { courseService } = apiService;
         if (courseService) {
           const courses = await courseService.getCourses();
@@ -79,10 +77,8 @@ const EditProfile: React.FC<EditProfileProps> = ({
     fetchCourses();
   }, [apiService]);
 
-  // Apply form values from user object
   useEffect(() => {
     if (user) {
-      // Extract study goals from various formats
       let studyGoals = [];
       if (Array.isArray(user.studyGoals)) {
         studyGoals = user.studyGoals;
@@ -97,17 +93,11 @@ const EditProfile: React.FC<EditProfileProps> = ({
         studyLevel: user.studyLevel,
         studyGoals,
         availability: user.availability,
-        // No need to set courses as they are handled separately
       });
     }
   }, [user, form]);
 
-  // Removed unused function
-
-  // Handle study goals change
   const handleStudyGoalsChange = (values: string[]) => {
-    // Create a synthetic event to use with onInputChange
-    // If values array is empty, set to empty string to avoid leading comma issue
     const fakeEvent = {
       target: {
         name: 'studyGoals',
@@ -118,9 +108,7 @@ const EditProfile: React.FC<EditProfileProps> = ({
     onInputChange(fakeEvent);
   };
 
-  // Handle study level change
   const handleStudyLevelSelectChange = (value: string) => {
-    // Create a synthetic event to use with onInputChange
     const fakeEvent = {
       target: {
         name: 'studyLevel',
@@ -131,12 +119,9 @@ const EditProfile: React.FC<EditProfileProps> = ({
     onInputChange(fakeEvent);
   };
 
-  // Handle availability change
   const handleAvailabilityChange = (value: string) => {
-    // Log the actual value for debugging
     console.log("Selected availability:", value);
     
-    // Make sure the value is one of the enum values
     let availabilityValue: UserAvailability;
     switch(value) {
       case "MORNING":
@@ -153,7 +138,6 @@ const EditProfile: React.FC<EditProfileProps> = ({
         availabilityValue = value as UserAvailability;
     }
     
-    // Create a synthetic event to use with onInputChange
     const fakeEvent = {
       target: {
         name: 'availability',
@@ -165,17 +149,15 @@ const EditProfile: React.FC<EditProfileProps> = ({
     onInputChange(fakeEvent);
   };
 
-  // Handle course selection change
+  
   const handleCourseChange = (index: number, courseId: number) => {
-    // Skip validation if selecting empty course (courseId = 0)
+
     if (courseId !== 0) {
-      // Check if this course is already selected in another row
       const isDuplicate = (user.userCourses ?? []).some((course, i) => 
         i !== index && course.courseId === courseId
       );
       
       if (isDuplicate) {
-        // Find the course name for better error message
         const courseName = availableCourses.find(c => c.id === courseId)?.courseName ?? `Course #${courseId}`;
         
         // Use antdMessage instead of potentially undefined message
@@ -309,13 +291,12 @@ const EditProfile: React.FC<EditProfileProps> = ({
             });
         }}
         autoComplete="off"
-        requiredMark={false} // We'll handle our own required markers with *
-        scrollToFirstError // Auto-scroll to first validation error
+        requiredMark={false}
+        scrollToFirstError 
       >
         <div style={{ marginBottom: '16px', color: '#ff4d4f' }}>
           Fields marked with * are required
         </div>
-        {/* Name input */}
         <Form.Item 
           name="name" 
           label={<span style={{ fontWeight: 'bold' }}>Name <span style={{ color: '#ff4d4f' }}>*</span></span>}
@@ -332,7 +313,6 @@ const EditProfile: React.FC<EditProfileProps> = ({
           />
         </Form.Item>
         
-        {/* Email input */}
         <Form.Item 
           name="email" 
           label={<span style={{ fontWeight: 'bold' }}>Email</span>}
@@ -354,7 +334,6 @@ const EditProfile: React.FC<EditProfileProps> = ({
           />
         </Form.Item>
         
-        {/* Study Level dropdown */}
         <Form.Item
           name="studyLevel"
           label={<span style={{ fontWeight: 'bold' }}>Study Level <span style={{ color: '#ff4d4f' }}>*</span></span>}
@@ -376,7 +355,6 @@ const EditProfile: React.FC<EditProfileProps> = ({
           </Select>
         </Form.Item>
         
-        {/* Study Goals multi-select */}
         <Form.Item
           name="studyGoals"
           label={<span style={{ fontWeight: 'bold' }}>Study Goals <span style={{ color: '#ff4d4f' }}>*</span></span>}
@@ -405,7 +383,6 @@ const EditProfile: React.FC<EditProfileProps> = ({
           </Select>
         </Form.Item>
         
-        {/* Availability dropdown */}
         <Form.Item
           name="availability"
           label={<span style={{ fontWeight: 'bold' }}>Availability <span style={{ color: '#ff4d4f' }}>*</span></span>}
@@ -425,7 +402,6 @@ const EditProfile: React.FC<EditProfileProps> = ({
           </Select>
         </Form.Item>
         
-        {/* Bio textarea */}
         <Form.Item
           name="bio"
           label={<span style={{ fontWeight: 'bold' }}>Bio</span>}
@@ -447,7 +423,6 @@ const EditProfile: React.FC<EditProfileProps> = ({
           />
         </Form.Item>
         
-        {/* Course Selection Section - Matching registration form */}
         <Form.Item 
           label={<span style={{ fontWeight: 'bold' }}>Courses <span style={{ color: '#ff4d4f' }}>*</span></span>}
           required 
@@ -463,10 +438,8 @@ const EditProfile: React.FC<EditProfileProps> = ({
           </div>
           
           {getStudyLevelsToDisplay(user).map((level, index) => {
-            // Find course ID if available
             const courseId = user.userCourses?.[index]?.courseId ?? (availableCourses.find(c => c.courseName.toLowerCase() === level.subject.toLowerCase())?.id ?? 0);
               
-            // Map level string to enum value
             let knowledgeLevel = ProfileKnowledgeLevel.BEGINNER;
             if (level.level.toLowerCase().includes('intermediate')) {
               knowledgeLevel = ProfileKnowledgeLevel.INTERMEDIATE;
@@ -554,7 +527,7 @@ const EditProfile: React.FC<EditProfileProps> = ({
         
         <Divider style={{ margin: '24px 0' }} />
         
-        {/* Submit button for form */}
+  
         <div style={{ display: 'flex', justifyContent: 'center', marginTop: '24px', marginBottom: '16px' }}>
           <button
             type="submit"

@@ -77,8 +77,8 @@ export interface UserPutDTO {
   profilePicture?: string;
   availability?: UserAvailability;
   studyLevel?: string;
-  studyGoals?: string[]; // Will be joined with comma in DTOMapper.updateUserFromDTO
-  courseSelections?: CourseSelectionDTO[]; // Match the server-side UserPutDTO field name
+  studyGoals?: string[]; 
+  courseSelections?: CourseSelectionDTO[]; 
 }
 
 // CourseGetDTO

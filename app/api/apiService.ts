@@ -7,8 +7,7 @@ export class ApiService {
 
   constructor() {
     this.baseURL = getApiDomain();
-    
-    // Initialize default headers - client should not set CORS headers
+  
     const headers: HeadersInit = {
       "Content-Type": "application/json",
     };
@@ -16,15 +15,10 @@ export class ApiService {
     this.defaultHeaders = headers;
   }
   
-  /**
-   * Get the current headers, including any auth token
-   * This ensures we always use the latest token from localStorage
-   * Aligns with the security setup in the server (JWT token in Authorization header)
-   */
   private getHeaders(): HeadersInit {
     const headers: Record<string, string> = { ...this.defaultHeaders as Record<string, string> };
 
-    // Only browser can access localStorage
+  
     if (typeof window === 'undefined') {
       return headers;
     }
@@ -50,7 +44,7 @@ export class ApiService {
       this.logToken(bearer);
       return bearer;
     } catch (err) {
-      // fallback to prefixing the original string
+     
       const fallback = tokenStr.startsWith('Bearer ') ? tokenStr : `Bearer ${tokenStr}`;
       console.error('Error processing token, using fallback format:', err);
       this.logToken(fallback, true);
@@ -68,7 +62,7 @@ export class ApiService {
         return parsed.token;
       }
     } catch {
-      // not JSON, use as-is
+     
     }
     return tokenStr;
   }
@@ -90,10 +84,10 @@ export class ApiService {
    * Helper function to check the response, parse JSON,
    * and throw an error if the response is not OK.
    *
-   * @param res - The response from fetch.
-   * @param errorMessage - A descriptive error message for this call.
-   * @returns Parsed JSON data.
-   * @throws ApplicationError if res.ok is false.
+   * @param res 
+   * @param errorMessage
+   * @returns 
+   * @throws 
    */
   private async processResponse<T>(
     res: Response,
@@ -111,9 +105,9 @@ export class ApiService {
   
   /**
    * Handle error response from API
-   * @param res Response object
-   * @param errorMessage Base error message
-   * @returns ApplicationError to be thrown
+   * @param res 
+   * @param errorMessage 
+   * @returns
    */
   private async handleErrorResponse(
     res: Response, 
@@ -137,8 +131,8 @@ export class ApiService {
   
   /**
    * Extract error details from an error response
-   * @param res Response object
-   * @returns Error detail message and parsed error body
+   * @param res 
+   * @returns
    */
   private async extractErrorDetails(res: Response): Promise<{ errorDetail: string, errorBody: any }> {
     let errorBody: any = null;
@@ -166,8 +160,8 @@ export class ApiService {
   
   /**
    * Parse error response text
-   * @param responseText Response text to parse
-   * @returns Parsed error body and detail message
+   * @param responseText 
+   * @returns 
    */
   private parseErrorResponseText(responseText: string): { errorBody: any, errorDetail: string } {
     let errorBody = null;
@@ -190,8 +184,8 @@ export class ApiService {
   
   /**
    * Get appropriate error message based on status code
-   * @param statusCode HTTP status code
-   * @returns Human-readable error message
+   * @param statusCode 
+   * @returns
    */
   private getStatusCodeErrorMessage(statusCode: number): string {
     const statusMessages: Record<number, string> = {
@@ -208,8 +202,8 @@ export class ApiService {
   
   /**
    * Log error response appropriately based on status code
-   * @param statusCode HTTP status code
-   * @param message Error message to log
+   * @param statusCode 
+   * @param message 
    */
   private logErrorResponse(statusCode: number, message: string): void {
     if ([401, 403, 404].includes(statusCode)) {
@@ -221,8 +215,8 @@ export class ApiService {
   
   /**
    * Parse successful response body
-   * @param res Response object
-   * @returns Parsed response data
+   * @param res 
+   * @returns 
    */
   private async parseSuccessResponse<T>(res: Response): Promise<T> {
     try {
@@ -245,9 +239,9 @@ export class ApiService {
   
   /**
    * Parse JSON response text
-   * @param text Response text to parse
-   * @param isOk Whether the response status was OK
-   * @returns Parsed JSON data
+   * @param text 
+   * @param isOk
+   * @returns
    */
   private parseJsonResponseText<T>(text: string, isOk: boolean): T {
     try {
@@ -268,8 +262,8 @@ export class ApiService {
 
   /**
    * GET request.
-   * @param endpoint - The API endpoint (e.g. "/users").
-   * @returns JSON data of type T.
+   * @param endpoint
+   * @returns 
    */
   public async get<T>(endpoint: string): Promise<T> {
     const url = `${this.baseURL}${endpoint}`;
@@ -298,9 +292,9 @@ export class ApiService {
 
   /**
    * POST request.
-   * @param endpoint - The API endpoint (e.g. "/users").
-   * @param data - The payload to post.
-   * @returns JSON data of type T.
+   * @param endpoint
+   * @param data
+   * @returns
    */
   public async post<T>(endpoint: string, data: unknown): Promise<T> {
     const url = `${this.baseURL}${endpoint}`;
@@ -333,9 +327,9 @@ export class ApiService {
 
   /**
    * PUT request.
-   * @param endpoint - The API endpoint (e.g. "/users/123").
-   * @param data - The payload to update.
-   * @returns JSON data of type T.
+   * @param endpoint 
+   * @param data 
+   * @returns 
    */
   public async put<T>(endpoint: string, data: unknown): Promise<T> {
     const url = `${this.baseURL}${endpoint}`;
@@ -372,8 +366,8 @@ export class ApiService {
 
   /**
    * DELETE request.
-   * @param endpoint - The API endpoint (e.g. "/users/123").
-   * @returns JSON data of type T.
+   * @param endpoint 
+   * @returns 
    */
   public async delete<T>(endpoint: string): Promise<T> {
     const url = `${this.baseURL}${endpoint}`;

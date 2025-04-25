@@ -10,10 +10,10 @@
   flex-direction: column;
   align-items: center;
   justify-content: space-between;
-  height: 100vh; /* Use exact viewport height */
-  padding: 10px 20px; /* Further reduced padding */
+  height: 100vh; 
+  padding: 10px 20px;
   font-family: var(--font-geist-sans);
-  overflow: hidden; /* Prevent scrolling */
+  overflow: hidden; 
 }
 
 @media (prefers-color-scheme: dark) {
