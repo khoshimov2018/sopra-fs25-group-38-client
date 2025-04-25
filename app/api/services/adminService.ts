@@ -1,11 +1,9 @@
 import { ApiService } from "@/api/apiService";
 
 export interface ReportedUser {
-  id: number;
-  name: string;
-  email: string;
+  reportedId: number;
+  reporterId: number;
   reason: string;
-  profileImage?: string;
 }
 
 export interface BlockedUser {
@@ -13,11 +11,23 @@ export interface BlockedUser {
   blockedUserId: number;
 }
 
+export interface UserInfo {
+  id: number;
+  name: string;
+}
+
 export class AdminService {
   private api: ApiService;
 
   constructor(api: ApiService) {
     this.api = api;
+  }
+
+  /**
+   * Get user by id
+   */
+  async getUserById(userId: number): Promise<UserInfo> {
+    return this.api.get<UserInfo>(`/users/${userId}`);
   }
 
   /**

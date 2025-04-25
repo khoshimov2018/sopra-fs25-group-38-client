@@ -18,16 +18,23 @@ const { Title } = Typography;
 /* Types                                                              */
 /* ------------------------------------------------------------------ */
 interface ReportedUser {
-  id: number;
   reason: string;
-  reportDate: string;
   reportedId: number;
   reporterId: number;
+  reportedName?: string;
+  reporterName?: string;
 }
 
 interface BlockedUser {
   blockerId: number;
   blockedUserId: number;
+  blockerName?: string;
+  blockedName?: string;
+}
+
+interface UserInfo{
+  id: number;
+  name: string;
 }
 
 /* ------------------------------------------------------------------ */
@@ -42,9 +49,24 @@ interface BlockedUser {
     const [reportedUsers, setReportedUsers] = useState<ReportedUser[]>([]);
     const [blockedUsers, setBlockedUsers] = useState<BlockedUser[]>([]);
     const [isLoading, setIsLoading] = useState<boolean>(true);
+    const [userMap, setUserMap] = useState<Map<number, string>>(new Map());
 
     const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+    const [selectedUserName, setSelectedUserName] = useState<string | null>(null);
     const [isModalVisible, setIsModalVisible] = useState(false);
+
+  /* ------------------------------------------------------------------ */
+  /* Id -> Name method                                                  */
+  /* ------------------------------------------------------------------ */
+    const fetchUserName = async (userId: number): Promise<string> => {
+      try {
+        const user = await adminService.getUserById(userId);
+        return user.name; 
+      } catch (error) {
+        return "Unknown";
+      }
+    };
+
 
   /* ------------------------------------------------------------------
      LOAD Reported, Blocked USER                                          
@@ -52,11 +74,23 @@ interface BlockedUser {
   useEffect(() => {
     (async () => {
       try {
-        const users = await adminService.getReportedUsers();
-        const blocked = await adminService.getBlockedUsers();
+        const reports = await adminService.getReportedUsers();
+        const blocks = await adminService.getBlockedUsers();
 
-        setReportedUsers(users);
-        setBlockedUsers(blocked);
+        const reportsWithNames = await Promise.all(reports.map(async (report) => ({
+          ...report,
+          reportedName: await fetchUserName(report.reportedId),
+          reporterName: await fetchUserName(report.reporterId),
+        })));
+  
+        const blocksWithNames = await Promise.all(blocks.map(async (block) => ({
+          ...block,
+          blockerName: await fetchUserName(block.blockerId),
+          blockedName: await fetchUserName(block.blockedUserId),
+        })));
+  
+        setReportedUsers(reportsWithNames);
+        setBlockedUsers(blocksWithNames);
 
       } catch (err) {
         message.error("Failed to load reported users");
@@ -69,8 +103,9 @@ interface BlockedUser {
       /* ------------------------------------------------------------------
      DELETE SELECTED USER                                          
   ------------------------------------------------------------------ */
-  const handleUserSelect = (userId: number) => {
+  const handleUserSelect = (userId: number, userName: string) => {
     setSelectedUserId(userId);
+    setSelectedUserName(userName);
     setIsModalVisible(true);
   };
 
@@ -88,13 +123,15 @@ interface BlockedUser {
   /* ------------------------------------------------------------------ */
   const reportColumns: ColumnsType<ReportedUser> = [
     { title: "Reason", dataIndex: "reason", key: "reason" },
-    { title: "Reported User ID", dataIndex: "reportedId", key: "reportedId" },
     { title: "Reporter ID", dataIndex: "reporterId", key: "reporterId" },
+    { title: "Reporter Name", dataIndex: "reporterName", key: "reporterName" },
+    { title: "Reported ID", dataIndex: "reportedId", key: "reportedId" },
+    { title: "Reported Name", dataIndex: "reportedName", key: "reportedName" },  
     {
       title: "Action",
       key: "action",
       render: (_, record) => (
-        <Button type="link" danger onClick={() => handleUserSelect(record.reportedId)}>
+        <Button type="link" danger onClick={() => handleUserSelect(record.reportedId, record.reportedName ?? "Unknown")}>
           Delete
         </Button>
       ),
@@ -103,7 +140,9 @@ interface BlockedUser {
 
   const blockColumns: ColumnsType<BlockedUser> = [
     { title: "Blocker ID", dataIndex: "blockerId", key: "blockerId" },
+    { title: "Blocker Name", dataIndex: "blockerName", key: "blockerName" },
     { title: "Blocked User ID", dataIndex: "blockedUserId", key: "blockedUserId" },
+    { title: "Blocked Name", dataIndex: "blockedName", key: "blockedName" },
   ];
 
   /* ------------------------------------------------------------------ */
@@ -155,11 +194,11 @@ interface BlockedUser {
           open={isModalVisible}
           onCancel={() => setIsModalVisible(false)}
           onOk={handleConfirmDelete}
-          okText="Delete this user"
+          okText="Delete"
           okButtonProps={{ danger: true }}
         >
           <p style={{ color: "#000" }}>
-            Are you sure you want to delete user ID: {selectedUserId ?? "?"}
+            Are you sure you want to delete user ID: {selectedUserId} ({selectedUserName})?
           </p>
         </Modal>
       </div>
