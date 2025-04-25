@@ -139,9 +139,14 @@ From Zhidian: Sorry for the inconvenience. For the commit after the email, I hav
 
 ---
 
-## Contributions Week 5 - [Begin Date] to [End Date]
-
-_Continue with the same table format as above._
+## Contributions Week 5 - [21.04.2025] to [02.05.2025]
+| **Student**        | **Date** | **Link to Commit** | **Description**                 | **Relevance**                       |
+| ------------------ | -------- | ------------------ | ------------------------------- | ----------------------------------- |
+| **[@notsofun]** | [23.04.2025]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-client/commit/c18af8f16403d314ed19114e7a893aaa3619c1fb] | [Implemented block and report, then fixed bugs in sending messages] | [This is a key user story in our project] |
+|  | [23.04.2025]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-client/commit/41f1a883002feedeaac8207f1dbfd3cf23c8ce44] | [Trying to solve dynamic routing of chat page] | [This is a key user story in our project] |
+|  | [24.04.2025]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-client/commit/c9eefc4d7bcd4cc7b028f0236e5ce3cce0e98cf3] | [Fixed bugs in accessing chat page from main page in local and deployed environment.] | [This is a key user story in our project] |
+|  | [24.04.2025]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-client/commit/3702a049473aec86c867a6bbdac5018948722da5] | [https://github.com/khoshimov2018/sopra-fs25-group-38-client/commit/c08e8b4ee902af7aab41a9eb849b9311a1ed7588] | [This is a key user story in our project] |
+|  | [25.04.2025]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-client/commit/29aa1726239099b01f524b8043691e046c3d9852] | [Fixed bugs in creating groups and Supporting showing images] | [This is a key user story in our project] |
 
 ---
 
