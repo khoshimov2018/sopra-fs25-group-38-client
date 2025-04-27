@@ -9,15 +9,21 @@ interface DeleteAccountModalProps {
   visible: boolean;
   onClose: () => void;
   onConfirm: () => void;
+  mode?: 'self' | 'admin'; // default is self deletion mode
+  targetName?: string;
 }
 
 const DeleteAccountModal: React.FC<DeleteAccountModalProps> = ({ 
   visible, 
   onClose, 
-  onConfirm 
+  onConfirm,
+  mode = 'self',
+  targetName 
 }) => {
   const [confirmText, setConfirmText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const nameToShow = mode === 'admin' ? targetName : 'your'; // define admin mode
 
   const handleConfirmChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setConfirmText(e.target.value);
@@ -53,13 +59,16 @@ const DeleteAccountModal: React.FC<DeleteAccountModalProps> = ({
     >
       <div style={{ padding: '20px 0' }}>
         <Text>
-          <p>Are you sure you want to delete your account? This action cannot be undone.</p>
-          <p>All your data will be permanently deleted, including:</p>
+          <p style={{ marginBottom: 0 }}>
+            Are you sure you want to delete <strong>{nameToShow} account</strong>?</p>
+          <p style={{ marginTop: 4 }}>
+            This action cannot be undone.</p>
+          <p>All {nameToShow} data will be permanently deleted, including:</p>
           <ul>
-            <li>Your profile information</li>
-            <li>Your matches</li>
-            <li>Your chat history</li>
-            <li>Your course enrollments</li>
+            <li>profile information</li>
+            <li>matches</li>
+            <li>chat history</li>
+            <li>course enrollments</li>
           </ul>
           <p style={{ marginTop: '20px', fontWeight: 'bold' }}>
             To confirm, type DELETE in the field below:

@@ -1,15 +1,19 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import useLocalStorage from "@/hooks/useLocalStorage";
 import { useRouter } from "next/navigation";
 import { useApi } from "@/hooks/useApi";
 import { useMessage } from "@/hooks/useMessage";
 import { AdminService } from "@/api/services/adminService";
 import { App, Typography, Table, Modal } from "antd";
 import type { ColumnsType } from "antd/es/table";
+import mainStyles from "@/styles/main.module.css";
 import styles from "@/styles/theme/layout.module.css";
 import Button from "@/components/Button";
 import { LogoutOutlined } from "@ant-design/icons";
+import { CloseOutlined } from "@ant-design/icons";
+import DeleteAccountModal from "@/components/DeleteAccountModal"; 
 
 
 const { Title } = Typography;
@@ -35,6 +39,16 @@ interface BlockedUser {
 interface UserInfo{
   id: number;
   name: string;
+  email?: string;
+  status?: string;
+  studyGoals?: string[];
+  studyLevel?: string;
+  creationDate?: number[];
+  userCourses?: {
+    courseId: number;
+    courseName: string;
+    knowledgeLevel: string;
+  }[];
 }
 
 /* ------------------------------------------------------------------ */
@@ -48,6 +62,8 @@ interface UserInfo{
   
     const [reportedUsers, setReportedUsers] = useState<ReportedUser[]>([]);
     const [blockedUsers, setBlockedUsers] = useState<BlockedUser[]>([]);
+    const [selectedProfileRole, setSelectedProfileRole] = useState<string | null>(null);
+
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [userMap, setUserMap] = useState<Map<number, string>>(new Map());
 
@@ -55,6 +71,11 @@ interface UserInfo{
     const [selectedUserName, setSelectedUserName] = useState<string | null>(null);
     const [isModalVisible, setIsModalVisible] = useState(false);
 
+    const [selectedProfile, setSelectedProfile] = useState<UserInfo | null>(null);
+    const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+
+     const { value: token, clear: clearToken } =
+        useLocalStorage<string>("token", "");
   /* ------------------------------------------------------------------ */
   /* Id -> Name method                                                  */
   /* ------------------------------------------------------------------ */
@@ -67,7 +88,15 @@ interface UserInfo{
       }
     };
 
-
+  /* ------------------------------------------------------------------ */
+  /* helper_create data format                                          */
+  /* ------------------------------------------------------------------ */
+  const formatCreationDate = (dateArray?: number[]) => {
+    if (!dateArray) return "Unknown";
+    const [year, month, day] = dateArray;
+    return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+  };
+  
   /* ------------------------------------------------------------------
      LOAD Reported, Blocked USER                                          
   ------------------------------------------------------------------ */
@@ -101,6 +130,20 @@ interface UserInfo{
   }, []);
 
       /* ------------------------------------------------------------------
+     OPEN SELECTED USER PROFILE                                         
+  ------------------------------------------------------------------ */
+  const handleProfileClick = async (userId: number, role: string) => {
+    const user = await adminService.getUserById(userId);
+    setSelectedProfile(user);
+    setSelectedProfileRole(role);
+    setIsProfileModalOpen(true);
+  };
+
+  const closeProfileModal = () => {
+    setIsProfileModalOpen(false);
+  };
+
+      /* ------------------------------------------------------------------
      DELETE SELECTED USER                                          
   ------------------------------------------------------------------ */
   const handleUserSelect = (userId: number, userName: string) => {
@@ -112,7 +155,15 @@ interface UserInfo{
   const handleConfirmDelete = async () => {
     if (selectedUserId !== null) {
       await adminService.deleteUser(selectedUserId);
+      
+      // update reported user(remove deleted user)
       setReportedUsers(users => users.filter(u => u.reportedId !== selectedUserId));
+      
+      // update blocked/blocker user(remove deleted user)
+      setBlockedUsers(users => 
+        users.filter(u => u.blockerId !== selectedUserId && u.blockedUserId !== selectedUserId)
+      );
+      
       message.success(`Deleted user ID: ${selectedUserId}`);
       setIsModalVisible(false);
     }
@@ -123,9 +174,20 @@ interface UserInfo{
   /* ------------------------------------------------------------------ */
   const reportColumns: ColumnsType<ReportedUser> = [
     { title: "Reason", dataIndex: "reason", key: "reason" },
-    { title: "Reporter ID", dataIndex: "reporterId", key: "reporterId" },
+    { 
+      title: "Reporter ID", 
+      key: "reporterId",
+      render: (_, record) => (
+        <a onClick={() => handleProfileClick(record.reporterId, "Reporter")}>{record.reporterId}</a>
+      )
+    },
     { title: "Reporter Name", dataIndex: "reporterName", key: "reporterName" },
-    { title: "Reported ID", dataIndex: "reportedId", key: "reportedId" },
+    { title: "Reported ID", 
+      key: "reportedId",
+      render: (_, record) => (
+        <a onClick={() => handleProfileClick(record.reportedId, "Reported")}>{record.reportedId}</a>
+      )
+    },
     { title: "Reported Name", dataIndex: "reportedName", key: "reportedName" },  
     {
       title: "Action",
@@ -139,9 +201,19 @@ interface UserInfo{
   ];
 
   const blockColumns: ColumnsType<BlockedUser> = [
-    { title: "Blocker ID", dataIndex: "blockerId", key: "blockerId" },
+    { title: "Blocker ID", 
+      key: "blockerId",
+      render: (_, block) => (
+        <a onClick={() => handleProfileClick(block.blockerId, "Blocker")}>{block.blockerId}</a>
+      )
+    },
     { title: "Blocker Name", dataIndex: "blockerName", key: "blockerName" },
-    { title: "Blocked User ID", dataIndex: "blockedUserId", key: "blockedUserId" },
+    { title: "Blocked User ID", 
+      key: "blockedUserId",
+      render: (_, block) => (
+        <a onClick={() => handleProfileClick(block.blockedUserId, "Blocked")}>{block.blockedUserId}</a>
+      )
+    },
     { title: "Blocked Name", dataIndex: "blockedName", key: "blockedName" },
   ];
 
@@ -154,16 +226,16 @@ interface UserInfo{
       <div className={styles.mainContainer}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", margin: "40px 10%" }}>
         <h2 style={{ color: "#000" }}>Admin Dashboard</h2>
-        <button
-            className={styles.iconButton}
-            onClick={() => {
-              localStorage.removeItem("token");
-              router.push("/login");
-            }}
-            aria-label="Logout"
-          >
-            <LogoutOutlined />
-          </button>
+          <button
+                  className={mainStyles.iconButton}
+                  onClick={() => {
+                    localStorage.removeItem("token");
+                    clearToken();
+                    router.push("/login");
+                  }}
+                >
+                  <LogoutOutlined />
+                </button>
         </div>
   
         <div style = {{ width: "80%", margin: "0 auto" }} className="adminTableWrapper">
@@ -190,17 +262,42 @@ interface UserInfo{
         </div>
   
         <Modal
-          title={<span style={{ color: "#000" }}>Confirm Deletion</span>}
-          open={isModalVisible}
-          onCancel={() => setIsModalVisible(false)}
-          onOk={handleConfirmDelete}
-          okText="Delete"
-          okButtonProps={{ danger: true }}
+          title={<span style={{ fontSize: "22px", fontWeight: "bold", color: "#000" }}>
+            {selectedProfileRole} User Profile</span>}
+          open={isProfileModalOpen}
+          onCancel={closeProfileModal}
+          footer={null}
+          className="custom-profile-modal"
         >
-          <p style={{ color: "#000" }}>
-            Are you sure you want to delete user ID: {selectedUserId} ({selectedUserName})?
-          </p>
+          {selectedProfile && (
+            <ul style={{
+              background: "#fff",
+              padding: "28px 28px 28px 70px",
+              borderRadius: "12px",
+              boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
+              color: "#000",
+              fontSize: "18px",
+              lineHeight: "1.8",
+            }}>
+                <li><strong>ID:</strong> {selectedProfile.id}</li>
+                <li><strong>Name:</strong> {selectedProfile.name}</li>
+                <li><strong>Email:</strong> {selectedProfile.email}</li>
+                <li><strong>Creation Date:</strong> {formatCreationDate(selectedProfile.creationDate)}</li>
+                <li><strong>Status:</strong> {selectedProfile.status}</li>
+                <li><strong>Study Goals:</strong> {selectedProfile.studyGoals?.join(", ") || "None"}</li>
+                <li><strong>Study Level:</strong> {selectedProfile.studyLevel}</li>
+                <li><strong>Courses:</strong> {selectedProfile.userCourses?.map(c => c.courseName).join(", ") || "None"}</li>
+              </ul>
+          )}
         </Modal>
+
+        <DeleteAccountModal
+          visible={isModalVisible}
+          onClose={() => setIsModalVisible(false)}
+          onConfirm={handleConfirmDelete}
+          mode = "admin"
+          targetName={`ID: ${selectedUserId} (${selectedUserName})`}
+        />
       </div>
     </App>
   );

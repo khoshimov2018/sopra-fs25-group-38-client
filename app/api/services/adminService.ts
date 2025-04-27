@@ -48,6 +48,6 @@ export class AdminService {
    * Admin deletes a user by ID
    */
   async deleteUser(userId: number): Promise<void> {
-    await this.api.delete<void>(`/admin/delete/${userId}`);
+    await this.api.delete<void>(`/delete/${userId}`);
   }
 }

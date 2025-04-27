@@ -593,3 +593,8 @@ input:focus, .ant-input:focus, .ant-input-password:focus {
   color: black !important;
   background-color: white !important;
 }
+
+/* AdminPage Profile Icon color */
+.custom-profile-modal .ant-modal-close svg {
+  fill: black !important; 
+}
