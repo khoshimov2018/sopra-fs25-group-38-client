@@ -147,7 +147,10 @@ From Zhidian: Sorry for the inconvenience. For the commit after the email, I hav
 |  | [24.04.2025]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-client/commit/c9eefc4d7bcd4cc7b028f0236e5ce3cce0e98cf3] | [Fixed bugs in accessing chat page from main page in local and deployed environment.] | [This is a key user story in our project] |
 |  | [24.04.2025]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-client/commit/c08e8b4ee902af7aab41a9eb849b9311a1ed7588] | [Fixed bugs in creating groups and improved experiences of blocking users .etc] | [This is a key user story in our project] |
 |  | [25.04.2025]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-client/commit/29aa1726239099b01f524b8043691e046c3d9852] | [Fixed bugs in creating groups and Supporting showing images] | [This is a key user story in our project] |
-
+| **[@AjeongShin]** | [25.04.2025]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-server/commit/e01dc48f58474a2337781514225184e30cbc0b91] | [backend_feat(block): expose admin API for blocked users retrieval] | [Enable admin to fetch all blocked user relationships securely] |
+|                    | [25.04.2025]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-client/commit/e3df6b0820534381612c79367c5fc0ff76888298] | [frontend_feat(admin): implement admin dashboard for user moderation] | [Allow admin to manage reported and blocked users through UI]  |
+|                    | [26.04.2025]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-client/commit/c5b5f601ad00233ea69da6ae06d35da10898dbcd] | [front_refactor(admin): map user IDs to usernames for clarity] | [Improve admin page readability by resolving ID-only confusion]  |
+|                    | [26.04.2025-27.04.2025]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-client/commit/053f1c1c0ee5a469003b82580252aa00ea7bb0fd] | [front_feat+fix(admin): implement profile modal, block sync fix, UI consistency, modal refactor]  | [Enhance usability by enabling inline profile viewing, ensuring real-time UI updates, and standardizing modal interactions] |
 ---
 
 ## Contributions Week 6 - [Begin Date] to [End Date]
