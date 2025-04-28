@@ -4,6 +4,7 @@ import { CourseService } from "./courseService";
 import { MatchService } from "./matchService";
 import { UserCourseService } from "./userCourseService";
 import { StudentFilterService } from "./studentFilterService";
+import { NotificationService } from "./notificationService";
 
 /**
  * Creates service instances with the provided API service
@@ -16,7 +17,8 @@ export const createServices = (apiService: ApiService) => {
     courseService: new CourseService(apiService),
     matchService: new MatchService(apiService),
     userCourseService: new UserCourseService(apiService),
-    studentFilterService: new StudentFilterService(apiService)
+    studentFilterService: new StudentFilterService(apiService),
+    notificationService: new NotificationService(apiService)
   };
 };
 
@@ -26,3 +28,4 @@ export { CourseService } from "./courseService";
 export { MatchService } from "./matchService";
 export { UserCourseService } from "./userCourseService";
 export { StudentFilterService } from "./studentFilterService";
+export { NotificationService } from "./notificationService";

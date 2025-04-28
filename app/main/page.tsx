@@ -12,6 +12,7 @@ import { UserService } from "@/api/services/userService";
 import { App } from "antd";
 import Link from "next/link";
 import Logo from "@/components/Logo";
+import NotificationBell from "@/components/NotificationBell";
 import {
   UserOutlined,
   MessageOutlined,
@@ -251,6 +252,11 @@ const MainPage: React.FC = () => {
                 <Logo className={styles.headerLogo} />
               </Link>
               <div className={styles.headerRight}>
+                {currentUser && (
+                  <button className={styles.iconButton} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                    <NotificationBell userId={Number(currentUser.id)} />
+                  </button>
+                )}
                 <Link href="/profile">
                   <button className={styles.iconButton}>
                     <UserOutlined />
@@ -329,6 +335,11 @@ const MainPage: React.FC = () => {
               <Logo className={styles.headerLogo} />
             </Link>
             <div className={styles.headerRight}>
+              {currentUser && (
+                <button className={styles.iconButton} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                  <NotificationBell userId={Number(currentUser.id)} />
+                </button>
+              )}
               <Link href="/profile">
                 <button className={styles.iconButton}>
                   <UserOutlined />
