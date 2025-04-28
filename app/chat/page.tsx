@@ -173,20 +173,28 @@ const ChatPage: React.FC = () => {
     typing: boolean;
   }
 
-    // 从 localStorage 获取 userId
+    // Trying to fetch userId
+    // const refreshToken = async () => {
+    //   try {
+    //     const response = await apiService.post("/auth/refresh", { token });
+    //     const newToken = (response as { token: string }).token;
+    //     localStorage.setItem("token", newToken);
+    //     return newToken;
+    //   } catch (error) {
+    //     console.error("Failed to refresh token:", error);
+    //     // actualLogout();
+    //     return null;
+    //   }
+    // };
+
+    const hasFetchedUserId = useRef(false);
+
     useEffect(() => {
-      // const refreshToken = async () => {
-      //   try {
-      //     const response = await apiService.post("/auth/refresh", { token });
-      //     const newToken = (response as { token: string }).token;
-      //     localStorage.setItem("token", newToken);
-      //     return newToken;
-      //   } catch (error) {
-      //     console.error("Failed to refresh token:", error);
-      //     // actualLogout();
-      //     return null;
-      //   }
-      // };
+      if (!hasFetchedUserId.current) {
+        fetchUserId();
+        hasFetchedUserId.current = true;
+      }
+    }, [router, message]);
 
     const fetchUserId = async () => {
       try {
@@ -217,9 +225,6 @@ const ChatPage: React.FC = () => {
           // actualLogout();
         }
     };
-
-    fetchUserId();
-  }, [router, message]);
 
   const handleTypingStatus = async (isTyping: boolean) => {
     if (!parsedUserId || !selectedChannel) {
@@ -275,8 +280,8 @@ const ChatPage: React.FC = () => {
     try {
       await apiService.post("/blocks", blockDTO);
       message.success("User blocked successfully!");
-      setIsBlockPanelVisible(false); // 关闭 Block Panel
-      setSelectedParticipant(null); // 清空选中用户
+      setIsBlockPanelVisible(false);
+      setSelectedParticipant(null);
       fetchMatchedUsers(parsedUserId);
       setSelectedChannel(null);
       console.log("current Channel", selectedChannel);
@@ -306,9 +311,10 @@ const ChatPage: React.FC = () => {
     try {
       await apiService.post("/reports", reportDTO);
       message.success("Report submitted successfully!");
-      setIsReportPanelVisible(false); // 关闭 Report Panel
-      setReportReason(""); // 清空输入框
-      setSelectedParticipant(null); // 清空选中用户
+      setIsReportPanelVisible(false);
+      setReportReason(""); 
+      fetchMatchedUsers(parsedUserId);
+      setSelectedParticipant(null);
     } catch (error) {
       console.error("Failed to submit report:", error);
       message.error("Failed to submit report, please try again later.");
@@ -316,6 +322,7 @@ const ChatPage: React.FC = () => {
   };
 
   const fetchTypingStatus = async (userId: number) => {
+    if (!userId) return;
     const url = `/chat/typing/${userId}`;
     console.log(`Fetching typing status from URL: ${url}`); // 打印完整的 URL
     try {
@@ -336,61 +343,61 @@ const ChatPage: React.FC = () => {
     channelType: 'individual' // Provide a default or appropriate value
   };
 
-const handleSubmitGroupModal = async (selectedUsers: number[], channelName?: string) => {
-  if (groupModalMode === "create") {
-    // 创建群聊逻辑
-    if (selectedUsers.length === 0) {
-      message.error("Please select at least one user!");
-      return;
+  const handleSubmitGroupModal = async (selectedUsers: number[], channelName?: string) => {
+    if (groupModalMode === "create") {
+      // 创建群聊逻辑
+      if (selectedUsers.length === 0) {
+        message.error("Please select at least one user!");
+        return;
+      }
+
+      const channelData = {
+        channelName: channelName || "New Group",
+        channelType: "group",
+        participantIds: [parsedUserId, ...selectedUsers],
+        channelProfileImage: defaultGroupicon, // 默认群聊头像
+      };
+
+      try {
+        const response = await apiService.post("/chat/channels", channelData);
+        message.success("Your group is made successfully!");
+        setIsGroupModalVisible(false);
+        setSelectedUsers([]);
+        console.log("创建的群聊信息：", response);
+      } catch (error) {
+        console.error("创建群聊失败：", error);
+        message.error("Failed creating a group, please try again later.");
+      }
+    } else if (groupModalMode === "update") {
+      // 更新群聊逻辑
+      const currentChannel = channels.find(
+        (channel) => String(channel.channelId) === String(selectedChannel)
+      );
+
+      if (!currentChannel || currentChannel.channelType !== "group") {
+        console.error("Selected channel is not a group or does not exist.");
+        return;
+      }
+
+      const channelId = currentChannel.channelId;
+
+      const channelData = {
+        channelName: currentChannel.channelName,
+        channelType: "group",
+        participantIds: [parsedUserId, ...selectedUsers], // 确保当前用户也在 participants 中
+      };
+
+      try {
+        await apiService.put(`/chat/channels/${channelId}`, channelData);
+        message.success("Group updated successfully!");
+        setIsGroupModalVisible(false);
+        setSelectedUsers([]);
+      } catch (error) {
+        console.error("Failed to update group:", error);
+        message.error("Failed to update group, please try again later.");
+      }
     }
-
-    const channelData = {
-      channelName: channelName || "New Group",
-      channelType: "group",
-      participantIds: [parsedUserId, ...selectedUsers],
-      channelProfileImage: defaultGroupicon, // 默认群聊头像
-    };
-
-    try {
-      const response = await apiService.post("/chat/channels", channelData);
-      message.success("Your group is made successfully!");
-      setIsGroupModalVisible(false);
-      setSelectedUsers([]);
-      console.log("创建的群聊信息：", response);
-    } catch (error) {
-      console.error("创建群聊失败：", error);
-      message.error("Failed creating a group, please try again later.");
-    }
-  } else if (groupModalMode === "update") {
-    // 更新群聊逻辑
-    const currentChannel = channels.find(
-      (channel) => String(channel.channelId) === String(selectedChannel)
-    );
-
-    if (!currentChannel || currentChannel.channelType !== "group") {
-      console.error("Selected channel is not a group or does not exist.");
-      return;
-    }
-
-    const channelId = currentChannel.channelId;
-
-    const channelData = {
-      channelName: currentChannel.channelName,
-      channelType: "group",
-      participantIds: [parsedUserId, ...selectedUsers], // 确保当前用户也在 participants 中
-    };
-
-    try {
-      await apiService.put(`/chat/channels/${channelId}`, channelData);
-      message.success("Group updated successfully!");
-      setIsGroupModalVisible(false);
-      setSelectedUsers([]);
-    } catch (error) {
-      console.error("Failed to update group:", error);
-      message.error("Failed to update group, please try again later.");
-    }
-  }
-};
+  };
 
   const fetchMatchedUsers = async (userid: number) => {
     try {
@@ -425,7 +432,6 @@ const handleSubmitGroupModal = async (selectedUsers: number[], channelName?: str
             channelProfileImage, // Storing Channel icon
           };
         });
-        console.log("Current selected users after fetching Matched Users", selectedUsers)
         // Fixed bugs so that now only channles would be updated
         setChannels(mappedData /* as { channelId: number; channelName: string; supportingText?: string; channelType: string; participants: ChatParticipantGetDTO[] } []*/);
         console.log("Mapped matched users:", mappedData);
@@ -436,8 +442,6 @@ const handleSubmitGroupModal = async (selectedUsers: number[], channelName?: str
       console.error("Failed to fetch chat channels:", error);
     }
   };
-
-  console.log("currentChannels are ", channels);
 
   // Fetching messages for selected channel
   const fetchMessages = async (channelId: string) => {
@@ -485,27 +489,24 @@ const handleSubmitGroupModal = async (selectedUsers: number[], channelName?: str
     // To fetch Matched users once entering.
     fetchMatchedUsers(parsedUserId);
   
-    const interval = setInterval(() => {
-      fetchMatchedUsers(parsedUserId); // 每 200ms 调用一次 fetchMatchedUsers
-    }, 200);
-  
-    // 清除定时器
-    return () => clearInterval(interval);
   }, [parsedUserId]);
 
   // controlling fetching messages
   useEffect(() => {
     if (!selectedChannel) return;
+    let interval: string | number | NodeJS.Timeout | undefined;
 
-    // To fetch Matched users once entering.
-    fetchMessages(selectedChannel);
+    if (selectedChannel !== 'AI Advisor') {
+      // To fetch Matched users once entering.
+      fetchMessages(selectedChannel);
 
-    const interval = setInterval(() => {
-      fetchMessages(selectedChannel); // 每 200ms 调用一次 fetchMessages
-    }, 200);
-  
-    // 清除定时器
-    return () => clearInterval(interval);
+      interval = setInterval(() => {
+        fetchMessages(selectedChannel); // 每 200ms 调用一次 fetchMessages
+      }, 500);
+    
+    }
+      // 清除定时器
+      return () => clearInterval(interval);
   }, [selectedChannel]);
 
   useEffect(() => {
@@ -517,34 +518,33 @@ const handleSubmitGroupModal = async (selectedUsers: number[], channelName?: str
   }, [channelMessages]);
 
   useEffect(() => {
-      const fetchTyping = async () => {
-          if (!selectedChannel) return;
+    if (!selectedChannel) return;
+    let intervalId: string | number | NodeJS.Timeout | undefined;
+    const fetchTyping = async () => {
   
-          // 获取当前频道的参与者（排除当前用户）
-          const currentChannel = channels.find((channel) => String(channel.channelId) === String(selectedChannel));
-          if (!currentChannel || currentChannel.channelType !== "individual") return;
+      const currentChannel = channels.find((channel) => String(channel.channelId) === String(selectedChannel));
+      if (!currentChannel || currentChannel.channelType !== "individual") return;
   
-          const participant = currentChannel.participants?.find((p) => p.userId !== parsedUserId);
-          if (!participant) return;
+      const participant = currentChannel.participants?.find((p) => p.userId !== parsedUserId);
+      if (!participant) return;
   
-          const participantId = participant.userId;
-  
-          const isTyping = await fetchTypingStatus(participantId);
-          setTypingStatus(isTyping);
-  
-          const interval = setInterval(async () => {
-            const isTyping = await fetchTypingStatus(participantId);
-            setTypingStatus(isTyping);
-          }, 200);
+      const participantId = participant.userId;
+      
+      const isTyping = await fetchTypingStatus(participantId);
+      setTypingStatus(isTyping ?? false);
+      console.log("Now you are choosing", selectedChannel);
 
-          console.log("selected users after fetching typing",selectedUsers);
-  
-          return () => clearInterval(interval); // 清除定时器
-
-      };
-  
-      fetchTyping();
-  }, [selectedChannel, channels, parsedUserId]);
+      intervalId = setInterval(async () => {
+        const isTyping = await fetchTypingStatus(participantId);
+        setTypingStatus(isTyping ?? false);
+      }, 1000);
+    };
+    fetchTyping();
+    return () => {
+      console.log("Clearing interval for typing status");
+      clearInterval(intervalId);
+    };
+  }, [selectedChannel]);
  
 
   const handleSendMessage = async (customPrompt?: string, quickReplyMessage?: string) => {
@@ -699,12 +699,18 @@ const handleSubmitGroupModal = async (selectedUsers: number[], channelName?: str
     handleSendMessage(prompt, quickReplyMessage);
   };
 
-  // 处理选择聊天对象
-
   const handleSelectChat = (chatName: string | number) => {
     const channelId = chatName.toString();
-    setSelectedChannel(channelId);
-    fetchMessages(channelId); // 点击时立即加载消息
+  
+    if (channelId === "AI Advisor") {
+      setSelectedChannel(channelId);
+      console.log("Not fetching typing status for AI Advisor");
+      return;
+    } else {
+      console.log('now you not selecting AI advisor',channelId);
+      setSelectedChannel(channelId);
+      fetchMessages(channelId);
+    };
   };
 
   const actualLogout = async () => {
@@ -780,7 +786,7 @@ const handleSubmitGroupModal = async (selectedUsers: number[], channelName?: str
                   <div
                     key={user.channelId}
                     className={`message-item ${String(selectedChannel) === String(user.channelId) ? "selected" : ""}`}
-                    onClick={() => setSelectedChannel(String(user.channelId))}
+                    onClick={() => handleSelectChat(String(user.channelId))}
                   >
                     <img className="avatar" src ={user.channelProfileImage || defaulindividualicon} alt ='User Image'/>
                     <div className="content">
