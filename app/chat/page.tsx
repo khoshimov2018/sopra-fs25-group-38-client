@@ -905,6 +905,7 @@ const ChatPage: React.FC = () => {
                                       )?.userProfileImage || defaulindividualicon // 普通用户从服务端读取头像
                                 }
                                 alt="Avatar"
+                                onClick={() => router.push(`/profile?userId=${message.sender}`)}
                               />
                             )}
                             <div className="message-bubble">{renderMarkdown(message.text)}</div>

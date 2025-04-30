@@ -10,6 +10,7 @@ interface ProfileContentProps {
   currentUser: UserProfile;
   editableUser: UserProfile | null;
   isEditing: boolean;
+  userId?: string;
   onEditToggle: () => void;
   onDeleteAccount: () => void;
   onImageUpload: () => void;
@@ -26,6 +27,7 @@ const ProfileContent: React.FC<ProfileContentProps> = ({
   currentUser,
   editableUser,
   isEditing,
+  userId,
   onEditToggle,
   onDeleteAccount,
   onImageUpload,
@@ -42,7 +44,8 @@ const ProfileContent: React.FC<ProfileContentProps> = ({
       <ProfileHeader 
         isEditing={isEditing} 
         onEditToggle={onEditToggle} 
-        onDeleteAccount={onDeleteAccount} 
+        onDeleteAccount={onDeleteAccount}
+        userId={userId}
       />
       
       <div className={styles.profileGrid}>
