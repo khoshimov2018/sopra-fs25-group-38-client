@@ -12,6 +12,7 @@ import { UserService } from "@/api/services/userService";
 import { App } from "antd";
 import Link from "next/link";
 import Logo from "@/components/Logo";
+import NotificationBell from "@/components/NotificationBell";
 import {
   UserOutlined,
   MessageOutlined,
@@ -30,6 +31,8 @@ interface UserProfile extends User {
   tags?: string[];
   studyLevels?: { subject: string; grade: string; level: string }[];
   profileImage?: string;
+  isLiked?: boolean;
+  isDisliked?: boolean;
 }
 
 
@@ -139,6 +142,10 @@ const MainPage: React.FC = () => {
             ] || u.availability
           : "Not specified";
 
+        const id = Number(u.id);
+        const isLiked = likedIds.includes(id);
+        const isDisliked = dislikedIds.includes(id);
+
         return {
           id: u.id,
           name: u.name,
@@ -154,7 +161,9 @@ const MainPage: React.FC = () => {
             u.profilePicture ?? 
             `https://placehold.co/600x800/random/white.png?text=${encodeURIComponent(
               u.name
-            )}`
+            )}`,
+          isLiked,
+          isDisliked
         };
       });
 
@@ -251,6 +260,11 @@ const MainPage: React.FC = () => {
                 <Logo className={styles.headerLogo} />
               </Link>
               <div className={styles.headerRight}>
+                {currentUser && (
+                  <button className={styles.iconButton} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                    <NotificationBell userId={Number(currentUser.id)} />
+                  </button>
+                )}
                 <Link href="/profile">
                   <button className={styles.iconButton}>
                     <UserOutlined />
@@ -329,6 +343,11 @@ const MainPage: React.FC = () => {
               <Logo className={styles.headerLogo} />
             </Link>
             <div className={styles.headerRight}>
+              {currentUser && (
+                <button className={styles.iconButton} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                  <NotificationBell userId={Number(currentUser.id)} />
+                </button>
+              )}
               <Link href="/profile">
                 <button className={styles.iconButton}>
                   <UserOutlined />
@@ -434,14 +453,14 @@ const MainPage: React.FC = () => {
 
               <div className={styles.actionButtons}>
                 <button
-                  className={`${styles.actionButton} ${styles.dislikeButton}`}
+                  className={`${styles.actionButton} ${styles.dislikeButton} ${currentProfile.isDisliked ? styles.dislikedButton : ''}`}
                   onClick={handleDislike}
                 >
                   <span className={styles.buttonIcon}>✕</span>
                   <span>Dislike</span>
                 </button>
                 <button
-                  className={`${styles.actionButton} ${styles.likeButton}`}
+                  className={`${styles.actionButton} ${styles.likeButton} ${currentProfile.isLiked ? styles.likedButton : ''}`}
                   onClick={handleLike}
                 >
                   <span className={styles.buttonIcon}>★</span>
