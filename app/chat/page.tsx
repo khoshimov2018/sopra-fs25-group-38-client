@@ -282,6 +282,7 @@ const ChatPage: React.FC = () => {
       message.success("User blocked successfully!");
       setIsBlockPanelVisible(false);
       setSelectedParticipant(null);
+      console.log("now loading matched users again with my userId",parsedUserId)
       fetchMatchedUsers(parsedUserId);
       setSelectedChannel(null);
       console.log("current Channel", selectedChannel);
