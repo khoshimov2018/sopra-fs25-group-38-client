@@ -32,44 +32,85 @@ const ProfilePage = () => {
   const [showImageModal, setShowImageModal] = useState(false);
   const [fileList, setFileList] = useState<any[]>([]);
   const [previewImage, setPreviewImage] = useState<string>("");
+  const [userId, setUserId] = useState<string | null | undefined>(undefined);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const userIdParam = params.get("userId");
+    setUserId(userIdParam || null);
+    console.log('set userId succefully')
+  }, []);
 
   useEffect(() => {
     const fetchUserProfile = async () => {
       try {
-        setLoading(true);
-        const localStorageToken = localStorage.getItem("token");
-        const effectiveToken = token || localStorageToken;
-        if (!effectiveToken) {
-          message.error("Please login to access your profile");
-          router.push("/login");
+        if (userId === undefined) {
           return;
         }
-
-        const tokenValue = effectiveToken.startsWith('Bearer ') ? effectiveToken.substring(7) : effectiveToken;
-        const apiUser = await apiService.userService?.getUserByToken(tokenValue);
-        console.log('apiUser is like this ...', apiUser)
-        if (!apiUser) return;
-
-        if (!apiUser.id) return;
-        const fullDetails = await apiService.userService?.getUserById(Number(apiUser.id));
-        if (!fullDetails) return;
-
-        const userProfile: UserProfile = {
-          ...apiUser,
-          ...fullDetails,
-          token: effectiveToken,
-          profileImage: fullDetails.profilePicture ?? "",
-          studyGoals: Array.isArray(fullDetails.studyGoals) ? fullDetails.studyGoals.join(", ") : fullDetails.studyGoals,
-          studyLevels: fullDetails.userCourses?.map(course => ({
-            subject: course.courseName ?? String(course.courseId),
-            grade: "N/A",
-            level: course.knowledgeLevel ?? "Beginner"
-          })) ?? [],
-          userCourses: fullDetails.userCourses ?? []
-        };
-
-        setCurrentUser(userProfile);
-        setEditableUser(userProfile);
+  
+        if (userId === null) {
+          console.log("Loading current user's profile...");
+          setLoading(true);
+          const localStorageToken = localStorage.getItem("token");
+          const effectiveToken = token || localStorageToken;
+          if (!effectiveToken) {
+            message.error("Please login to access your profile");
+            router.push("/login");
+            return;
+          }
+  
+          const tokenValue = effectiveToken.startsWith("Bearer ")
+            ? effectiveToken.substring(7)
+            : effectiveToken;
+          const apiUser = await apiService.userService?.getUserByToken(tokenValue);
+          if (!apiUser || !apiUser.id) return;
+  
+          const fullDetails = await apiService.userService?.getUserById(Number(apiUser.id));
+          if (!fullDetails) return;
+  
+          const userProfile: UserProfile = {
+            ...apiUser,
+            ...fullDetails,
+            token: effectiveToken,
+            profileImage: fullDetails.profilePicture ?? "",
+            studyGoals: Array.isArray(fullDetails.studyGoals)
+              ? fullDetails.studyGoals.join(", ")
+              : fullDetails.studyGoals,
+            studyLevels: fullDetails.userCourses?.map(course => ({
+              subject: course.courseName ?? String(course.courseId),
+              grade: "N/A",
+              level: course.knowledgeLevel ?? "Beginner"
+            })) ?? [],
+            userCourses: fullDetails.userCourses ?? []
+          };
+  
+          setCurrentUser(userProfile);
+          setEditableUser(userProfile);
+        } else {
+          console.log("Loading other user's profile with userId:", userId);
+          const fullDetails = await apiService.userService?.getUserById(Number(userId));
+          if (!fullDetails) {
+            message.error("User not found");
+            return;
+          }
+  
+          const userProfile: UserProfile = {
+            ...fullDetails,
+            profileImage: fullDetails.profilePicture ?? "",
+            studyGoals: Array.isArray(fullDetails.studyGoals)
+              ? fullDetails.studyGoals.join(", ")
+              : fullDetails.studyGoals,
+            studyLevels: fullDetails.userCourses?.map(course => ({
+              subject: course.courseName ?? String(course.courseId),
+              grade: "N/A",
+              level: course.knowledgeLevel ?? "Beginner"
+            })) ?? [],
+            userCourses: fullDetails.userCourses ?? []
+          };
+  
+          setCurrentUser(userProfile);
+          setEditableUser(null);
+        }
       } catch (error) {
         console.error("Error fetching user profile:", error);
         message.error("Could not load your profile");
@@ -77,9 +118,9 @@ const ProfilePage = () => {
         setLoading(false);
       }
     };
-
+  
     fetchUserProfile();
-  }, []);
+  }, [userId]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     if (!editableUser) return;
@@ -613,7 +654,7 @@ const ProfilePage = () => {
           <div className={mainStyles.header}>
             <Link href="/main" className={mainStyles.logoLink}><Logo className={mainStyles.headerLogo} /></Link>
             <div className={mainStyles.headerRight}>
-              <Link href="/profile"><button className={mainStyles.iconButton}><UserOutlined /></button></Link>
+              <Link href="/profile"><button className={mainStyles.iconButton} onClick={() => setUserId(null)}><UserOutlined /></button></Link>
               <Link href={`/chat`}><button className={mainStyles.iconButton}><MessageOutlined /></button></Link>
               <button className={mainStyles.iconButton} onClick={handleLogout}><LogoutOutlined /></button>
             </div>
@@ -622,6 +663,7 @@ const ProfilePage = () => {
             currentUser={currentUser}
             editableUser={editableUser}
             isEditing={isEditing}
+            userId={userId || undefined}
             onEditToggle={handleEditToggle}
             onDeleteAccount={handleOpenDeleteModal}
             onImageUpload={handleImageUpload}

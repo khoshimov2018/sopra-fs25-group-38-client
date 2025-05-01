@@ -42,10 +42,14 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ userId }) => {
   const handleNotificationClick = async (notification: NotificationGetDTO) => {
     try {
       await notificationService.markNotificationAsRead(notification.id);
-            if (notification.type === 'MATCH') {
+      
+      if (notification.type === 'MATCH') {
         router.push('/chat');
       } else if (notification.type === 'LIKE') {
         router.push('/main');
+      } else if (notification.type === 'MESSAGE') {
+        // For message notifications, navigate to the specific chat channel
+        router.push(`/chat?channelId=${notification.relatedEntityId}`);
       }
       
       setNotifications(notifications.filter(n => n.id !== notification.id));

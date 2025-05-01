@@ -352,6 +352,13 @@
   width: 237px;
   box-sizing: border-box;
   position: relative;
+  transition: all 0.3s ease;
+}
+
+.dislikedButton {
+  background-color: #ff4d4f;
+  color: white;
+  border: 1px solid #ff4d4f;
 }
 
 .likeButton {
@@ -369,6 +376,13 @@
   width: 240px;
   box-sizing: border-box;
   position: relative;
+  transition: all 0.3s ease;
+}
+
+.likedButton {
+  background-color: #52c41a;
+  color: white;
+  border: 1px solid #52c41a;
 }
 
 /* Responsive Adjustments */
