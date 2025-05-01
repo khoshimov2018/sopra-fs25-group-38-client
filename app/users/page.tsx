@@ -69,7 +69,7 @@ const UsersList: React.FC = () => {
   
     try {
       if (token) {
-        const response = await fetch(`${getApiDomain()}/users/logout`, {
+        await fetch(`${getApiDomain()}/users/logout`, {
           method: "POST",
           headers: {
             Authorization: `Bearer ${token}`,

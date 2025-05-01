@@ -403,34 +403,6 @@
     }
   }
 
-  .chat-loading {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 16px 0;
-    color: #757575;
-    font-size: 14px;
-  }
-  
-  .chat-loading .spinner {
-    width: 16px;
-    height: 16px;
-    border: 2px solid #ccc;
-    border-top: 2px solid #625b71; /* 深紫色 */
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    margin-right: 8px;
-  }
-  
-  @keyframes spin {
-    0% {
-      transform: rotate(0deg);
-    }
-    100% {
-      transform: rotate(360deg);
-    }
-  }
-
   .send-button {
     width: 48px;
     height: 48px;

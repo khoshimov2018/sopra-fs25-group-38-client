@@ -12,7 +12,6 @@ import mainStyles from "@/styles/main.module.css";
 import styles from "@/styles/theme/layout.module.css";
 import Button from "@/components/Button";
 import { LogoutOutlined } from "@ant-design/icons";
-import { CloseOutlined } from "@ant-design/icons";
 import DeleteAccountModal from "@/components/DeleteAccountModal"; 
 
 
@@ -65,7 +64,6 @@ interface UserInfo{
     const [selectedProfileRole, setSelectedProfileRole] = useState<string | null>(null);
 
     const [isLoading, setIsLoading] = useState<boolean>(true);
-    const [userMap, setUserMap] = useState<Map<number, string>>(new Map());
 
     const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
     const [selectedUserName, setSelectedUserName] = useState<string | null>(null);
@@ -74,7 +72,7 @@ interface UserInfo{
     const [selectedProfile, setSelectedProfile] = useState<UserInfo | null>(null);
     const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
-     const { value: token, clear: clearToken } =
+     const { clear: clearToken } =
         useLocalStorage<string>("token", "");
   /* ------------------------------------------------------------------ */
   /* Id -> Name method                                                  */
@@ -84,6 +82,7 @@ interface UserInfo{
         const user = await adminService.getUserById(userId);
         return user.name; 
       } catch (error) {
+        console.error(`Failed to fetch user name for ID ${userId}:`, error);
         return "Unknown";
       }
     };
@@ -122,6 +121,7 @@ interface UserInfo{
         setBlockedUsers(blocksWithNames);
 
       } catch (err) {
+        console.error("Failed to load reported users:", err);
         message.error("Failed to load reported users");
       } finally {
         setIsLoading(false);
@@ -178,14 +178,30 @@ interface UserInfo{
       title: "Reporter ID", 
       key: "reporterId",
       render: (_, record) => (
-        <a onClick={() => handleProfileClick(record.reporterId, "Reporter")}>{record.reporterId}</a>
+        <button 
+          onClick={() => handleProfileClick(record.reporterId, "Reporter")}
+          onKeyDown={(e) => e.key === 'Enter' && handleProfileClick(record.reporterId, "Reporter")}
+          role="button"
+          tabIndex={0}
+          style={{ background: "none", border: "none", color: "#1677ff", cursor: "pointer", padding: 0, textDecoration: "underline" }}
+        >
+          {record.reporterId}
+        </button>
       )
     },
     { title: "Reporter Name", dataIndex: "reporterName", key: "reporterName" },
     { title: "Reported ID", 
       key: "reportedId",
       render: (_, record) => (
-        <a onClick={() => handleProfileClick(record.reportedId, "Reported")}>{record.reportedId}</a>
+        <button 
+          onClick={() => handleProfileClick(record.reportedId, "Reported")}
+          onKeyDown={(e) => e.key === 'Enter' && handleProfileClick(record.reportedId, "Reported")}
+          role="button"
+          tabIndex={0}
+          style={{ background: "none", border: "none", color: "#1677ff", cursor: "pointer", padding: 0, textDecoration: "underline" }}
+        >
+          {record.reportedId}
+        </button>
       )
     },
     { title: "Reported Name", dataIndex: "reportedName", key: "reportedName" },  
@@ -204,14 +220,30 @@ interface UserInfo{
     { title: "Blocker ID", 
       key: "blockerId",
       render: (_, block) => (
-        <a onClick={() => handleProfileClick(block.blockerId, "Blocker")}>{block.blockerId}</a>
+        <button 
+          onClick={() => handleProfileClick(block.blockerId, "Blocker")}
+          onKeyDown={(e) => e.key === 'Enter' && handleProfileClick(block.blockerId, "Blocker")}
+          role="button"
+          tabIndex={0}
+          style={{ background: "none", border: "none", color: "#1677ff", cursor: "pointer", padding: 0, textDecoration: "underline" }}
+        >
+          {block.blockerId}
+        </button>
       )
     },
     { title: "Blocker Name", dataIndex: "blockerName", key: "blockerName" },
     { title: "Blocked User ID", 
       key: "blockedUserId",
       render: (_, block) => (
-        <a onClick={() => handleProfileClick(block.blockedUserId, "Blocked")}>{block.blockedUserId}</a>
+        <button 
+          onClick={() => handleProfileClick(block.blockedUserId, "Blocked")}
+          onKeyDown={(e) => e.key === 'Enter' && handleProfileClick(block.blockedUserId, "Blocked")}
+          role="button"
+          tabIndex={0}
+          style={{ background: "none", border: "none", color: "#1677ff", cursor: "pointer", padding: 0, textDecoration: "underline" }}
+        >
+          {block.blockedUserId}
+        </button>
       )
     },
     { title: "Blocked Name", dataIndex: "blockedName", key: "blockedName" },
@@ -284,9 +316,9 @@ interface UserInfo{
                 <li><strong>Email:</strong> {selectedProfile.email}</li>
                 <li><strong>Creation Date:</strong> {formatCreationDate(selectedProfile.creationDate)}</li>
                 <li><strong>Status:</strong> {selectedProfile.status}</li>
-                <li><strong>Study Goals:</strong> {selectedProfile.studyGoals?.join(", ") || "None"}</li>
+                <li><strong>Study Goals:</strong> {selectedProfile.studyGoals?.join(", ") ?? "None"}</li>
                 <li><strong>Study Level:</strong> {selectedProfile.studyLevel}</li>
-                <li><strong>Courses:</strong> {selectedProfile.userCourses?.map(c => c.courseName).join(", ") || "None"}</li>
+                <li><strong>Courses:</strong> {selectedProfile.userCourses?.map(c => c.courseName).join(", ") ?? "None"}</li>
               </ul>
           )}
         </Modal>

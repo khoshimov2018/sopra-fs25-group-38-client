@@ -1,5 +1,4 @@
 import { ApiService } from "../apiService";
-import { User } from "@/types/user";
 import { UserGetDTO, UserLoginDTO, UserPostDTO, UserPutDTO, CourseSelectionDTO } from "@/types";
 export class UserService {
   private readonly apiService: ApiService;

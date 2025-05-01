@@ -17,7 +17,7 @@ export interface UserInfo {
 }
 
 export class AdminService {
-  private api: ApiService;
+  private readonly api: ApiService;
 
   constructor(api: ApiService) {
     this.api = api;

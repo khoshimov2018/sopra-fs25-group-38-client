@@ -16,7 +16,6 @@ interface NotificationBellProps {
 
 const NotificationBell: React.FC<NotificationBellProps> = ({ userId }) => {
   const [notifications, setNotifications] = useState<NotificationGetDTO[]>([]);
-  const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const apiService = useApi();
   const notificationService = new NotificationService(apiService.apiService);
@@ -34,8 +33,6 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ userId }) => {
       setNotifications(data);
     } catch (error) {
       console.error("Failed to fetch notifications:", error);
-    } finally {
-      setLoading(false);
     }
   };
 

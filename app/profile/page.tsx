@@ -6,7 +6,7 @@ import { useApi } from "@/hooks/useApi";
 import useLocalStorage from "@/hooks/useLocalStorage";
 import { useMessage } from '@/hooks/useMessage';
 import { UserProfile } from "@/types/profile";
-import { ProfileKnowledgeLevel, UserPutDTO } from "@/types/dto";
+import { ProfileKnowledgeLevel } from "@/types/dto";
 import Link from "next/link";
 import Logo from "@/components/Logo";
 import DeleteAccountModal from "@/components/DeleteAccountModal";
@@ -37,9 +37,75 @@ const ProfilePage = () => {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const userIdParam = params.get("userId");
-    setUserId(userIdParam || null);
+    setUserId(userIdParam ?? null);
     console.log('set userId succefully')
   }, []);
+
+  // Helper function to create a user profile object from API data
+  const createUserProfileFromApiData = (apiData, fullDetails, token = null) => {
+    return {
+      ...apiData,
+      ...(token && { token }),
+      profileImage: fullDetails.profilePicture ?? "",
+      studyGoals: Array.isArray(fullDetails.studyGoals)
+        ? fullDetails.studyGoals.join(", ")
+        : fullDetails.studyGoals,
+      studyLevels: fullDetails.userCourses?.map(course => ({
+        subject: course.courseName ?? String(course.courseId),
+        grade: "N/A",
+        level: course.knowledgeLevel ?? "Beginner"
+      })) ?? [],
+      userCourses: fullDetails.userCourses ?? []
+    };
+  };
+
+  // Helper function to load current user's profile
+  const loadCurrentUserProfile = async (effectiveToken) => {
+    console.log("Loading current user's profile...");
+    setLoading(true);
+    
+    if (!effectiveToken) {
+      message.error("Please login to access your profile");
+      router.push("/login");
+      return false;
+    }
+    
+    if (!apiService.userService) return false;
+    
+    const tokenValue = effectiveToken.startsWith("Bearer ")
+      ? effectiveToken.substring(7)
+      : effectiveToken;
+      
+    const apiUser = await apiService.userService.getUserByToken(tokenValue);
+    if (!apiUser || !apiUser.id) return false;
+    
+    const fullDetails = await apiService.userService.getUserById(Number(apiUser.id));
+    if (!fullDetails) return false;
+    
+    const userProfile = createUserProfileFromApiData(apiUser, fullDetails, effectiveToken);
+    
+    setCurrentUser(userProfile);
+    setEditableUser(userProfile);
+    return true;
+  };
+  
+  // Helper function to load another user's profile
+  const loadOtherUserProfile = async (userId) => {
+    console.log("Loading other user's profile with userId:", userId);
+    if (!apiService.userService) return false;
+    
+    const fullDetails = await apiService.userService.getUserById(Number(userId));
+    if (!fullDetails) {
+      message.error("User not found");
+      return false;
+    }
+    
+    const userProfile = createUserProfileFromApiData(fullDetails, fullDetails);
+    
+    setCurrentUser(userProfile);
+    setEditableUser(null);
+    return true;
+  };
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -48,68 +114,19 @@ const ProfilePage = () => {
           return;
         }
   
+        const localStorageToken = localStorage.getItem("token");
+        const effectiveToken = token ?? localStorageToken;
+        
+        let success = false;
+        
         if (userId === null) {
-          console.log("Loading current user's profile...");
-          setLoading(true);
-          const localStorageToken = localStorage.getItem("token");
-          const effectiveToken = token || localStorageToken;
-          if (!effectiveToken) {
-            message.error("Please login to access your profile");
-            router.push("/login");
-            return;
-          }
-  
-          const tokenValue = effectiveToken.startsWith("Bearer ")
-            ? effectiveToken.substring(7)
-            : effectiveToken;
-          const apiUser = await apiService.userService?.getUserByToken(tokenValue);
-          if (!apiUser || !apiUser.id) return;
-  
-          const fullDetails = await apiService.userService?.getUserById(Number(apiUser.id));
-          if (!fullDetails) return;
-  
-          const userProfile: UserProfile = {
-            ...apiUser,
-            ...fullDetails,
-            token: effectiveToken,
-            profileImage: fullDetails.profilePicture ?? "",
-            studyGoals: Array.isArray(fullDetails.studyGoals)
-              ? fullDetails.studyGoals.join(", ")
-              : fullDetails.studyGoals,
-            studyLevels: fullDetails.userCourses?.map(course => ({
-              subject: course.courseName ?? String(course.courseId),
-              grade: "N/A",
-              level: course.knowledgeLevel ?? "Beginner"
-            })) ?? [],
-            userCourses: fullDetails.userCourses ?? []
-          };
-  
-          setCurrentUser(userProfile);
-          setEditableUser(userProfile);
+          success = await loadCurrentUserProfile(effectiveToken);
         } else {
-          console.log("Loading other user's profile with userId:", userId);
-          const fullDetails = await apiService.userService?.getUserById(Number(userId));
-          if (!fullDetails) {
-            message.error("User not found");
-            return;
-          }
-  
-          const userProfile: UserProfile = {
-            ...fullDetails,
-            profileImage: fullDetails.profilePicture ?? "",
-            studyGoals: Array.isArray(fullDetails.studyGoals)
-              ? fullDetails.studyGoals.join(", ")
-              : fullDetails.studyGoals,
-            studyLevels: fullDetails.userCourses?.map(course => ({
-              subject: course.courseName ?? String(course.courseId),
-              grade: "N/A",
-              level: course.knowledgeLevel ?? "Beginner"
-            })) ?? [],
-            userCourses: fullDetails.userCourses ?? []
-          };
-  
-          setCurrentUser(userProfile);
-          setEditableUser(null);
+          success = await loadOtherUserProfile(userId);
+        }
+        
+        if (!success) {
+          console.log("Failed to load user profile");
         }
       } catch (error) {
         console.error("Error fetching user profile:", error);
@@ -626,13 +643,12 @@ const ProfilePage = () => {
   
     try {
       if (token) {
-        const response = await fetch(`${getApiDomain()}/users/logout`, {
+        await fetch(`${getApiDomain()}/users/logout`, {
           method: "POST",
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
-        
       }
     } catch (error) {
       console.warn("Logout API failed, proceeding with local logout:", error);
