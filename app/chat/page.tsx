@@ -16,6 +16,16 @@ import backgroundStyles from "@/styles/theme/backgrounds.module.css";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { marked } from "marked"; // 导入 marked 库
 
+const getUserItemClass = (userId: number, existingUsers: number[], selectedUsers: number[]): string => {
+  if (existingUsers.includes(userId)) {
+    return "existing";
+  }
+  if (selectedUsers.includes(userId)) {
+    return "selected";
+  }
+  return "";
+};
+
 const GroupModal: React.FC<{
   visible: boolean;
   mode: "create" | "update";
@@ -64,16 +74,12 @@ const GroupModal: React.FC<{
             <div className="no-users-message">No selectable users.</div>
           ) : (
             allUsers.map((user) => (
-              <div
+              <button
                 key={user.userId}
                 className={`user-item ${
-                  existingUsers.includes(user.userId) ? "existing" : 
-                  selectedUsers.includes(user.userId) ? "selected" : ""
+                  getUserItemClass(user.userId, existingUsers, selectedUsers)
                 }`}
                 onClick={() => handleUserSelect(user.userId)}
-                onKeyDown={(e) => e.key === 'Enter' && handleUserSelect(user.userId)}
-                tabIndex={0}
-                role="button"
                 style={
                   mode === "update" && existingUsers.includes(user.userId)
                     ? { pointerEvents: "none", opacity: 0.5 }
@@ -83,7 +89,7 @@ const GroupModal: React.FC<{
                 <div className="content">
                   <div className="headline">{user.userName}</div>
                 </div>
-              </div>
+              </button>
             ))
           )}
         </div>
@@ -173,19 +179,6 @@ const ChatPage: React.FC = () => {
     typing: boolean;
   }
 
-    // Trying to fetch userId
-    // const refreshToken = async () => {
-    //   try {
-    //     const response = await apiService.post("/auth/refresh", { token });
-    //     const newToken = (response as { token: string }).token;
-    //     localStorage.setItem("token", newToken);
-    //     return newToken;
-    //   } catch (error) {
-    //     console.error("Failed to refresh token:", error);
-    //     // actualLogout();
-    //     return null;
-    //   }
-    // };
 
     const hasFetchedUserId = useRef(false);
 
@@ -214,7 +207,7 @@ const ChatPage: React.FC = () => {
         const tokenValue = effectiveToken.startsWith('Bearer ') ? effectiveToken.substring(7) : effectiveToken;
         const apiUser = await apiService_token.userService?.getUserByToken(tokenValue);
     
-        if (!apiUser || !apiUser.id) {
+        if (!apiUser?.id) {
           throw new Error("Invalid token: userId not found");
         }
     
@@ -222,7 +215,6 @@ const ChatPage: React.FC = () => {
         setCurrentUserImage(apiUser.profilePicture);
       } catch (error) {
           message.error("Network error. Please check your connection.");
-          // actualLogout();
         }
     };
 
@@ -250,7 +242,7 @@ const ChatPage: React.FC = () => {
       (channel) => String(channel.channelId) === String(selectedChannel)
     );
   
-    if (!currentChannel || !currentChannel.participants) {
+    if (!currentChannel?.participants) {
       console.error("Selected channel does not exist or has no participants.");
       return;
     }
@@ -672,7 +664,28 @@ const ChatPage: React.FC = () => {
     return <div dangerouslySetInnerHTML={{ __html: htmlContent }} />;
   };
 
-  const handleQuickReplySuggestion = () => {
+  const getChannelHeaderText = (selectedChannel: string | null, typingStatus: boolean, channels: { channelId: number; channelName: string; supportingText?: string; channelType: string; participants?: ChatParticipantGetDTO[]; channelProfileImage?: string }[]) => {
+    if (!selectedChannel) {
+      return "Select a chat";
+    }
+    if (typingStatus) {
+      return "Typing...";
+    }
+    return channels.find((c) => String(c.channelId) === String(selectedChannel))?.channelName || selectedChannel;
+  };
+
+const getAvatarSrc = (sender: string, selectedChannel: string | null, channels: { channelId: number; channelName: string; supportingText?: string; channelType: string; participants?: ChatParticipantGetDTO[]; channelProfileImage?: string }[], aiAvatar: string, defaulindividualicon: string): string => {
+    if (sender === "AI Advisor") {
+      return aiAvatar; // AI Advisor uses a fixed avatar
+    }
+
+    // For regular users, get avatar from the participants list
+    const channel = channels.find(channel => String(channel.channelId) === String(selectedChannel));
+    const participant = channel?.participants?.find(p => String(p.userId) === sender);
+    return participant?.userProfileImage || defaulindividualicon;
+  };
+  
+const handleQuickReplySuggestion = () => {
     const quickReplyMessage = "Can you give me a suggestion on study?";
     const prompt = `
       You have many experiences in instructing study so you know how to advise intuitively.
@@ -766,8 +779,12 @@ const ChatPage: React.FC = () => {
               <div className="message-list-header">Matched Users</div>
               <div className="message-list">
                 {/* AI Advisor 始终置顶 */}
-                <div className="message-item" onClick={() => handleSelectChat("AI Advisor")}>
-                  <img className="avatar" src={aiAvatar} alt="AI Avatar" />
+                <button 
+                  className="message-item" 
+                  onClick={() => handleSelectChat("AI Advisor")}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSelectChat("AI Advisor")}
+                >
+                  <img className="avatar" src={aiAvatar} alt="" />
                   <div className="content">
                     <div className="headline">AI Advisor</div>
                     <div className="supporting-text">
@@ -778,18 +795,19 @@ const ChatPage: React.FC = () => {
                     }
                     </div>
                   </div>
-                </div>
+                </button>
 
                 {/* 渲染匹配用户 */}
                 {channels
                   .filter((user) => user.channelId !== -1)
                   .map((user) => (
-                  <div
+                  <button
                     key={user.channelId}
                     className={`message-item ${String(selectedChannel) === String(user.channelId) ? "selected" : ""}`}
                     onClick={() => handleSelectChat(String(user.channelId))}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSelectChat(String(user.channelId))}
                   >
-                    <img className="avatar" src ={user.channelProfileImage || defaulindividualicon} alt ='User Image'/>
+                    <img className="avatar" src ={user.channelProfileImage || defaulindividualicon} alt =""/>
                     <div className="content">
                       <div className="headline">{user.channelName}</div>
                       <div className="supporting-text">
@@ -799,7 +817,7 @@ const ChatPage: React.FC = () => {
                           "No messages yet"}
                       </div>
                     </div>
-                  </div>
+                  </button>
                 ))}
               </div>
             </div>
@@ -808,11 +826,7 @@ const ChatPage: React.FC = () => {
             <div className="chat-page">
                 {/* 动态显示对方的用户名 */}
                 <div className="chat-header">
-                {selectedChannel
-                  ? typingStatus
-                    ? "Typing..." // 如果对方正在输入
-                    : channels.find((c) => String(c.channelId) === String(selectedChannel))?.channelName || selectedChannel
-                  : "Select a chat"}
+                {getChannelHeaderText(selectedChannel, typingStatus, channels)}
                   <div className="chat-header-actions">
                     {channels.find(
                       (channel) => String(channel.channelId) === String(selectedChannel)
@@ -878,7 +892,7 @@ const ChatPage: React.FC = () => {
                 {/* AI Advisor 默认消息 */}
                 {selectedChannel === "AI Advisor" && aiAvatar && (
                   <div key={defaultAIMessage.id} className="chat-message">
-                    <img className="avatar" src={aiAvatar} alt="AI Avatar" />
+                    <img className="avatar" src={aiAvatar} alt="" />
                     <div className="message-bubble">{defaultAIMessage.text}</div>
                   </div>
                 )}
@@ -896,18 +910,18 @@ const ChatPage: React.FC = () => {
                         .map((message) => (
                           <div key={message.id} className={`chat-message ${message.sender === String(parsedUserId) ? "you" : ""}`}>
                             {message.sender !== String(parsedUserId) && (
-                              <img
-                                className="avatar"
-                                src={
-                                  message.sender === "AI Advisor"
-                                    ? aiAvatar // AI Advisor 使用固定头像
-                                    : channels.find((channel) => String(channel.channelId) === String(selectedChannel))?.participants?.find(
-                                        (p) => String(p.userId) === message.sender
-                                      )?.userProfileImage || defaulindividualicon // 普通用户从服务端读取头像
-                                }
-                                alt="Avatar"
+                              <button
+                                className="avatar-button"
                                 onClick={() => router.push(`/profile?userId=${message.sender}`)}
-                              />
+                                onKeyDown={(e) => e.key === 'Enter' && router.push(`/profile?userId=${message.sender}`)}
+                                aria-label="View profile"
+                              >
+                                <img
+                                  className="avatar"
+                                  src={getAvatarSrc(message.sender, selectedChannel, channels, aiAvatar, defaulindividualicon)}
+                                  alt=""
+                                />
+                              </button>
                             )}
                             <div className="message-bubble">{renderMarkdown(message.text)}</div>
                           </div>
@@ -947,24 +961,30 @@ const ChatPage: React.FC = () => {
                     {/* Quick Reply 按钮容器 */}
                     {selectedChannel === "AI Advisor" && (
                       <div className="quick-reply-container">
-                        <div
+                        <button
                           className="quick-reply-bubble"
                           onClick={handleQuickReplySuggestion}
+                          onKeyDown={(e) => e.key === 'Enter' && handleQuickReplySuggestion()}
                         >
                           Sugeestion
-                        </div>
-                        <div
+                        </button>
+                        <button
                           className="quick-reply-bubble"
                           onClick={handleQuickReplySchedule}
+                          onKeyDown={(e) => e.key === 'Enter' && handleQuickReplySchedule()}
                         >
                           Scheduler
-                        </div>
+                        </button>
                         {/* 如果需要更多按钮，可以继续添加 */}
                       </div>
                     )}
-                    <div className="send-button" onClick={() => handleSendMessage()}>
+                    <button 
+                      className="send-button" 
+                      onClick={() => handleSendMessage()} 
+                      onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+                      aria-label="Send message">
                       <div className="icon"></div>
-                    </div>
+                    </button>
                   </div>
                 )}
             </div>
@@ -1010,8 +1030,9 @@ const ChatPage: React.FC = () => {
               <div className="form-forgot-password">
                 <h3>Report User</h3>
                 <div className="input-field">
-                  <label className="label">Reason</label>
+                  <label className="label" htmlFor="report-reason">Reason</label>
                   <textarea
+                    id="report-reason"
                     className="input"
                     placeholder="Enter your reason here..."
                     value={reportReason}
