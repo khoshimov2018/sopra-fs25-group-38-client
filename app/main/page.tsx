@@ -95,6 +95,23 @@ const MainPage: React.FC = () => {
     fetchUsers(filters.selectedCourses, filters.availabilities);
   }, [filters, currentUser, isUserLoaded]);
 
+  const fetchInteractedUsers = async (userId: number) => {
+    try {
+      const { likedIds: remoteLikedIds, matchedIds, blockedIds } = await matchService.getInteractedUserIds(userId);
+      
+      // If we're unable to fetch from the backend, we'll use the local state as a fallback
+      if (remoteLikedIds.length > 0) {
+        // Merge remote and local ids to ensure we don't miss anything
+        setLikedIds(prevIds => [...new Set([...prevIds, ...remoteLikedIds])]);
+      }
+      
+      return { matchedIds, blockedIds };
+    } catch (error) {
+      console.error("Failed to fetch interacted users:", error);
+      return { matchedIds: [], blockedIds: [] };
+    }
+  };
+
   const fetchUsers = async (
     courseIds?: number[],
     availability?: UserAvailability[]
@@ -106,6 +123,9 @@ const MainPage: React.FC = () => {
         return;
       }
 
+      // Fetch users the current user has already interacted with
+      const { matchedIds, blockedIds } = await fetchInteractedUsers(Number(currentUser.id));
+
       let users = await studentFilterService.getFilteredStudents(
         courseIds && courseIds.length > 0 ? courseIds : undefined,
         availability && availability.length > 0 ? availability : undefined
@@ -115,10 +135,17 @@ const MainPage: React.FC = () => {
 
       const filtered = users
         .filter(u => Number(u.id) !== Number(currentUser.id))
+        // Filter out users that the current user has already matched with, liked, or blocked
         .filter(u => {
           const id = Number(u.id);
+          // Skip users that have been matched with or blocked
+          if (matchedIds.includes(id) || blockedIds.includes(id)) {
+            return false;
+          }
+          
+          // Handle client-side seen/disliked logic
           const alreadySeen = seenIds.includes(id) && !dislikedIds.includes(id);
-          const disliked   = dislikedIds.includes(id);
+          const disliked = dislikedIds.includes(id);
           return showDislikedOnly ? disliked : !alreadySeen;
         });
       const fetchedProfiles: UserProfile[] = filtered.map(u => {

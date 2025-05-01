@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import {useRouter} from "next/navigation";
 import { UserOutlined, MessageOutlined, LogoutOutlined } from "@ant-design/icons";
+import NotificationBell from "@/components/NotificationBell";
 import { useMessage } from "@/hooks/useMessage";
 import useLocalStorage from "@/hooks/useLocalStorage";
 import { App } from "antd";
@@ -758,6 +759,11 @@ const handleQuickReplySuggestion = () => {
               <Logo className={styles.headerLogo} />
             </Link>
             <div className={styles.headerRight}>
+              {parsedUserId && (
+                <button className={styles.iconButton} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                  <NotificationBell userId={Number(parsedUserId)} />
+                </button>
+              )}
               <Link href="/profile">
                 <button className={styles.iconButton}><UserOutlined /></button>
               </Link>

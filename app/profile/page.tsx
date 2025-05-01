@@ -11,6 +11,7 @@ import Link from "next/link";
 import Logo from "@/components/Logo";
 import DeleteAccountModal from "@/components/DeleteAccountModal";
 import { UserOutlined, MessageOutlined, LogoutOutlined } from "@ant-design/icons";
+import NotificationBell from "@/components/NotificationBell";
 import { Modal, Upload } from "antd";
 import { RcFile, UploadProps } from "antd/es/upload";
 import styles from "@/styles/profile.module.css";
@@ -18,6 +19,7 @@ import mainStyles from "@/styles/main.module.css";
 import backgroundStyles from "@/styles/theme/backgrounds.module.css";
 import ProfileContent from "@/components/profile";
 import { getApiDomain } from "@/utils/domain";
+
 
 const ProfilePage = () => {
   const router = useRouter();
@@ -670,6 +672,11 @@ const ProfilePage = () => {
           <div className={mainStyles.header}>
             <Link href="/main" className={mainStyles.logoLink}><Logo className={mainStyles.headerLogo} /></Link>
             <div className={mainStyles.headerRight}>
+              {currentUser?.id && (
+                <button className={mainStyles.iconButton} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                  <NotificationBell userId={Number(currentUser.id)} />
+                </button>
+              )}
               <Link href="/profile"><button className={mainStyles.iconButton} onClick={() => setUserId(null)}><UserOutlined /></button></Link>
               <Link href={`/chat`}><button className={mainStyles.iconButton}><MessageOutlined /></button></Link>
               <button className={mainStyles.iconButton} onClick={handleLogout}><LogoutOutlined /></button>

@@ -27,4 +27,26 @@ export class MatchService {
   async processDislike(matchData: MatchPostDTO): Promise<void> {
     await this.apiService.post<void>("/matches/dislike", matchData);
   }
+
+  /**
+   * Get all user IDs that the current user has interacted with (liked, matched, or blocked)
+   * @param userId Current user's ID
+   * @returns List of user IDs
+   */
+  async getInteractedUserIds(userId: number): Promise<{ 
+    likedIds: number[], 
+    matchedIds: number[],
+    blockedIds: number[] 
+  }> {
+    try {
+      return await this.apiService.get<{
+        likedIds: number[],
+        matchedIds: number[],
+        blockedIds: number[]
+      }>(`/matches/user/${userId}/interacted`);
+    } catch (error) {
+      console.error("Error fetching interacted users:", error);
+      return { likedIds: [], matchedIds: [], blockedIds: [] };
+    }
+  }
 }
