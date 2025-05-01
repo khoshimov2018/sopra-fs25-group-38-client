@@ -77,7 +77,7 @@ const ProfilePage = () => {
       : effectiveToken;
       
     const apiUser = await apiService.userService.getUserByToken(tokenValue);
-    if (!apiUser || !apiUser.id) return false;
+    if (!apiUser?.id) return false;
     
     const fullDetails = await apiService.userService.getUserById(Number(apiUser.id));
     if (!fullDetails) return false;
@@ -679,7 +679,7 @@ const ProfilePage = () => {
             currentUser={currentUser}
             editableUser={editableUser}
             isEditing={isEditing}
-            userId={userId || undefined}
+            userId={userId ?? undefined}
             onEditToggle={handleEditToggle}
             onDeleteAccount={handleOpenDeleteModal}
             onImageUpload={handleImageUpload}

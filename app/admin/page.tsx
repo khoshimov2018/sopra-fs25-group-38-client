@@ -181,7 +181,6 @@ interface UserInfo{
         <button 
           onClick={() => handleProfileClick(record.reporterId, "Reporter")}
           onKeyDown={(e) => e.key === 'Enter' && handleProfileClick(record.reporterId, "Reporter")}
-          role="button"
           tabIndex={0}
           style={{ background: "none", border: "none", color: "#1677ff", cursor: "pointer", padding: 0, textDecoration: "underline" }}
         >
@@ -196,7 +195,6 @@ interface UserInfo{
         <button 
           onClick={() => handleProfileClick(record.reportedId, "Reported")}
           onKeyDown={(e) => e.key === 'Enter' && handleProfileClick(record.reportedId, "Reported")}
-          role="button"
           tabIndex={0}
           style={{ background: "none", border: "none", color: "#1677ff", cursor: "pointer", padding: 0, textDecoration: "underline" }}
         >
@@ -223,7 +221,6 @@ interface UserInfo{
         <button 
           onClick={() => handleProfileClick(block.blockerId, "Blocker")}
           onKeyDown={(e) => e.key === 'Enter' && handleProfileClick(block.blockerId, "Blocker")}
-          role="button"
           tabIndex={0}
           style={{ background: "none", border: "none", color: "#1677ff", cursor: "pointer", padding: 0, textDecoration: "underline" }}
         >
@@ -238,7 +235,6 @@ interface UserInfo{
         <button 
           onClick={() => handleProfileClick(block.blockedUserId, "Blocked")}
           onKeyDown={(e) => e.key === 'Enter' && handleProfileClick(block.blockedUserId, "Blocked")}
-          role="button"
           tabIndex={0}
           style={{ background: "none", border: "none", color: "#1677ff", cursor: "pointer", padding: 0, textDecoration: "underline" }}
         >
