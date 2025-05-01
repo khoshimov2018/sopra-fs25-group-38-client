@@ -571,15 +571,18 @@ const ProfilePage = () => {
   };
 
   const beforeUpload = (file: RcFile) => {
+    // Check file type
     const isJpgOrPng = file.type === 'image/jpeg' || file.type === 'image/png';
     if (!isJpgOrPng) {
       message.error('You can only upload JPG/PNG files!');
       return false;
     }
     
-    const isLt2M = file.size / 1024 / 1024 < 2;
+    // Check file size (strict 2MB limit)
+    const fileSizeMB = file.size / 1024 / 1024;
+    const isLt2M = fileSizeMB < 2;
     if (!isLt2M) {
-      message.error('Image must be smaller than 2MB!');
+      message.error(`Image is too large! Current size is ${fileSizeMB.toFixed(2)}MB, but maximum allowed is 2MB.`);
       return false;
     }
 

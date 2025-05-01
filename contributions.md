@@ -157,6 +157,22 @@ From Zhidian: Sorry for the inconvenience. For the commit after the email, I hav
 |                    | [25.04.2025]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-client/commit/e3df6b0820534381612c79367c5fc0ff76888298] | [frontend_feat(admin): implement admin dashboard for user moderation] | [Allow admin to manage reported and blocked users through UI]  |
 |                    | [26.04.2025]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-client/commit/c5b5f601ad00233ea69da6ae06d35da10898dbcd] | [front_refactor(admin): map user IDs to usernames for clarity] | [Improve admin page readability by resolving ID-only confusion]  |
 |                    | [26.04.2025-27.04.2025]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-client/commit/053f1c1c0ee5a469003b82580252aa00ea7bb0fd] | [front_feat+fix(admin): implement profile modal, block sync fix, UI consistency, modal refactor]  | [Enhance usability by enabling inline profile viewing, ensuring real-time UI updates, and standardizing modal interactions] |
+| **[@Kai]** | [25.04.2025]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-server/commit/f8243782681051ab9b8a9aaa013b86d9f1b95e8d] | [ added Test for UserRegistration Integration
+] | [checks edge cases for user registration to gurantee that user registration integration works well] |
+[25.04.2025-01.05.2025]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-server/commit/58fe0cbe79e252673bdd97901952b3cb3ca76fb3] | [ added notification logic on the backend for matching
+] | [notification enable users to see when a user has liked them or a match is created] |
+[25.04.2025-01.05.2025]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-server/commit/e775efa73e20823a321ef322e9478c437734932e] | [ fixed issue with double notification
+] | [double notifications where sent out to users] |
+[25.04.2025-01.05.2025]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-server/commit/c8f2f8703771bc0bd01e0e61eeb67b6bcfea0a23] | [ added notification also for messages
+] | [now users are also notified if they receive messages] |
+[25.04.2025-01.05.2025]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-client/commit/d572d5b90c764a3a8c94b3a00451251e88f79e643] | [ front-end integration of notifications
+] | [make use of backend logic in front end] |
+[25.04.2025-01.05.2025]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-client/commit/0f1916b81af2259ec4d82cba958569e766526e8a] | [ also integration of messages
+] | [make use of backend logic in front end] |
+[25.04.2025-01.05.2025]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-client/commit/4d152f99e5066b70ac67fc37fe250e1367021f93] | [ changed color coding for buttons
+] | [make choice of like or dislike visible] |
+[25.04.2025-01.05.2025]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-client/commit/cac6a5532452a591a17468eccba59fac602033c9] | [ integrated notification bell on all pages and fixed problem of fetching users that have already been matched, liked or blocked on front end] | [notification bell should be accessible from all pages, and potential users should only be fetched if they are not already matched, liked or blocked] |
+
 ---
 
 ## Contributions Week 6 - [Begin Date] to [End Date]
