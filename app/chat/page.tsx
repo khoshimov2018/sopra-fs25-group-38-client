@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useRef } from "react";
 import {useRouter} from "next/navigation";
-import { UserOutlined, MessageOutlined, FilterOutlined, LogoutOutlined } from "@ant-design/icons";
+import { UserOutlined, MessageOutlined, LogoutOutlined } from "@ant-design/icons";
 import { useMessage } from "@/hooks/useMessage";
 import useLocalStorage from "@/hooks/useLocalStorage";
 import { App } from "antd";
@@ -67,13 +67,13 @@ const GroupModal: React.FC<{
               <div
                 key={user.userId}
                 className={`user-item ${
-                  existingUsers.includes(user.userId)
-                    ? "existing"
-                    : selectedUsers.includes(user.userId)
-                    ? "selected"
-                    : ""
+                  existingUsers.includes(user.userId) ? "existing" : 
+                  selectedUsers.includes(user.userId) ? "selected" : ""
                 }`}
                 onClick={() => handleUserSelect(user.userId)}
+                onKeyDown={(e) => e.key === 'Enter' && handleUserSelect(user.userId)}
+                tabIndex={0}
+                role="button"
                 style={
                   mode === "update" && existingUsers.includes(user.userId)
                     ? { pointerEvents: "none", opacity: 0.5 }
@@ -101,8 +101,8 @@ const GroupModal: React.FC<{
 };
 
 const ChatPage: React.FC = () => {
-  const [userMessages, setUserMessages] = useState<{ id: number; text: string; sender: string; timeStamp: number; avatar: string| null }[]>([]);
-  const [otherMessages, setOtherMessages] = useState<{ id: number; text: string; sender: string; timeStamp: number; avatar: string| null}[]>([]);
+  const [userMessages] = useState<{ id: number; text: string; sender: string; timeStamp: number; avatar: string| null }[]>([]);
+  const [otherMessages] = useState<{ id: number; text: string; sender: string; timeStamp: number; avatar: string| null}[]>([]);
   const [channels, setChannels] = useState<{ channelId: number; channelName: string; supportingText?: string; channelType:string; participants?: ChatParticipantGetDTO[]; channelProfileImage?: string }[]>([
     {
       channelId: -1, // 特殊 ID 表示 AI Advisor
@@ -111,7 +111,7 @@ const ChatPage: React.FC = () => {
       channelType:'individual'
     }
   ]);
-  const [isMessagesLoading, setIsMessagesLoading] = useState(false); // 控制消息加载状态
+  const [isMessagesLoading] = useState(false); // 控制消息加载状态
   const [isBlockPanelVisible, setIsBlockPanelVisible] = useState(false); // 控制 Block Panel 显示
   const [isReportPanelVisible, setIsReportPanelVisible] = useState(false); // 控制 Report Panel 显示
   const [selectedParticipant, setSelectedParticipant] = useState<number | null>(null); // 当前选中的对方用户 ID
@@ -121,7 +121,7 @@ const ChatPage: React.FC = () => {
   const apiService = new ApiService();
   const apiService_token = useApi();
   const [selectedChannel, setSelectedChannel] = useState<string | null>(null);  // Track selected chat
-  const Your_API_Key = "AIzaSyAA9DyJQQeK-E9E1PIblN7ay-g4PlwKbVw"
+  const Your_API_Key = process.env.GOOGLE_API_KEY || ""
   const genAI = new GoogleGenerativeAI(Your_API_Key);
   const aiAvatar = "/AI-Icon.svg";  // 你可以使用本地或外部的头像路径
   const defaultGroupicon = '/Group_icon.svg';
@@ -160,9 +160,9 @@ const ChatPage: React.FC = () => {
   }
 
   interface MessageGetDTO {
-    messageId: Number;
-    senderId: Number;
-    channelId: Number;
+    messageId: number;
+    senderId: number;
+    channelId: number;
     senderProfileImage: String;
     context: String;
     timestamp: String;
@@ -464,7 +464,7 @@ const ChatPage: React.FC = () => {
       }
   
       const mappedMessages = response.map((message) => ({
-        id: Number(message.messageId),
+        id: Number(message.messageId) as number,
         text: String(message.context),
         sender: String(message.senderId),
         timeStamp: new Date(String(message.timestamp)).getTime(),

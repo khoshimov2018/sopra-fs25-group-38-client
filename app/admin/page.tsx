@@ -104,8 +104,9 @@ interface Course {
   /* ------------------------------------------------------------------ */
     const fetchCourses = async () => {
       try {
-        const courseList = await courseService.getAllCourses();        setCourses(courseList);
-      } catch (err) {
+        const courseList = await courseService.getAllCourses();
+        setCourses(courseList);
+      } catch {
         message.error("Failed to fetch courses");
       }
     };
@@ -116,7 +117,7 @@ interface Course {
         message.success("Course added successfully");
         form.resetFields();
         fetchCourses();
-      } catch (err) {
+      } catch {
         message.error("Failed to add course");
       }
     };
