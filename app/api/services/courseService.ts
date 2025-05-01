@@ -121,4 +121,11 @@ export class CourseService {
   async addCoursesWithKnowledgeLevels(userId: number, courseSelections: CourseSelectionDTO[]): Promise<void> {
     await this.apiService.post<void>(`/users/${userId}/courses`, { courseSelections });
   }
+  /**
+   * Add a new course in admin page
+   * @param courseName
+   */
+  async createCourse(courseName: string): Promise<void> {
+    await this.apiService.post<void>("/courses", { courseName });
+  }
 }

@@ -6,7 +6,9 @@ import { useRouter } from "next/navigation";
 import { useApi } from "@/hooks/useApi";
 import { useMessage } from "@/hooks/useMessage";
 import { AdminService } from "@/api/services/adminService";
-import { App, Typography, Table, Modal } from "antd";
+import { CourseService } from "@/api/services/courseService";
+import { CourseGetDTO } from "@/types/dto";
+import { App, Typography, Table, Modal, Input, Form, Tabs } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import mainStyles from "@/styles/main.module.css";
 import styles from "@/styles/theme/layout.module.css";
@@ -50,6 +52,11 @@ interface UserInfo{
   }[];
 }
 
+interface Course {
+  id: number;
+  name: string;
+}
+
 /* ------------------------------------------------------------------ */
 /* Component                                                          */
 /* ------------------------------------------------------------------ */
@@ -57,6 +64,7 @@ interface UserInfo{
     const router = useRouter();
     const apiService = useApi();
     const adminService = new AdminService(apiService.apiService);
+    const courseService = new CourseService(apiService.apiService);
     const { message, contextHolder } = useMessage();
   
     const [reportedUsers, setReportedUsers] = useState<ReportedUser[]>([]);
@@ -72,8 +80,12 @@ interface UserInfo{
     const [selectedProfile, setSelectedProfile] = useState<UserInfo | null>(null);
     const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
-     const { clear: clearToken } =
-        useLocalStorage<string>("token", "");
+    const { clear: clearToken } =
+      useLocalStorage<string>("token", "");
+
+    const [courses, setCourses] = useState<CourseGetDTO[]>([]);
+    const [form] = Form.useForm();
+      
   /* ------------------------------------------------------------------ */
   /* Id -> Name method                                                  */
   /* ------------------------------------------------------------------ */
@@ -88,6 +100,28 @@ interface UserInfo{
     };
 
   /* ------------------------------------------------------------------ */
+  /* Course method                                                  */
+  /* ------------------------------------------------------------------ */
+    const fetchCourses = async () => {
+      try {
+        const courseList = await courseService.getAllCourses();        setCourses(courseList);
+      } catch (err) {
+        message.error("Failed to fetch courses");
+      }
+    };
+
+    const handleAddCourse = async (courseName: string) => {
+      try {
+        await courseService.createCourse(courseName);
+        message.success("Course added successfully");
+        form.resetFields();
+        fetchCourses();
+      } catch (err) {
+        message.error("Failed to add course");
+      }
+    };
+
+  /* ------------------------------------------------------------------ */
   /* helper_create data format                                          */
   /* ------------------------------------------------------------------ */
   const formatCreationDate = (dateArray?: number[]) => {
@@ -97,13 +131,14 @@ interface UserInfo{
   };
   
   /* ------------------------------------------------------------------
-     LOAD Reported, Blocked USER                                          
+     LOAD Courses | Reported, Blocked USER                                          
   ------------------------------------------------------------------ */
   useEffect(() => {
     (async () => {
       try {
         const reports = await adminService.getReportedUsers();
         const blocks = await adminService.getBlockedUsers();
+        const courseList = await courseService.getCourses();
 
         const reportsWithNames = await Promise.all(reports.map(async (report) => ({
           ...report,
@@ -119,6 +154,7 @@ interface UserInfo{
   
         setReportedUsers(reportsWithNames);
         setBlockedUsers(blocksWithNames);
+        setCourses(courseList);
 
       } catch (err) {
         console.error("Failed to load reported users:", err);
@@ -265,30 +301,80 @@ interface UserInfo{
                   <LogoutOutlined />
                 </button>
         </div>
-  
-        <div style = {{ width: "80%", margin: "0 auto" }} className="adminTableWrapper">
-          <Title level={4} style={{ color: "#000" }}>Reported Users</Title>
-          <Table
-            columns={reportColumns}
-            dataSource={reportedUsers}
-            rowKey="id"
-            pagination={false}
-            loading={isLoading}
-            rowClassName={() => styles.adminTableRow}
-            />
-          </div>
-  
-        <div style = {{ width: "80%", margin: "0 auto" }} className="adminTableWrapper">
-          <Title level={4} style={{ marginTop: 48, color: "#000" }}>Blocked Users</Title>
-          <Table
-            columns={blockColumns}
-            dataSource={blockedUsers}
-            rowKey={(row) => `${row.blockerId}-${row.blockedUserId}`}
-            pagination={false}
-            rowClassName={() => styles.adminTableRow}
-          />
-        </div>
-  
+
+      <div style={{ width: "80%", margin: "0 auto" }}>
+        {/* --- Tab Component --- */}
+        <Tabs
+        defaultActiveKey="courses"
+        type="card" 
+        tabBarStyle={{ fontWeight: 600, fontSize: 16 }} 
+        items={[
+          {
+            key: 'courses',
+            label: 'Courses',
+            children: (
+              <div style={{ marginTop: 24 }} className="admin-tab-content">
+                  <div style={{ width: "80%", margin: "0 auto", marginBottom: 48 }} className="adminTableWrapper">
+                  {/* <div style={{ width: "80%", marginLeft: "40px", marginBottom: 48 }} className="adminTableWrapper"> */}
+                  <Title level={4} style={{ color: "#000" }}>Course Management</Title>
+
+                  <Form layout="inline" form={form} onFinish={({ courseName }) => handleAddCourse(courseName)} style={{ marginBottom: 20 }}>
+                    <Form.Item name="courseName" rules={[{ required: true, message: 'Course name required' }]}>
+                      <Input placeholder="Course Name" />
+                    </Form.Item>
+                    <Form.Item>
+                      <Button htmlType="submit" type="primary">Add Course</Button>
+                    </Form.Item>
+                  </Form>
+
+                  <Table
+                    columns={[
+                      { title: "ID", dataIndex: "id", key: "id" },
+                      { title: "Name", dataIndex: "courseName", key: "courseName" },
+                    ]}
+                    dataSource={courses}
+                    rowKey="id"
+                    pagination={false}
+                    rowClassName={() => styles.adminTableRow}
+                  />
+                </div>
+              </div>
+            )
+          },
+          {
+            key: 'User Management',
+            label: 'User Management',
+            children: (
+              <div style={{ marginTop: 24 }} className="admin-tab-content">
+                <div style = {{ width: "80%", margin: "0 auto" }} className="adminTableWrapper">
+                  <Title level={4} style={{ color: "#000" }}>Reported Users</Title>
+                  <Table
+                    columns={reportColumns}
+                    dataSource={reportedUsers}
+                    rowKey="id"
+                    pagination={false}
+                    loading={isLoading}
+                    rowClassName={() => styles.adminTableRow}
+                    />
+                  </div>
+          
+                <div style = {{ width: "80%", margin: "0 auto" }} className="adminTableWrapper">
+                  <Title level={4} style={{ marginTop: 48, color: "#000" }}>Blocked Users</Title>
+                  <Table
+                    columns={blockColumns}
+                    dataSource={blockedUsers}
+                    rowKey={(row) => `${row.blockerId}-${row.blockedUserId}`}
+                    pagination={false}
+                    rowClassName={() => styles.adminTableRow}
+                  />
+                </div>
+              </div>
+            )
+          }
+        ]}
+      /> 
+      </div>       
+
         <Modal
           title={<span style={{ fontSize: "22px", fontWeight: "bold", color: "#000" }}>
             {selectedProfileRole} User Profile</span>}
