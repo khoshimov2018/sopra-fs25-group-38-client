@@ -1,5 +1,6 @@
 'use client';
 
+require('dotenv').config();
 import React, { useEffect, useState, useRef } from "react";
 import {useRouter} from "next/navigation";
 import { UserOutlined, MessageOutlined, LogoutOutlined } from "@ant-design/icons";
@@ -15,7 +16,7 @@ import "../styles/chat.css";
 import styles from "@/styles/main.module.css";
 import backgroundStyles from "@/styles/theme/backgrounds.module.css";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { marked } from "marked"; // 导入 marked 库
+import { marked } from "marked"; 
 
 const getUserItemClass = (userId: number, existingUsers: number[], selectedUsers: number[]): string => {
   if (existingUsers.includes(userId)) {
@@ -112,23 +113,23 @@ const ChatPage: React.FC = () => {
   const [otherMessages] = useState<{ id: number; text: string; sender: string; timeStamp: number; avatar: string| null}[]>([]);
   const [channels, setChannels] = useState<{ channelId: number; channelName: string; supportingText?: string; channelType:string; participants?: ChatParticipantGetDTO[]; channelProfileImage?: string }[]>([
     {
-      channelId: -1, // 特殊 ID 表示 AI Advisor
+      channelId: -1,
       channelName: "AI Advisor",
       supportingText: "Hello! How can I assist you?",
       channelType:'individual'
     }
   ]);
-  const [isMessagesLoading] = useState(false); // 控制消息加载状态
-  const [isBlockPanelVisible, setIsBlockPanelVisible] = useState(false); // 控制 Block Panel 显示
-  const [isReportPanelVisible, setIsReportPanelVisible] = useState(false); // 控制 Report Panel 显示
-  const [selectedParticipant, setSelectedParticipant] = useState<number | null>(null); // 当前选中的对方用户 ID
-  const [reportReason, setReportReason] = useState<string>(""); // 存储用户输入的举报理由
+  const [isMessagesLoading] = useState(false); 
+  const [isBlockPanelVisible, setIsBlockPanelVisible] = useState(false); 
+  const [isReportPanelVisible, setIsReportPanelVisible] = useState(false); 
+  const [selectedParticipant, setSelectedParticipant] = useState<number | null>(null);
+  const [reportReason, setReportReason] = useState<string>(""); 
   const [channelMessages, setChannelMessages] = useState<Record<string, { id: number; text: string; sender: string; timeStamp: number; avatar: string | null }[]>>({});
   const [inputValue, setInputValue] = useState("");
   const apiService = new ApiService();
   const apiService_token = useApi();
   const [selectedChannel, setSelectedChannel] = useState<string | null>(null);  // Track selected chat
-  const Your_API_Key = process.env.GOOGLE_API_KEY || ""
+  const Your_API_Key = process.env.NEXT_PUBLIC_GOOGLE_API_KEY || ""
   const genAI = new GoogleGenerativeAI(Your_API_Key);
   const aiAvatar = "/AI-Icon.svg";  // 你可以使用本地或外部的头像路径
   const defaultGroupicon = '/Group_icon.svg';
@@ -553,15 +554,13 @@ const ChatPage: React.FC = () => {
       avatar: currentUserImage,
     };
   
-    // 清空输入框
     if (!quickReplyMessage) {
       setInputValue("");
     }
-  
-    // 如果是 AI Advisor 的会话
+
     if (selectedChannel === "AI Advisor") {
       try {
-        setIsLoading(true); // 开始加载
+        setIsLoading(true); 
         const prompt = customPrompt || `
           You are a professional study advisor with a PhD in diverse fields. Please answer in an academic way and briefly. Your answer should be less than 100 words.
           The conversation so far:
@@ -569,7 +568,8 @@ const ChatPage: React.FC = () => {
             .map((msg) => `${msg.sender}: ${msg.text}`)
             .join("\n")}
           AI Advisor:`;
-  
+        
+        console.log('My genAI API is:', process.env.GOOGLE_API_KEY);
         const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
         const result = await model.generateContent(prompt);
         const response = await result.response;
@@ -587,19 +587,19 @@ const ChatPage: React.FC = () => {
           ...prevMessages,
           [selectedChannel]: [
             ...(prevMessages[selectedChannel] || []),
-            userMessage, // 添加用户消息
-            aiMessage, // 添加 AI 回复
+            userMessage, 
+            aiMessage,
           ],
         }));
       } catch (error) {
         console.error("AI Advisor message generation failed:", error);
       } finally {
-        setIsLoading(false); // 加载完成
+        setIsLoading(false);
       }
       return;
     }
   
-    // 非 AI Advisor 的会话逻辑
+    // For channels which are not AI advisor
     const currentChannel = channels.find((channel) => String(channel.channelId) === String(selectedChannel));
     if (!currentChannel) {
       console.error("Channel not found!");
@@ -677,7 +677,7 @@ const ChatPage: React.FC = () => {
 
 const getAvatarSrc = (sender: string, selectedChannel: string | null, channels: { channelId: number; channelName: string; supportingText?: string; channelType: string; participants?: ChatParticipantGetDTO[]; channelProfileImage?: string }[], aiAvatar: string, defaulindividualicon: string): string => {
     if (sender === "AI Advisor") {
-      return aiAvatar; // AI Advisor uses a fixed avatar
+      return aiAvatar;
     }
 
     // For regular users, get avatar from the participants list
@@ -780,11 +780,11 @@ const handleQuickReplySuggestion = () => {
           </div>
 
           <div className="chat-container">
-            {/* 左侧消息列表 */}
+            {/* Messages list in the left */}
             <div className="message-list-container">
               <div className="message-list-header">Matched Users</div>
               <div className="message-list">
-                {/* AI Advisor 始终置顶 */}
+                {/* AI Advisor is always at the top */}
                 <button 
                   className="message-item" 
                   onClick={() => handleSelectChat("AI Advisor")}
@@ -803,7 +803,7 @@ const handleQuickReplySuggestion = () => {
                   </div>
                 </button>
 
-                {/* 渲染匹配用户 */}
+                {/* for all matched users */}
                 {channels
                   .filter((user) => user.channelId !== -1)
                   .map((user) => (
@@ -828,34 +828,66 @@ const handleQuickReplySuggestion = () => {
               </div>
             </div>
 
-            {/* 右侧聊天页面 */}
+            {/* For Chat Contents */}
             <div className="chat-page">
-                {/* 动态显示对方的用户名 */}
+                {/* Displaying usernames */}
                 <div className="chat-header">
-                {getChannelHeaderText(selectedChannel, typingStatus, channels)}
+                  <div
+                    className={`header-text ${selectedChannel && selectedChannel !== "AI Advisor" ? "clickable" : ""}`}
+                    role={selectedChannel && selectedChannel !== "AI Advisor" ? "button" : undefined}
+                    tabIndex={selectedChannel && selectedChannel !== "AI Advisor" ? 0 : undefined}
+                    onClick={() => {
+                      if (selectedChannel && selectedChannel !== "AI Advisor") {
+                        const currentChannel = channels.find(
+                          (channel) => String(channel.channelId) === String(selectedChannel)
+                        );
+                        const participant = currentChannel?.participants?.find(
+                          (p) => String(p.userId) !== String(parsedUserId)
+                        );
+                        if (participant) {
+                          router.push(`/profile?userId=${participant.userId}`);
+                        }
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && selectedChannel && selectedChannel !== "AI Advisor") {
+                        const currentChannel = channels.find(
+                          (channel) => String(channel.channelId) === String(selectedChannel)
+                        );
+                        const participant = currentChannel?.participants?.find(
+                          (p) => String(p.userId) !== String(parsedUserId)
+                        );
+                        if (participant) {
+                          router.push(`/profile?userId=${participant.userId}`);
+                        }
+                      }
+                    }}
+                  >
+                    {getChannelHeaderText(selectedChannel, typingStatus, channels)}
+                  </div>
                   <div className="chat-header-actions">
                     {channels.find(
                       (channel) => String(channel.channelId) === String(selectedChannel)
                     ) && (
                       <>
-                        {/* Individual 类型的频道 */}
+                        {/* Individual Channels */}
                         {channels.find((channel) => String(channel.channelId) === String(selectedChannel))?.channelType === "individual" && (
                           <>
-                            {/* 删除聊天按钮 */}
+                            {/* Deleting Channels */}
                             <button
                               className="icon-button"
-                              onClick={handleBlock} // 点击时调用 handleBlock
+                              onClick={handleBlock}
                             >
                               <div className="icon icon-clear"></div>
                             </button>
 
-                            {/* 创建群聊按钮 */}
+                            {/* Creating Groups */}
                             <button
                               className="icon-button"
                               onClick={() => {
                                 setGroupModalMode("create");
-                                setSelectedUsers([]); // 清空选中用户
-                                setIsGroupModalVisible(true); // 打开创建群聊浮窗
+                                setSelectedUsers([]);
+                                setIsGroupModalVisible(true); 
                               }}
                             >
                               <div className="icon icon-makingGroup"></div>
@@ -863,10 +895,10 @@ const handleQuickReplySuggestion = () => {
                           </>
                         )}
 
-                        {/* Group 类型的频道 */}
+                        {/* Group Channels */}
                         {channels.find((channel) => String(channel.channelId) === String(selectedChannel))?.channelType === "group" && (
                           <>
-                            {/* 更新群聊按钮 */}
+                            {/* Updating Groups */}
                             <button
                               className="icon-button"
                               onClick={() => {
@@ -879,11 +911,10 @@ const handleQuickReplySuggestion = () => {
                                   return;
                                 }
 
-                                // 更新群聊逻辑
                                 setGroupModalMode("update");
                                 const existingUserIds = currentChannel.participants?.map((p) => p.userId) ?? [];
-                                setSelectedUsers(existingUserIds); // 设置已有用户为选中态
-                                setIsGroupModalVisible(true); // 打开更新群聊浮窗
+                                setSelectedUsers(existingUserIds);
+                                setIsGroupModalVisible(true); 
                               }}
                             >
                               <div className="icon icon-makingGroup"></div>
@@ -895,7 +926,6 @@ const handleQuickReplySuggestion = () => {
                   </div>
                 </div>
                 <div className="chat-content">
-                {/* AI Advisor 默认消息 */}
                 {selectedChannel === "AI Advisor" && aiAvatar && (
                   <div key={defaultAIMessage.id} className="chat-message">
                     <img className="avatar" src={aiAvatar} alt="" />
@@ -910,17 +940,26 @@ const handleQuickReplySuggestion = () => {
                     </div>
                   ) : (
                     <>
-                      {/* 渲染所有消息 */}
+                      {/* Displaying all messages */}
                       {[...(selectedChannel ? channelMessages[selectedChannel] || [] : [])]
-                        .sort((a, b) => a.timeStamp - b.timeStamp) // 按时间戳排序
+                        .sort((a, b) => a.timeStamp - b.timeStamp) 
                         .map((message) => (
                           <div key={message.id} className={`chat-message ${message.sender === String(parsedUserId) ? "you" : ""}`}>
                             {message.sender !== String(parsedUserId) && (
                               <button
-                                className="avatar-button"
-                                onClick={() => router.push(`/profile?userId=${message.sender}`)}
-                                onKeyDown={(e) => e.key === 'Enter' && router.push(`/profile?userId=${message.sender}`)}
+                                className={`avatar-button ${selectedChannel === "AI Advisor" ? "disabled" : ""}`}
+                                onClick={() => {
+                                  if (selectedChannel !== "AI Advisor") {
+                                    router.push(`/profile?userId=${message.sender}`);
+                                  }
+                                }}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' && selectedChannel !== "AI Advisor") {
+                                    router.push(`/profile?userId=${message.sender}`);
+                                  }
+                                }}
                                 aria-label="View profile"
+                                disabled={selectedChannel === "AI Advisor"}
                               >
                                 <img
                                   className="avatar"

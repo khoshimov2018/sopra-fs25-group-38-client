@@ -108,6 +108,10 @@
   }
   
   .message-item {
+    all:unset;
+    align-items: flex-start;
+    width: 100%;
+    text-align: left;
     display: flex;
     align-items: center;
     padding: 12px;
@@ -167,13 +171,40 @@
     display: flex;
     border-bottom: 1px solid #e0d7f3;
   }
-  
+
     /* Chat Header Actions */
   .chat-header-actions {
     display: flex;
     gap: 12px; /* 按钮之间的间距 */
     margin-left: auto; /* 将按钮组推到右侧 */
     align-items: center;
+  }
+
+  .header-text {
+    display: inline-block;
+    cursor: default;
+    color: inherit;
+    padding: 4px 6px;
+    border-radius: 6px;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+  
+  .header-text.clickable {
+    cursor: pointer;
+    color: black;
+    background: linear-gradient(90deg, #fff0f5 0%, #ffe4e9 100%);
+    transition: background 0.3s ease, color 0.2s ease;
+  }
+  
+  .header-text.clickable:hover {
+    background-color: #e0ecff; 
+    text-decoration: none;   
+    color: #2752b0;
+  }
+  
+  .header-text[role="button"]:focus {
+    outline: 2px solid #3b82f6;
+    border-radius: 6px;
   }
 
   /* Icon Button */
@@ -330,6 +361,18 @@
     height: 40px;
     background: #eaddff;
     border-radius: 50%;
+    object-fit: cover; 
+    display: block; 
+  }
+  
+  .avatar-button {
+    all: unset;
+    cursor: pointer;
+  }
+  
+  .avatar-button.disabled {
+    pointer-events: none;
+    cursor: default; 
   }
   
   .chat-message .message-bubble {
