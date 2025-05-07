@@ -103,7 +103,8 @@
   
   .message-list {
     flex-grow: 1;
-    overflow-y: auto; /* 支持滚动 */
+    overflow-y: auto;
+    overflow-x: hidden;
     padding: 16px;
   }
   
@@ -120,6 +121,7 @@
     border-radius: 8px;
     cursor: pointer;
     transition: background 0.3s;
+    box-sizing: border-box;
   }
   
   .message-item:hover {

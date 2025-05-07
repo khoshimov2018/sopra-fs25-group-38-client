@@ -16,7 +16,7 @@ import "../styles/chat.css";
 import styles from "@/styles/main.module.css";
 import backgroundStyles from "@/styles/theme/backgrounds.module.css";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { marked } from "marked"; 
+import { marked } from "marked";
 
 const getUserItemClass = (userId: number, existingUsers: number[], selectedUsers: number[]): string => {
   if (existingUsers.includes(userId)) {
@@ -119,11 +119,11 @@ const ChatPage: React.FC = () => {
       channelType:'individual'
     }
   ]);
-  const [isMessagesLoading] = useState(false); 
-  const [isBlockPanelVisible, setIsBlockPanelVisible] = useState(false); 
-  const [isReportPanelVisible, setIsReportPanelVisible] = useState(false); 
+  const [isMessagesLoading] = useState(false);
+  const [isBlockPanelVisible, setIsBlockPanelVisible] = useState(false);
+  const [isReportPanelVisible, setIsReportPanelVisible] = useState(false);
   const [selectedParticipant, setSelectedParticipant] = useState<number | null>(null);
-  const [reportReason, setReportReason] = useState<string>(""); 
+  const [reportReason, setReportReason] = useState<string>("");
   const [channelMessages, setChannelMessages] = useState<Record<string, { id: number; text: string; sender: string; timeStamp: number; avatar: string | null }[]>>({});
   const [inputValue, setInputValue] = useState("");
   const apiService = new ApiService();
@@ -133,22 +133,21 @@ const ChatPage: React.FC = () => {
   const genAI = new GoogleGenerativeAI(Your_API_Key);
   const aiAvatar = "/AI-Icon.svg";  // 你可以使用本地或外部的头像路径
   const defaultGroupicon = '/Group_icon.svg';
-  const defaulindividualicon = '/defaultIndividualIcon.svg'; 
-  const [isGroupModalVisible, setIsGroupModalVisible] = useState(false); // 控制浮层显示
-  const [selectedUsers, setSelectedUsers] = useState<number[]>([]); // 存储选中的用户 ID
-  const [typingStatus, setTypingStatus] = useState(false); // 存储对方的 typing 状态
-  const [groupModalMode, setGroupModalMode] = useState<"create" | "update">("create"); // 区分创建和更新模式
+  const defaulindividualicon = '/defaultIndividualIcon.svg';
+  const [isGroupModalVisible, setIsGroupModalVisible] = useState(false);
+  const [selectedUsers, setSelectedUsers] = useState<number[]>([]);
+  const [typingStatus, setTypingStatus] = useState(false);
+  const [groupModalMode, setGroupModalMode] = useState<"create" | "update">("create");
 
   // Used for scrolling to the latest message.
   const messagesEndRef = useRef<HTMLDivElement | null >(null);
-  const [parsedUserId, setParsedUserId] = useState<number | undefined>(undefined); // 存储解析后的 userId
+  const [parsedUserId, setParsedUserId] = useState<number | undefined>(undefined);
   const [currentUserImage, setCurrentUserImage] = useState<string | null>(null);
   const { message, contextHolder } = useMessage();
-  const [isLoading, setIsLoading] = useState(false); // 控制加载状态
-  const router = useRouter(); // 用于页面跳转
+  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
   const { value: token, clear: clearToken } = useLocalStorage<string>("token", "");
-
-  // 定义 ChatParticipantGetDTO 类型
+  const [userStatus, setUserStatus] = useState<string>("OFFLINE");
   interface ChatParticipantGetDTO {
     userId: number;
     userName: string;
@@ -156,7 +155,6 @@ const ChatPage: React.FC = () => {
     role: string;
   }
 
-  // 定义 ChatChannelGetDTO 类型
   interface ChatChannelGetDTO {
     channelId: number;
     channelName: string;
@@ -319,13 +317,15 @@ const ChatPage: React.FC = () => {
   const fetchTypingStatus = async (userId: number) => {
     if (!userId) return;
     const url = `/chat/typing/${userId}`;
-    console.log(`Fetching typing status from URL: ${url}`); // 打印完整的 URL
+    console.log(`Fetching typing status from URL: ${url}`);
     try {
-      const response = await apiService.get<UserTypingStatusPushDTO>(url);
-      return response.typing;
+      const response = await apiService.get<{ typing: boolean; userId: number; userStatus: string }>(url);
+      setTypingStatus(response.typing ?? false);
+      setUserStatus(response.userStatus ?? "OFFLINE");
+      return response;
     } catch (error) {
       console.error(`Failed to fetch typing status for user ${userId}:`, error);
-      return false; // 默认返回 false
+      return { typing: false, userId, userStatus: "OFFLINE" };
     }
   };
 
@@ -340,53 +340,85 @@ const ChatPage: React.FC = () => {
 
   const handleSubmitGroupModal = async (selectedUsers: number[], channelName?: string) => {
     if (groupModalMode === "create") {
-      // 创建群聊逻辑
       if (selectedUsers.length === 0) {
         message.error("Please select at least one user!");
         return;
       }
-
+  
       const channelData = {
         channelName: channelName || "New Group",
         channelType: "group",
         participantIds: [parsedUserId, ...selectedUsers],
-        channelProfileImage: defaultGroupicon, // 默认群聊头像
+        channelProfileImage: defaultGroupicon,
       };
-
+  
       try {
         const response = await apiService.post("/chat/channels", channelData);
         message.success("Your group is made successfully!");
         setIsGroupModalVisible(false);
         setSelectedUsers([]);
-        console.log("创建的群聊信息：", response);
-      } catch (error) {
-        console.error("创建群聊失败：", error);
+        console.log("Creating Group Messages：", response);
+        if (parsedUserId) {
+          fetchMatchedUsers(parsedUserId);
+        }
+    } catch (error) {
+        console.error("Failed in creating a group", error);
         message.error("Failed creating a group, please try again later.");
       }
     } else if (groupModalMode === "update") {
-      // 更新群聊逻辑
       const currentChannel = channels.find(
         (channel) => String(channel.channelId) === String(selectedChannel)
       );
-
+  
       if (!currentChannel || currentChannel.channelType !== "group") {
         console.error("Selected channel is not a group or does not exist.");
         return;
       }
-
+  
       const channelId = currentChannel.channelId;
-
+  
       const channelData = {
         channelName: currentChannel.channelName,
         channelType: "group",
-        participantIds: [parsedUserId, ...selectedUsers], // 确保当前用户也在 participants 中
+        participantIds: [parsedUserId, ...selectedUsers], // To make sure that currently logged in user is selected
       };
-
+  
       try {
         await apiService.put(`/chat/channels/${channelId}`, channelData);
         message.success("Group updated successfully!");
+  
+        const messageText = "Let's welcome our new members!";
+        const messagePostDTO = {
+          senderId: parsedUserId,
+          context: messageText,
+        };
+  
+        const response = await apiService.post<MessageGetDTO>(
+          `/chat/${channelId}/message`,
+          messagePostDTO
+        );
+  
+        const serverMessage = {
+          id: Number(response.messageId),
+          text: String(response.context),
+          sender: String(response.senderId),
+          timeStamp: new Date(String(response.timestamp)).getTime(),
+          avatar: response.senderProfileImage ? String(response.senderProfileImage) : defaulindividualicon,
+        };
+  
+        setChannelMessages((prevMessages) => ({
+          ...prevMessages,
+          [String(channelId)]: [
+            ...(prevMessages[String(channelId)] || []),
+            serverMessage,
+          ],
+        }));
+  
         setIsGroupModalVisible(false);
         setSelectedUsers([]);
+        if (parsedUserId) {
+          fetchMatchedUsers(parsedUserId);
+        }
       } catch (error) {
         console.error("Failed to update group:", error);
         message.error("Failed to update group, please try again later.");
@@ -406,29 +438,27 @@ const ChatPage: React.FC = () => {
             ? `Last message at ${new Date(channel.updatedAt).toLocaleString()}`
             : "No messages yet";
 
-          // 处理 participants，移除当前用户
           const participants = channel.participants.filter((p) => p.userId !== userid);
 
-          // 设置头像逻辑
         const channelProfileImage =
           channel.channelType === "individual" && participants.length > 0
-            ? participants[0].userProfileImage // 对方用户的头像
-            : defaultGroupicon; // 默认群聊头像
+            ? participants[0].userProfileImage
+            : defaultGroupicon;
 
         
           return {
-            channelId: channel.channelId, // 频道 ID
+            channelId: channel.channelId,
             channelName: channel.channelType === "individual" && participants.length > 0
-              ? participants[0].userName // 私聊时显示对方的名字
-              : channel.channelName, // 群聊时显示群聊名称
+              ? participants[0].userName
+              : channel.channelName,
             supportingText: latestMessage,
             channelType: channel.channelType,
-            participants, // 存储移除当前用户后的参与者列表
-            channelProfileImage, // Storing Channel icon
+            participants,
+            channelProfileImage,
           };
         });
         // Fixed bugs so that now only channles would be updated
-        setChannels(mappedData /* as { channelId: number; channelName: string; supportingText?: string; channelType: string; participants: ChatParticipantGetDTO[] } []*/);
+        setChannels(mappedData);
         console.log("Mapped matched users:", mappedData);
       } else {
         console.error("userId is undefined!");
@@ -441,7 +471,6 @@ const ChatPage: React.FC = () => {
   // Fetching messages for selected channel
   const fetchMessages = async (channelId: string) => {
     try {
-      // setIsMessagesLoading(true); // 开始加载消息
       const currentChannel = channels.find((channel) => String(channel.channelId) === channelId);
       if (!currentChannel) {
         console.error("Channel not found!");
@@ -467,14 +496,11 @@ const ChatPage: React.FC = () => {
   
       setChannelMessages((prevMessages) => ({
         ...prevMessages,
-        [String(channelId)]: mappedMessages, // 将消息存储到对应的频道
+        [String(channelId)]: mappedMessages,
       }));
     } catch (error) {
       console.error("Failed to fetch messages:", error);
-      } 
-    // finally {
-    //   setIsMessagesLoading(false); // 加载完成
-    // }
+      }
   };
 
   // Controlling fetching matched users
@@ -496,11 +522,10 @@ const ChatPage: React.FC = () => {
       fetchMessages(selectedChannel);
 
       interval = setInterval(() => {
-        fetchMessages(selectedChannel); // 每 200ms 调用一次 fetchMessages
+        fetchMessages(selectedChannel);
       }, 500);
     
     }
-      // 清除定时器
       return () => clearInterval(interval);
   }, [selectedChannel]);
 
@@ -525,12 +550,14 @@ const ChatPage: React.FC = () => {
   
       const participantId = participant.userId;
       
-      const isTyping = await fetchTypingStatus(participantId);
+      const isTyping_response = await fetchTypingStatus(participantId);
+      const isTyping = isTyping_response?.typing;
       setTypingStatus(isTyping ?? false);
-      console.log("Now you are choosing", selectedChannel);
+      console.log("Typing API returns:", isTyping);
 
       intervalId = setInterval(async () => {
-        const isTyping = await fetchTypingStatus(participantId);
+        const isTyping_response = await fetchTypingStatus(participantId);
+        const isTyping = isTyping_response?.typing;
         setTypingStatus(isTyping ?? false);
       }, 1000);
     };
@@ -540,7 +567,6 @@ const ChatPage: React.FC = () => {
       clearInterval(intervalId);
     };
   }, [selectedChannel]);
- 
 
   const handleSendMessage = async (customPrompt?: string, quickReplyMessage?: string) => {
     const messageText = quickReplyMessage || inputValue.trim();
@@ -549,7 +575,7 @@ const ChatPage: React.FC = () => {
     const userMessage = {
       id: Date.now(),
       text: messageText,
-      sender: String(parsedUserId), // 使用 parsedUserId 作为 sender
+      sender: String(parsedUserId),
       timeStamp: Date.now(),
       avatar: currentUserImage,
     };
@@ -614,9 +640,8 @@ const ChatPage: React.FC = () => {
         context: messageText,
       };
   
-      // 发送消息到服务端
       const response = await apiService.post<MessageGetDTO>(
-        `/chat/${channelId}/message`, // 使用 channelId
+        `/chat/${channelId}/message`,
         messagePostDTO
       );
   
@@ -630,16 +655,15 @@ const ChatPage: React.FC = () => {
         avatar: data.senderProfileImage ? String(data.senderProfileImage) : defaulindividualicon,
       };
   
-      // 将服务端返回的消息添加到当前频道的消息列表中
       setChannelMessages((prevMessages) => ({
         ...prevMessages,
         [String(channelId)]: [
           ...(prevMessages[String(channelId)] || []),
-          serverMessage, // 添加服务器返回的消息
+          serverMessage,
         ],
       }));
     } catch (error) {
-      console.error("消息发送失败：", error);
+      console.error("Failed in sending this message", error);
   
       const errorMessage = {
         id: Date.now(),
@@ -653,15 +677,15 @@ const ChatPage: React.FC = () => {
         ...prevMessages,
         [String(channelId)]: [
           ...(prevMessages[String(channelId)] || []),
-          errorMessage, // 添加错误消息
+          errorMessage,
         ],
       }));
     }
   };
 
-  // 渲染 Markdown 内容到页面
+
   const renderMarkdown = (markdownText: string) => {
-    const htmlContent = marked(markdownText, { async: false }); // 将Markdown转成HTML
+    const htmlContent = marked(markdownText, { async: false });
     return <div dangerouslySetInnerHTML={{ __html: htmlContent }} />;
   };
 
@@ -864,6 +888,11 @@ const handleQuickReplySuggestion = () => {
                     }}
                   >
                     {getChannelHeaderText(selectedChannel, typingStatus, channels)}
+                      {selectedChannel && selectedChannel !== "AI Advisor" && channels.find((channel) => String(channel.channelId) === String(selectedChannel))?.channelType === "individual" && (
+                        <span style={{ marginLeft: "10px", color: userStatus === "ONLINE" ? "green" : "red" }}>
+                        {userStatus === "ONLINE" ? "Online" : "Offline"}
+                        </span>
+                      )}
                   </div>
                   <div className="chat-header-actions">
                     {channels.find(
@@ -994,16 +1023,16 @@ const handleQuickReplySuggestion = () => {
                       onChange={(e) => setInputValue(e.target.value)}
                       onFocus={() => {
                         if (selectedChannel !== "AI Advisor") {
-                          handleTypingStatus(true); // 用户开始输入时
+                          handleTypingStatus(true); 
                         }
                       }}
                       onBlur={() => {
                         if (selectedChannel !== "AI Advisor") {
-                          handleTypingStatus(false); // 用户离开输入框时, 调试用
+                          handleTypingStatus(false);
                         }
                       }}
                     />
-                    {/* Quick Reply 按钮容器 */}
+                    {/* Quick Reply */}
                     {selectedChannel === "AI Advisor" && (
                       <div className="quick-reply-container">
                         <button
