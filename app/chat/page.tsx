@@ -17,6 +17,7 @@ import styles from "@/styles/main.module.css";
 import backgroundStyles from "@/styles/theme/backgrounds.module.css";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { marked } from "marked";
+import { getApiDomain } from "@/utils/domain";
 
 const getUserItemClass = (userId: number, existingUsers: number[], selectedUsers: number[]): string => {
   if (existingUsers.includes(userId)) {
@@ -753,7 +754,16 @@ const handleQuickReplySuggestion = () => {
   };
 
   const actualLogout = async () => {
+    const token = localStorage.getItem("token");
     try {
+      if (token) {
+        await fetch(`${getApiDomain()}/users/logout`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+      }
       message.success("Logging out...");
       localStorage.removeItem("token");
       clearToken();

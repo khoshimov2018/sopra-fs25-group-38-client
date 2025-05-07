@@ -23,6 +23,7 @@ import styles from "@/styles/main.module.css";
 import backgroundStyles from "@/styles/theme/backgrounds.module.css";
 import Button from "@/components/Button";
 import FilterModal from "@/components/FilterModal";
+import { getApiDomain } from "@/utils/domain";
 
 interface UserProfile extends User {
   studyStyle?: string;
@@ -313,10 +314,18 @@ const MainPage: React.FC = () => {
                 </button>
                 <button
                   className={styles.iconButton}
-                  onClick={() => {
+                  onClick={async () => {
                     localStorage.removeItem("token");
                     clearToken();
                     router.push("/login");
+                    if (token) {
+                      await fetch(`${getApiDomain()}/users/logout`, {
+                        method: "POST",
+                        headers: {
+                          Authorization: `Bearer ${token}`,
+                        },
+                      });
+                    }
                   }}
                 >
                   <LogoutOutlined />
