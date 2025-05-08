@@ -24,6 +24,82 @@ const InfoModal: React.FC<InfoModalProps> = ({
   }, []);
   const getContent = () => {
     switch(pageName) {
+      case 'profile':
+        return (
+          <>
+            <Title level={4}>Profile Management</Title>
+            <Paragraph>
+              Welcome to your profile page where you can customize how you present yourself to potential study partners.
+            </Paragraph>
+            
+            <Divider />
+            
+            <Title level={5}>Profile Information</Title>
+            <ul>
+              <li>
+                <Text strong>Personal Details:</Text>
+                <Text> Update your name, profile picture, and bio to tell others about yourself.</Text>
+              </li>
+              <li>
+                <Text strong>Study Level:</Text>
+                <Text> Indicate your overall academic level to help find appropriate matches.</Text>
+              </li>
+              <li>
+                <Text strong>Study Goals:</Text>
+                <Text> Add tags representing what you hope to achieve with a study partner.</Text>
+              </li>
+              <li>
+                <Text strong>Availability:</Text>
+                <Text> Set your preferred study time (morning, afternoon, or evening).</Text>
+              </li>
+              <li>
+                <Text strong>Courses:</Text>
+                <Text> Add the courses you're studying and indicate your knowledge level for each.</Text>
+              </li>
+            </ul>
+            
+            <Divider />
+            
+            <Title level={5}>Editing Your Profile</Title>
+            <ul>
+              <li>
+                <Text strong>Edit Mode:</Text>
+                <Text> Click the "Edit Profile" button to make changes to your information.</Text>
+              </li>
+              <li>
+                <Text strong>Profile Picture:</Text>
+                <Text> Upload a new profile image by clicking on your current picture.</Text>
+              </li>
+              <li>
+                <Text strong>Adding Courses:</Text>
+                <Text> Click "Add Course" to include more subjects you're studying.</Text>
+              </li>
+              <li>
+                <Text strong>Adding Goals:</Text>
+                <Text> Click "Add Goal" to include additional study objectives.</Text>
+              </li>
+              <li>
+                <Text strong>Save Changes:</Text>
+                <Text> After editing, click "Save Profile" to update your information.</Text>
+              </li>
+            </ul>
+            
+            <Divider />
+            
+            <Title level={5}>Account Management</Title>
+            <ul>
+              <li>
+                <Text strong>View Others' Profiles:</Text>
+                <Text> When viewing another user's profile, you'll see their information but can't edit it.</Text>
+              </li>
+              <li>
+                <Text strong>Delete Account:</Text>
+                <Text> The "Delete Account" button permanently removes your account and all associated data.</Text>
+              </li>
+            </ul>
+          </>
+        );
+
       case 'main':
         return (
           <>
