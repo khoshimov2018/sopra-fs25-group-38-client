@@ -190,4 +190,10 @@ From Zhidian: Sorry for the inconvenience. For the commit after the email, I hav
 | **[@RomanticSilence]** | [08/05/2025]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-client/commit/df6181f91c17590d7f9c6afb321241dd24e33682, https://github.com/khoshimov2018/sopra-fs25-group-38-client/commit/a7a59c794e8bf848ce6f7701661d77e80ecec82c] | [Add information button to the chat page] | [essential for guide user for the first time usage of chat system] |
 |                    | [08/05/2025]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-server/commit/7be545f35140f1d20831aa8d2b17cefd3cce9b8b] | [ReadMe file in the backend] | [Essential for the others to understand how this work and what can be improved] |
 
+| **[@Kai3421]** | [08/05/2025]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-client/commit/015499f2e2ba2b61dc62b0b0e50dc273d9529e18] | [created foundation of the info button and added to main page, also fixed hydration warning] | [essential for users that have never used the application] |
+[08/05/2025]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-client/commit/957c9afe6ecd19bead6fe6d3cb6e84b750c9c3a8] | [changed the README to include our technologies used, high-level components and how to launch and deploy] | [essential for understanding the application] |
+[08/05/2025]   | [https://github.com/khoshimov2018/sopra-fs25-group-38-client/commit/469ec4f55c09a7ff7333cdc558d737a71fc2a9de] | [hydration issue due to browser extensions - since its just a warning that happens on some browsers nothing to fix] | [essential to not get the hydration warning since no impact] |
+
+
+
 _Continue with the same table format as above._
