@@ -1,9 +1,8 @@
 'use client';
 
-require('dotenv').config();
 import React, { useEffect, useState, useRef } from "react";
 import {useRouter} from "next/navigation";
-import { UserOutlined, MessageOutlined, LogoutOutlined } from "@ant-design/icons";
+import { UserOutlined, MessageOutlined, LogoutOutlined, InfoCircleOutlined } from "@ant-design/icons";
 import NotificationBell from "@/components/NotificationBell";
 import { useMessage } from "@/hooks/useMessage";
 import useLocalStorage from "@/hooks/useLocalStorage";
@@ -18,7 +17,7 @@ import backgroundStyles from "@/styles/theme/backgrounds.module.css";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { marked } from "marked";
 import { getApiDomain } from "@/utils/domain";
-import HelpButton from "@/components/HelpButton";
+import InfoModal from "@/components/InfoModal";
 
 
 const getUserItemClass = (userId: number, existingUsers: number[], selectedUsers: number[]): string => {
@@ -119,7 +118,7 @@ const ChatPage: React.FC = () => {
       channelId: -1,
       channelName: "AI Advisor",
       supportingText: "Hello! How can I assist you?",
-      channelType:'individual'
+      channelType:'undefined'
     }
   ]);
   const [isMessagesLoading] = useState(false);
@@ -132,9 +131,13 @@ const ChatPage: React.FC = () => {
   const apiService = new ApiService();
   const apiService_token = useApi();
   const [selectedChannel, setSelectedChannel] = useState<string | null>(null);  // Track selected chat
-  const Your_API_Key = process.env.NEXT_PUBLIC_GOOGLE_API_KEY || ""
+  const [infoModalVisible, setInfoModalVisible] = useState(false);
+  const { value: hasSeenChatInfoModal, set: setHasSeenChatInfoModal } =
+    useLocalStorage<boolean>("hasSeenChatInfoModal", false);
+  // Using the Next.js public environment variable for the API key
+  const Your_API_Key = process.env.NEXT_PUBLIC_GOOGLE_API_KEY || "";
   const genAI = new GoogleGenerativeAI(Your_API_Key);
-  const aiAvatar = "/AI-Icon.svg";  // 你可以使用本地或外部的头像路径
+  const aiAvatar = "/AI-Icon.svg";
   const defaultGroupicon = '/Group_icon.svg';
   const defaulindividualicon = '/defaultIndividualIcon.svg';
   const [isGroupModalVisible, setIsGroupModalVisible] = useState(false);
@@ -161,7 +164,7 @@ const ChatPage: React.FC = () => {
   interface ChatChannelGetDTO {
     channelId: number;
     channelName: string;
-    channelType: 'individual' | 'group'; // 或者你可以直接使用字符串类型 'string'，不过使用具体的枚举值会更好
+    channelType: 'individual' | 'group';
     channelProfileImage: string;
     createdAt: string;
     updatedAt: string;
@@ -256,8 +259,8 @@ const ChatPage: React.FC = () => {
       return;
     }
   
-    setSelectedParticipant(participant.userId); // 设置对方用户 ID
-    setIsBlockPanelVisible(true); // 打开 Block Panel
+    setSelectedParticipant(participant.userId);
+    setIsBlockPanelVisible(true);
     console.log("I am trying to open the block panel",isBlockPanelVisible)
   };
 
@@ -288,8 +291,8 @@ const ChatPage: React.FC = () => {
   };
 
   const handleReport = () => {
-    setIsBlockPanelVisible(false); // 关闭 Block Panel
-    setIsReportPanelVisible(true); // 打开 Report Panel
+    setIsBlockPanelVisible(false);
+    setIsReportPanelVisible(true);
   };
 
   const handleSubmitReport = async () => {
@@ -434,9 +437,10 @@ const ChatPage: React.FC = () => {
       if (userid) {
         const response = await apiService.get<ChatChannelGetDTO[]>(`/chat/channels/user/${userid}`);
         console.log("Fetched chat channels:", response);
-        const data = response;
+        const data = response || [];
 
-        const mappedData = data.map((channel) => {
+        // Ensure data is an array before mapping
+        const mappedData = Array.isArray(data) ? data.map((channel) => {
           const latestMessage = channel.updatedAt
             ? `Last message at ${new Date(channel.updatedAt).toLocaleString()}`
             : "No messages yet";
@@ -459,9 +463,13 @@ const ChatPage: React.FC = () => {
             participants,
             channelProfileImage,
           };
+        }) : [];
+        // Fixed bugs so that now only channels would be updated
+        setChannels(prevChannels => {
+          // Always keep the AI Advisor channel
+          const aiAdvisorChannel = prevChannels.find(channel => channel.channelId === -1);
+          return [...(aiAdvisorChannel ? [aiAdvisorChannel] : []), ...mappedData];
         });
-        // Fixed bugs so that now only channles would be updated
-        setChannels(mappedData);
         console.log("Mapped matched users:", mappedData);
       } else {
         console.error("userId is undefined!");
@@ -598,7 +606,7 @@ const ChatPage: React.FC = () => {
             .join("\n")}
           AI Advisor:`;
         
-        console.log('My genAI API is:', process.env.GOOGLE_API_KEY);
+        // Initialize the model
         const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
         const result = await model.generateContent(prompt);
         const response = await result.response;
@@ -639,7 +647,7 @@ const ChatPage: React.FC = () => {
   
     try {
       const messagePostDTO = {
-        senderId: parsedUserId, // 当前用户 ID
+        senderId: parsedUserId,
         context: messageText,
       };
   
@@ -778,6 +786,17 @@ const handleQuickReplySuggestion = () => {
     }
   };
 
+  // Show info modal on first visit
+  useEffect(() => {
+    if (parsedUserId && !hasSeenChatInfoModal) {
+      setInfoModalVisible(true);
+      // Make sure this function exists
+      if (typeof setHasSeenChatInfoModal === 'function') {
+        setHasSeenChatInfoModal(true);
+      }
+    }
+  }, [parsedUserId, hasSeenChatInfoModal, setHasSeenChatInfoModal]);
+
   useEffect(() => {
     console.log("isBlockPanelVisible:", isBlockPanelVisible);
     console.log("isReportPanelVisible:", isReportPanelVisible);
@@ -800,13 +819,18 @@ const handleQuickReplySuggestion = () => {
                   <NotificationBell userId={Number(parsedUserId)} />
                 </button>
               )}
-              <HelpButton /> 
               <Link href="/profile">
                 <button className={styles.iconButton}><UserOutlined /></button>
               </Link>
               <Link href={`/chat`}>
                 <button className={styles.iconButton}><MessageOutlined /></button>
               </Link>
+              <button
+                className={styles.iconButton}
+                onClick={() => setInfoModalVisible(true)}
+              >
+                <InfoCircleOutlined />
+              </button>
               <button
                 className={styles.iconButton}
                 onClick={actualLogout}
@@ -822,8 +846,8 @@ const handleQuickReplySuggestion = () => {
               <div className="message-list-header">Matched Users</div>
               <div className="message-list">
                 {/* AI Advisor is always at the top */}
-                <button 
-                  className="message-item" 
+                <button
+                  className="message-item"
                   onClick={() => handleSelectChat("AI Advisor")}
                   onKeyDown={(e) => e.key === 'Enter' && handleSelectChat("AI Advisor")}
                 >
@@ -1017,7 +1041,6 @@ const handleQuickReplySuggestion = () => {
                     </>
                   )}
                 
-                {/* 加载指示器 */}
                 {isLoading && (
                   <div className="chat-loading">
                     <div className="spinner"></div>
@@ -1053,19 +1076,18 @@ const handleQuickReplySuggestion = () => {
                           onClick={handleQuickReplySuggestion}
                           onKeyDown={(e) => e.key === 'Enter' && handleQuickReplySuggestion()}
                         >
-                          Sugeestion
+                          Suggestion
                         </button>
                         <button
                           className="quick-reply-bubble"
                           onClick={handleQuickReplySchedule}
                           onKeyDown={(e) => e.key === 'Enter' && handleQuickReplySchedule()}
                         >
-                          Scheduler
+                          Scheduling
                         </button>
-                        {/* 如果需要更多按钮，可以继续添加 */}
                       </div>
                     )}
-                    <button 
+                    <button
                       className="send-button" 
                       onClick={() => handleSendMessage()} 
                       onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
@@ -1086,7 +1108,7 @@ const handleQuickReplySuggestion = () => {
                 groupModalMode === "update"
                   ? channels
                       .find((channel) => String(channel.channelId) === String(selectedChannel))
-                      ?.participants?.map((p) => p.userId) ?? [] // 获取当前群聊的 participants
+                      ?.participants?.map((p) => p.userId) ?? []
                   : []
               }
               allUsers={channels
@@ -1134,6 +1156,11 @@ const handleQuickReplySuggestion = () => {
             </div>
           )}
         </div>
+        <InfoModal
+          visible={infoModalVisible}
+          onClose={() => setInfoModalVisible(false)}
+          pageName="chat"
+        />
       </div>
     </App>
   );

@@ -10,7 +10,7 @@ import { ProfileKnowledgeLevel } from "@/types/dto";
 import Link from "next/link";
 import Logo from "@/components/Logo";
 import DeleteAccountModal from "@/components/DeleteAccountModal";
-import { UserOutlined, MessageOutlined, LogoutOutlined } from "@ant-design/icons";
+import { UserOutlined, MessageOutlined, LogoutOutlined, InfoCircleOutlined } from "@ant-design/icons";
 import NotificationBell from "@/components/NotificationBell";
 import { Modal, Upload } from "antd";
 import { RcFile, UploadProps } from "antd/es/upload";
@@ -18,6 +18,7 @@ import styles from "@/styles/profile.module.css";
 import mainStyles from "@/styles/main.module.css";
 import backgroundStyles from "@/styles/theme/backgrounds.module.css";
 import ProfileContent from "@/components/profile";
+import InfoModal from "@/components/InfoModal";
 import { getApiDomain } from "@/utils/domain";
 
 
@@ -32,6 +33,9 @@ const ProfilePage = () => {
   const [loading, setLoading] = useState(true);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showImageModal, setShowImageModal] = useState(false);
+  const [infoModalVisible, setInfoModalVisible] = useState(false);
+  const { value: hasSeenProfileInfoModal, set: setHasSeenProfileInfoModal } = 
+    useLocalStorage<boolean>("hasSeenProfileInfoModal", false);
   const [fileList, setFileList] = useState<any[]>([]);
   const [previewImage, setPreviewImage] = useState<string>("");
   const [userId, setUserId] = useState<string | null | undefined>(undefined);
@@ -140,6 +144,17 @@ const ProfilePage = () => {
   
     fetchUserProfile();
   }, [userId]);
+
+  // Show info modal on first visit (only for own profile)
+  useEffect(() => {
+    if (!loading && currentUser && userId === null && !hasSeenProfileInfoModal) {
+      setInfoModalVisible(true);
+      // Make sure this function exists
+      if (typeof setHasSeenProfileInfoModal === 'function') {
+        setHasSeenProfileInfoModal(true);
+      }
+    }
+  }, [loading, currentUser, userId, hasSeenProfileInfoModal, setHasSeenProfileInfoModal]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     if (!editableUser) return;
@@ -682,6 +697,7 @@ const ProfilePage = () => {
               )}
               <Link href="/profile"><button className={mainStyles.iconButton} onClick={() => setUserId(null)}><UserOutlined /></button></Link>
               <Link href={`/chat`}><button className={mainStyles.iconButton}><MessageOutlined /></button></Link>
+              <button className={mainStyles.iconButton} onClick={() => setInfoModalVisible(true)}><InfoCircleOutlined /></button>
               <button className={mainStyles.iconButton} onClick={handleLogout}><LogoutOutlined /></button>
             </div>
           </div>
@@ -775,6 +791,12 @@ const ProfilePage = () => {
           </div>
         </div>
       </Modal>
+
+      <InfoModal
+        visible={infoModalVisible}
+        onClose={() => setInfoModalVisible(false)}
+        pageName="profile"
+      />
     </div>
   );
 };

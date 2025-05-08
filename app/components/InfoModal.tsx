@@ -24,6 +24,82 @@ const InfoModal: React.FC<InfoModalProps> = ({
   }, []);
   const getContent = () => {
     switch(pageName) {
+      case 'profile':
+        return (
+          <>
+            <Title level={4}>Profile Management</Title>
+            <Paragraph>
+              Welcome to your profile page where you can customize how you present yourself to potential study partners.
+            </Paragraph>
+            
+            <Divider />
+            
+            <Title level={5}>Profile Information</Title>
+            <ul>
+              <li>
+                <Text strong>Personal Details:</Text>
+                <Text> Update your name, profile picture, and bio to tell others about yourself.</Text>
+              </li>
+              <li>
+                <Text strong>Study Level:</Text>
+                <Text> Indicate your overall academic level to help find appropriate matches.</Text>
+              </li>
+              <li>
+                <Text strong>Study Goals:</Text>
+                <Text> Add tags representing what you hope to achieve with a study partner.</Text>
+              </li>
+              <li>
+                <Text strong>Availability:</Text>
+                <Text> Set your preferred study time (morning, afternoon, or evening).</Text>
+              </li>
+              <li>
+                <Text strong>Courses:</Text>
+                <Text> Add the courses you're studying and indicate your knowledge level for each.</Text>
+              </li>
+            </ul>
+            
+            <Divider />
+            
+            <Title level={5}>Editing Your Profile</Title>
+            <ul>
+              <li>
+                <Text strong>Edit Mode:</Text>
+                <Text> Click the "Edit Profile" button to make changes to your information.</Text>
+              </li>
+              <li>
+                <Text strong>Profile Picture:</Text>
+                <Text> Upload a new profile image by clicking on your current picture.</Text>
+              </li>
+              <li>
+                <Text strong>Adding Courses:</Text>
+                <Text> Click "Add Course" to include more subjects you're studying.</Text>
+              </li>
+              <li>
+                <Text strong>Adding Goals:</Text>
+                <Text> Click "Add Goal" to include additional study objectives.</Text>
+              </li>
+              <li>
+                <Text strong>Save Changes:</Text>
+                <Text> After editing, click "Save Profile" to update your information.</Text>
+              </li>
+            </ul>
+            
+            <Divider />
+            
+            <Title level={5}>Account Management</Title>
+            <ul>
+              <li>
+                <Text strong>View Others' Profiles:</Text>
+                <Text> When viewing another user's profile, you'll see their information but can't edit it.</Text>
+              </li>
+              <li>
+                <Text strong>Delete Account:</Text>
+                <Text> The "Delete Account" button permanently removes your account and all associated data.</Text>
+              </li>
+            </ul>
+          </>
+        );
+
       case 'main':
         return (
           <>
@@ -77,6 +153,93 @@ const InfoModal: React.FC<InfoModalProps> = ({
             </ul>
           </>
         );
+        case 'chat':
+      return (
+        <>
+          <Title level={4}>Chat System Overview</Title>
+          <Paragraph>
+            StudyBuddy provides three kinds of conversations so you can get help
+            from AI, talk 1-on-1, or collaborate in groups.
+          </Paragraph>
+
+          <Divider />
+
+          <Title level={5}>1. AI Advisor</Title>
+          <ul>
+            <li>
+              <Text strong>Ask Anything:</Text>{' '}
+              <Text>
+                click the <Text keyboard>Suggestion</Text> bubble to start a free-form Q &amp; A with the AI.
+              </Text>
+            </li>
+            <li>
+              <Text strong>Generate Study Plan:</Text>{' '}
+              <Text>
+                hit <Text keyboard>Scheduler</Text> and the AI builds a tailored weekly schedule based on
+                <em>your</em> profile.
+              </Text>
+            </li>
+            <li>
+              <Text type="secondary">
+                The AI channel is always listed first and never goes offline.
+              </Text>
+            </li>
+          </ul>
+
+          <Divider />
+
+          <Title level={5}>2. Individual Chats</Title>
+          <ul>
+            <li>
+              <Text strong>Automatic Channel:</Text>{' '}
+              <Text>
+                whenever two students match, a private 1-on-1 chat is created for you.
+              </Text>
+            </li>
+            <li>
+              <Text strong>Online Indicator:</Text>{' '}
+              <Text>green&nbsp;● means your partner is currently online.</Text>
+            </li>
+            <li>
+              <Text strong>Report / Block:</Text>{' '}
+              <Text>
+                click the <Text keyboard>✕</Text> button in the chat header if a conversation
+                becomes inappropriate.
+              </Text>
+            </li>
+            <li>
+              <Text strong>Create Group:</Text>{' '}
+              <Text>
+                use the <Text keyboard>＋</Text> button to start a group with this partner and other matches.
+              </Text>
+            </li>
+          </ul>
+
+          <Divider />
+
+          <Title level={5}>3. Group Chats</Title>
+          <ul>
+            <li>
+              <Text strong>Made from an Individual Chat:</Text>{' '}
+              <Text>
+                press <Text keyboard>＋</Text>, give the group a name, and invite matched students.
+              </Text>
+            </li>
+            <li>
+              <Text strong>Add Members Later:</Text>{' '}
+              <Text>
+                open the group, hit <Text keyboard>＋</Text> again, and pick more matches to join.
+              </Text>
+            </li>
+            <li>
+              <Text strong>Only Matched Students:</Text>{' '}
+              <Text>
+                for safety, you can <em>only</em> add people you’ve already matched with.
+              </Text>
+            </li>
+          </ul>
+        </>
+      );
          // Other page content would go here
       default:
         return <Text>Information about this page is not available.</Text>;
