@@ -118,7 +118,7 @@ const ChatPage: React.FC = () => {
       channelId: -1,
       channelName: "AI Advisor",
       supportingText: "Hello! How can I assist you?",
-      channelType:'individual'
+      channelType:'undefined'
     }
   ]);
   const [isMessagesLoading] = useState(false);
@@ -132,12 +132,12 @@ const ChatPage: React.FC = () => {
   const apiService_token = useApi();
   const [selectedChannel, setSelectedChannel] = useState<string | null>(null);  // Track selected chat
   const [infoModalVisible, setInfoModalVisible] = useState(false);
-  const { value: hasSeenChatInfoModal, set: setHasSeenChatInfoModal } = 
+  const { value: hasSeenChatInfoModal, set: setHasSeenChatInfoModal } =
     useLocalStorage<boolean>("hasSeenChatInfoModal", false);
   // Using the Next.js public environment variable for the API key
   const Your_API_Key = process.env.NEXT_PUBLIC_GOOGLE_API_KEY || "";
   const genAI = new GoogleGenerativeAI(Your_API_Key);
-  const aiAvatar = "/AI-Icon.svg";  // 你可以使用本地或外部的头像路径
+  const aiAvatar = "/AI-Icon.svg";
   const defaultGroupicon = '/Group_icon.svg';
   const defaulindividualicon = '/defaultIndividualIcon.svg';
   const [isGroupModalVisible, setIsGroupModalVisible] = useState(false);
@@ -164,7 +164,7 @@ const ChatPage: React.FC = () => {
   interface ChatChannelGetDTO {
     channelId: number;
     channelName: string;
-    channelType: 'individual' | 'group'; // 或者你可以直接使用字符串类型 'string'，不过使用具体的枚举值会更好
+    channelType: 'individual' | 'group';
     channelProfileImage: string;
     createdAt: string;
     updatedAt: string;
@@ -259,8 +259,8 @@ const ChatPage: React.FC = () => {
       return;
     }
   
-    setSelectedParticipant(participant.userId); // 设置对方用户 ID
-    setIsBlockPanelVisible(true); // 打开 Block Panel
+    setSelectedParticipant(participant.userId);
+    setIsBlockPanelVisible(true);
     console.log("I am trying to open the block panel",isBlockPanelVisible)
   };
 
@@ -291,8 +291,8 @@ const ChatPage: React.FC = () => {
   };
 
   const handleReport = () => {
-    setIsBlockPanelVisible(false); // 关闭 Block Panel
-    setIsReportPanelVisible(true); // 打开 Report Panel
+    setIsBlockPanelVisible(false);
+    setIsReportPanelVisible(true);
   };
 
   const handleSubmitReport = async () => {
@@ -647,7 +647,7 @@ const ChatPage: React.FC = () => {
   
     try {
       const messagePostDTO = {
-        senderId: parsedUserId, // 当前用户 ID
+        senderId: parsedUserId,
         context: messageText,
       };
   
@@ -846,8 +846,8 @@ const handleQuickReplySuggestion = () => {
               <div className="message-list-header">Matched Users</div>
               <div className="message-list">
                 {/* AI Advisor is always at the top */}
-                <button 
-                  className="message-item" 
+                <button
+                  className="message-item"
                   onClick={() => handleSelectChat("AI Advisor")}
                   onKeyDown={(e) => e.key === 'Enter' && handleSelectChat("AI Advisor")}
                 >
@@ -1041,7 +1041,6 @@ const handleQuickReplySuggestion = () => {
                     </>
                   )}
                 
-                {/* 加载指示器 */}
                 {isLoading && (
                   <div className="chat-loading">
                     <div className="spinner"></div>
@@ -1077,19 +1076,18 @@ const handleQuickReplySuggestion = () => {
                           onClick={handleQuickReplySuggestion}
                           onKeyDown={(e) => e.key === 'Enter' && handleQuickReplySuggestion()}
                         >
-                          Sugeestion
+                          Suggestion
                         </button>
                         <button
                           className="quick-reply-bubble"
                           onClick={handleQuickReplySchedule}
                           onKeyDown={(e) => e.key === 'Enter' && handleQuickReplySchedule()}
                         >
-                          Scheduler
+                          Scheduling
                         </button>
-                        {/* 如果需要更多按钮，可以继续添加 */}
                       </div>
                     )}
-                    <button 
+                    <button
                       className="send-button" 
                       onClick={() => handleSendMessage()} 
                       onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
@@ -1110,7 +1108,7 @@ const handleQuickReplySuggestion = () => {
                 groupModalMode === "update"
                   ? channels
                       .find((channel) => String(channel.channelId) === String(selectedChannel))
-                      ?.participants?.map((p) => p.userId) ?? [] // 获取当前群聊的 participants
+                      ?.participants?.map((p) => p.userId) ?? []
                   : []
               }
               allUsers={channels
