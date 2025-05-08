@@ -12,7 +12,8 @@ const helpByRoute: Record<string, React.ReactNode> = {
     <Image
       src="/help/chat.png"       // put the screenshot in /public/help/
       alt="Introduction to Chat page"
-      style={{ width: "77%", height: "auto", display: "block", margin: "0 auto" }}
+      width={800}
+      height={540}
     />
   ),
   /* add more routes/screens if you need them */
