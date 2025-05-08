@@ -18,6 +18,8 @@ import backgroundStyles from "@/styles/theme/backgrounds.module.css";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { marked } from "marked";
 import { getApiDomain } from "@/utils/domain";
+import HelpButton from "@/components/HelpButton";
+
 
 const getUserItemClass = (userId: number, existingUsers: number[], selectedUsers: number[]): string => {
   if (existingUsers.includes(userId)) {
@@ -798,6 +800,7 @@ const handleQuickReplySuggestion = () => {
                   <NotificationBell userId={Number(parsedUserId)} />
                 </button>
               )}
+              <HelpButton /> 
               <Link href="/profile">
                 <button className={styles.iconButton}><UserOutlined /></button>
               </Link>
