@@ -1,28 +1,35 @@
-import type { Metadata } from "next";
+'use client';
+
 import { Inter } from "next/font/google";
 import { ConfigProvider, App, theme } from "antd";
 import { AntdRegistry } from "@ant-design/nextjs-registry";
 import "@/styles/globals.css";
 import "@/styles/theme/index.module.css";
+import { useEffect, useState } from "react";
 
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "StudyBuddy",
-  description: "sopra-fs25-template-client",
-};
 
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   return (
     <html lang="en">
-      <body className={`${inter.variable}`} style={{ background: 'var(--bg-gradient)', backgroundAttachment: 'fixed', minHeight: '100vh' }}>
+      <body 
+        className={mounted ? `${inter.variable}` : ''}
+        style={{ background: 'var(--bg-gradient)', backgroundAttachment: 'fixed', minHeight: '100vh' }}
+      >
         <ConfigProvider
           theme={{
             algorithm: theme.defaultAlgorithm,

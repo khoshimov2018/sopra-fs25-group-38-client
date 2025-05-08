@@ -17,12 +17,14 @@ import {
   UserOutlined,
   MessageOutlined,
   FilterOutlined,
-  LogoutOutlined
+  LogoutOutlined,
+  InfoCircleOutlined
 } from "@ant-design/icons";
 import styles from "@/styles/main.module.css";
 import backgroundStyles from "@/styles/theme/backgrounds.module.css";
 import Button from "@/components/Button";
 import FilterModal from "@/components/FilterModal";
+import InfoModal from "@/components/InfoModal";
 import { getApiDomain } from "@/utils/domain";
 
 interface UserProfile extends User {
@@ -54,12 +56,17 @@ const MainPage: React.FC = () => {
   const [currentProfileIndex, setCurrentProfileIndex] = useState<number>(0);
 
   const [filterModalVisible, setFilterModalVisible] = useState(false);
+  const [infoModalVisible, setInfoModalVisible] = useState(false);
   const [isUserLoaded, setIsUserLoaded] = useState(false);
-
+  
   const [seenIds, setSeenIds] = useState<number[]>([]);
   const [likedIds, setLikedIds] = useState<number[]>([]);
   const [dislikedIds, setDislikedIds] = useState<number[]>([]);
   const [showDislikedOnly, setShowDislikedOnly] = useState(false);
+  
+  // Check if this is the first time the user is visiting this page
+  const { value: hasSeenInfoModal, set: setHasSeenInfoModal } = 
+    useLocalStorage<boolean>("hasSeenMainInfoModal", false);
 
   const [filters, setFilters] = useState<{
     selectedCourses: number[];
@@ -93,8 +100,50 @@ const MainPage: React.FC = () => {
 
   useEffect(() => {
     if (!isUserLoaded || !currentUser) return;
-    fetchUsers(filters.selectedCourses, filters.availabilities);
+    
+    const fetchAndProcessUsers = async () => {
+      try {
+        const result = await fetchUsers(filters.selectedCourses, filters.availabilities);
+        
+        if (result && result.profiles) {
+          if (result.profiles.length > 0) {
+            message.success(`Loaded ${result.profiles.length} profiles`);
+          } else if (!result.error) {
+            message.warning(
+              "No students match the criteria (or you've already seen them)."
+            );
+          }
+          
+          setProfiles(result.profiles);
+          setCurrentProfileIndex(result.profiles.length > 0 ? 0 : -1);
+        }
+        
+        if (result && result.error) {
+          message.error(result.error);
+        }
+        
+        setShowDislikedOnly(false); // reset flag after each fetch
+      } catch (error) {
+        console.error(error);
+        message.error("Failed to load profiles");
+        setProfiles([]);
+        setCurrentProfileIndex(-1);
+      }
+    };
+    
+    fetchAndProcessUsers();
   }, [filters, currentUser, isUserLoaded]);
+  
+  // Show info modal on first visit
+  useEffect(() => {
+    if (isUserLoaded && currentUser && !hasSeenInfoModal) {
+      setInfoModalVisible(true);
+      // Make sure this function exists
+      if (typeof setHasSeenInfoModal === 'function') {
+        setHasSeenInfoModal(true);
+      }
+    }
+  }, [isUserLoaded, currentUser, hasSeenInfoModal, setHasSeenInfoModal]);
 
   const fetchInteractedUsers = async (userId: number) => {
     try {
@@ -120,8 +169,7 @@ const MainPage: React.FC = () => {
     const hideLoading = message.loading("Loading profiles...");
     try {
       if (!currentUser) {
-        message.error("User not loaded");
-        return;
+        return { profiles: [] };
       }
 
       // Fetch users the current user has already interacted with
@@ -267,11 +315,11 @@ const MainPage: React.FC = () => {
     showNextProfile();
   };
 
-  const handleRefreshUsers = () => {
-
+  const handleRefreshUsers = async () => {
     setSeenIds(likedIds);      
     setShowDislikedOnly(true);
-    fetchUsers(filters.selectedCourses, filters.availabilities);
+    
+    setFilters({...filters});
   };
 
 
@@ -311,6 +359,12 @@ const MainPage: React.FC = () => {
                   onClick={() => setFilterModalVisible(true)}
                 >
                   <FilterOutlined />
+                </button>
+                <button
+                  className={styles.iconButton}
+                  onClick={() => setInfoModalVisible(true)}
+                >
+                  <InfoCircleOutlined />
                 </button>
                 <button
                   className={styles.iconButton}
@@ -364,6 +418,11 @@ const MainPage: React.FC = () => {
           onClose={() => setFilterModalVisible(false)}
           onSave={handleFilterSave}
         />
+        <InfoModal
+          visible={infoModalVisible}
+          onClose={() => setInfoModalVisible(false)}
+          pageName="main"
+        />
       </App>
     );
   }
@@ -402,6 +461,12 @@ const MainPage: React.FC = () => {
                 onClick={() => setFilterModalVisible(true)}
               >
                 <FilterOutlined />
+              </button>
+              <button
+                className={styles.iconButton}
+                onClick={() => setInfoModalVisible(true)}
+              >
+                <InfoCircleOutlined />
               </button>
               <button
                 className={styles.iconButton}
@@ -512,6 +577,11 @@ const MainPage: React.FC = () => {
         visible={filterModalVisible}
         onClose={() => setFilterModalVisible(false)}
         onSave={handleFilterSave}
+      />
+      <InfoModal
+        visible={infoModalVisible}
+        onClose={() => setInfoModalVisible(false)}
+        pageName="main"
       />
     </App>
   );
