@@ -1,9 +1,8 @@
 'use client';
 
-require('dotenv').config();
 import React, { useEffect, useState, useRef } from "react";
 import {useRouter} from "next/navigation";
-import { UserOutlined, MessageOutlined, LogoutOutlined } from "@ant-design/icons";
+import { UserOutlined, MessageOutlined, LogoutOutlined, InfoCircleOutlined } from "@ant-design/icons";
 import NotificationBell from "@/components/NotificationBell";
 import { useMessage } from "@/hooks/useMessage";
 import useLocalStorage from "@/hooks/useLocalStorage";
@@ -18,7 +17,7 @@ import backgroundStyles from "@/styles/theme/backgrounds.module.css";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { marked } from "marked";
 import { getApiDomain } from "@/utils/domain";
-import HelpButton from "@/components/HelpButton";
+import InfoModal from "@/components/InfoModal";
 
 
 const getUserItemClass = (userId: number, existingUsers: number[], selectedUsers: number[]): string => {
@@ -132,7 +131,11 @@ const ChatPage: React.FC = () => {
   const apiService = new ApiService();
   const apiService_token = useApi();
   const [selectedChannel, setSelectedChannel] = useState<string | null>(null);  // Track selected chat
-  const Your_API_Key = process.env.NEXT_PUBLIC_GOOGLE_API_KEY || ""
+  const [infoModalVisible, setInfoModalVisible] = useState(false);
+  const { value: hasSeenChatInfoModal, set: setHasSeenChatInfoModal } = 
+    useLocalStorage<boolean>("hasSeenChatInfoModal", false);
+  // Using the Next.js public environment variable for the API key
+  const Your_API_Key = process.env.NEXT_PUBLIC_GOOGLE_API_KEY || "";
   const genAI = new GoogleGenerativeAI(Your_API_Key);
   const aiAvatar = "/AI-Icon.svg";  // 你可以使用本地或外部的头像路径
   const defaultGroupicon = '/Group_icon.svg';
@@ -434,9 +437,10 @@ const ChatPage: React.FC = () => {
       if (userid) {
         const response = await apiService.get<ChatChannelGetDTO[]>(`/chat/channels/user/${userid}`);
         console.log("Fetched chat channels:", response);
-        const data = response;
+        const data = response || [];
 
-        const mappedData = data.map((channel) => {
+        // Ensure data is an array before mapping
+        const mappedData = Array.isArray(data) ? data.map((channel) => {
           const latestMessage = channel.updatedAt
             ? `Last message at ${new Date(channel.updatedAt).toLocaleString()}`
             : "No messages yet";
@@ -459,9 +463,13 @@ const ChatPage: React.FC = () => {
             participants,
             channelProfileImage,
           };
+        }) : [];
+        // Fixed bugs so that now only channels would be updated
+        setChannels(prevChannels => {
+          // Always keep the AI Advisor channel
+          const aiAdvisorChannel = prevChannels.find(channel => channel.channelId === -1);
+          return [...(aiAdvisorChannel ? [aiAdvisorChannel] : []), ...mappedData];
         });
-        // Fixed bugs so that now only channles would be updated
-        setChannels(mappedData);
         console.log("Mapped matched users:", mappedData);
       } else {
         console.error("userId is undefined!");
@@ -598,7 +606,7 @@ const ChatPage: React.FC = () => {
             .join("\n")}
           AI Advisor:`;
         
-        console.log('My genAI API is:', process.env.GOOGLE_API_KEY);
+        // Initialize the model
         const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
         const result = await model.generateContent(prompt);
         const response = await result.response;
@@ -778,6 +786,17 @@ const handleQuickReplySuggestion = () => {
     }
   };
 
+  // Show info modal on first visit
+  useEffect(() => {
+    if (parsedUserId && !hasSeenChatInfoModal) {
+      setInfoModalVisible(true);
+      // Make sure this function exists
+      if (typeof setHasSeenChatInfoModal === 'function') {
+        setHasSeenChatInfoModal(true);
+      }
+    }
+  }, [parsedUserId, hasSeenChatInfoModal, setHasSeenChatInfoModal]);
+
   useEffect(() => {
     console.log("isBlockPanelVisible:", isBlockPanelVisible);
     console.log("isReportPanelVisible:", isReportPanelVisible);
@@ -800,13 +819,18 @@ const handleQuickReplySuggestion = () => {
                   <NotificationBell userId={Number(parsedUserId)} />
                 </button>
               )}
-              <HelpButton /> 
               <Link href="/profile">
                 <button className={styles.iconButton}><UserOutlined /></button>
               </Link>
               <Link href={`/chat`}>
                 <button className={styles.iconButton}><MessageOutlined /></button>
               </Link>
+              <button
+                className={styles.iconButton}
+                onClick={() => setInfoModalVisible(true)}
+              >
+                <InfoCircleOutlined />
+              </button>
               <button
                 className={styles.iconButton}
                 onClick={actualLogout}
@@ -1134,6 +1158,11 @@ const handleQuickReplySuggestion = () => {
             </div>
           )}
         </div>
+        <InfoModal
+          visible={infoModalVisible}
+          onClose={() => setInfoModalVisible(false)}
+          pageName="chat"
+        />
       </div>
     </App>
   );
