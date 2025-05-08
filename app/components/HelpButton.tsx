@@ -38,7 +38,7 @@ export default function HelpButton() {
         onCancel={() => setOpen(false)}
         footer={null}
         centered
-        width={820}
+        width={840}
         destroyOnClose
       >
         {helpByRoute[pathname] ?? (
