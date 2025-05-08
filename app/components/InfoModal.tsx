@@ -153,6 +153,93 @@ const InfoModal: React.FC<InfoModalProps> = ({
             </ul>
           </>
         );
+        case 'chat':
+      return (
+        <>
+          <Title level={4}>Chat System Overview</Title>
+          <Paragraph>
+            StudyBuddy provides three kinds of conversations so you can get help
+            from AI, talk 1-on-1, or collaborate in groups.
+          </Paragraph>
+
+          <Divider />
+
+          <Title level={5}>1. AI Advisor</Title>
+          <ul>
+            <li>
+              <Text strong>Ask Anything:</Text>{' '}
+              <Text>
+                click the <Text keyboard>Suggestion</Text> bubble to start a free-form Q &amp; A with the AI.
+              </Text>
+            </li>
+            <li>
+              <Text strong>Generate Study Plan:</Text>{' '}
+              <Text>
+                hit <Text keyboard>Scheduler</Text> and the AI builds a tailored weekly schedule based on
+                <em>your</em> profile.
+              </Text>
+            </li>
+            <li>
+              <Text type="secondary">
+                The AI channel is always listed first and never goes offline.
+              </Text>
+            </li>
+          </ul>
+
+          <Divider />
+
+          <Title level={5}>2. Individual Chats</Title>
+          <ul>
+            <li>
+              <Text strong>Automatic Channel:</Text>{' '}
+              <Text>
+                whenever two students match, a private 1-on-1 chat is created for you.
+              </Text>
+            </li>
+            <li>
+              <Text strong>Online Indicator:</Text>{' '}
+              <Text>green&nbsp;● means your partner is currently online.</Text>
+            </li>
+            <li>
+              <Text strong>Report / Block:</Text>{' '}
+              <Text>
+                click the <Text keyboard>✕</Text> button in the chat header if a conversation
+                becomes inappropriate.
+              </Text>
+            </li>
+            <li>
+              <Text strong>Create Group:</Text>{' '}
+              <Text>
+                use the <Text keyboard>＋</Text> button to start a group with this partner and other matches.
+              </Text>
+            </li>
+          </ul>
+
+          <Divider />
+
+          <Title level={5}>3. Group Chats</Title>
+          <ul>
+            <li>
+              <Text strong>Made from an Individual Chat:</Text>{' '}
+              <Text>
+                press <Text keyboard>＋</Text>, give the group a name, and invite matched students.
+              </Text>
+            </li>
+            <li>
+              <Text strong>Add Members Later:</Text>{' '}
+              <Text>
+                open the group, hit <Text keyboard>＋</Text> again, and pick more matches to join.
+              </Text>
+            </li>
+            <li>
+              <Text strong>Only Matched Students:</Text>{' '}
+              <Text>
+                for safety, you can <em>only</em> add people you’ve already matched with.
+              </Text>
+            </li>
+          </ul>
+        </>
+      );
          // Other page content would go here
       default:
         return <Text>Information about this page is not available.</Text>;
