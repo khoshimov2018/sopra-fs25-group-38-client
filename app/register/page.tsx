@@ -12,8 +12,9 @@ import backgroundStyles from "@/styles/theme/backgrounds.module.css";
 import componentStyles from "@/styles/theme/components.module.css";
 import Logo from "@/components/Logo";
 import Button from "@/components/Button";
+import InfoModal from "@/components/InfoModal";
 import { useEffect, useState } from "react";
-import { MinusCircleOutlined, PlusOutlined } from '@ant-design/icons';
+import { MinusCircleOutlined, PlusOutlined, InfoCircleOutlined } from '@ant-design/icons';
 
 const { Option } = Select;
 
@@ -40,6 +41,7 @@ const Register: React.FC = () => {
     { courseId: 0, knowledgeLevel: ProfileKnowledgeLevel.BEGINNER }
   ]);
   const [isLoading, setIsLoading] = useState(false);
+  const [infoModalVisible, setInfoModalVisible] = useState(false);
 
   useEffect(() => {
     // Only fetch courses if we don't already have them
@@ -381,8 +383,19 @@ const Register: React.FC = () => {
         alignItems: "center",
         padding: '60px 20px'
       }}>
-        <div style={{ position: 'absolute', top: '20px', left: '20px' }}>
-          <Logo />
+        <div style={{ position: 'absolute', top: '20px', left: '20px', cursor: 'pointer' }}>
+          <Link href="/login">
+            <Logo />
+          </Link>
+        </div>
+        <div style={{ position: 'absolute', top: '20px', right: '20px' }}>
+          <button
+            className={componentStyles.iconButton}
+            onClick={() => setInfoModalVisible(true)}
+            style={{ backgroundColor: 'transparent', border: 'none', cursor: 'pointer', fontSize: '24px' }}
+          >
+            <InfoCircleOutlined style={{ color: '#6750A4' }} />
+          </button>
         </div>
         
         <div style={{ 
@@ -585,6 +598,12 @@ const Register: React.FC = () => {
           </div>
         </div>
       </div>
+
+      <InfoModal
+        visible={infoModalVisible}
+        onClose={() => setInfoModalVisible(false)}
+        pageName="register"
+      />
     </App>
   );
 };
