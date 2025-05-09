@@ -364,9 +364,6 @@ const ChatPage: React.FC = () => {
         setIsGroupModalVisible(false);
         setSelectedUsers([]);
         console.log("Creating Group Messages：", response);
-        if (parsedUserId) {
-          fetchMatchedUsers(parsedUserId);
-        }
     } catch (error) {
         console.error("Failed in creating a group", error);
         message.error("Failed creating a group, please try again later.");
@@ -517,9 +514,16 @@ const ChatPage: React.FC = () => {
   // Controlling fetching matched users
   useEffect(() => {
     if (parsedUserId === undefined) return;
+    let interval: string | number | NodeJS.Timeout | undefined;
 
     // To fetch Matched users once entering.
     fetchMatchedUsers(parsedUserId);
+    
+    interval = setInterval( () => {
+      fetchMatchedUsers(parsedUserId);
+    }, 2000);
+
+    return () => clearInterval(interval);
   
   }, [parsedUserId]);
 
