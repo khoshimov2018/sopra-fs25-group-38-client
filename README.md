@@ -14,14 +14,27 @@
 
 ## Table of Contents
 
-- [Introduction](#introduction)
-- [Technologies Used](#technologies-used)
-- [High-Level Components](#high-level-components)
-- [Launch & Deployment](#launch--deployment)
-- [Illustrations](#illustrations)
-- [Roadmap](#roadmap)
-- [Authors and Acknowledgment](#authors-and-acknowledgment)
-- [License](#license)
+- [StudyBuddy](#studybuddy)
+  - [Table of Contents](#table-of-contents)
+  - [Introduction](#introduction)
+  - [Technologies Used](#technologies-used)
+  - [High-Level Components](#high-level-components)
+    - [1. Matching System](#1-matching-system)
+    - [2. Chat System](#2-chat-system)
+    - [3. Profile Management](#3-profile-management)
+    - [4. User Authentication](#4-user-authentication)
+    - [5. API Service](#5-api-service)
+  - [Launch \& Deployment](#launch--deployment)
+    - [Prerequisites](#prerequisites)
+    - [Local Development](#local-development)
+    - [Testing](#testing)
+    - [Building for Production](#building-for-production)
+    - [Deployment](#deployment)
+    - [Working with the Backend](#working-with-the-backend)
+  - [Illustrations](#illustrations)
+  - [Roadmap](#roadmap)
+  - [Authors and Acknowledgment](#authors-and-acknowledgment)
+  - [License](#license)
 
 ---
 
@@ -150,10 +163,30 @@ The frontend expects a specific API structure. Ensure the backend is running and
 
 ## Illustrations
 
+Here are some screenshots showcasing the key features of StudyBuddy:
+
+### Main Interface - Match Finding
+![Main Interface](/public/images/screenshot-main.png)
+
+### Chat System
+![Chat Interface](/public/images/screenshot-chat.png)
+
+### AI Study Advisor
+![AI Advisor](/public/images/screenshot-ai-advisor.png)
+
+### User Profile
+![Profile](/public/images/screenshot-profile.png)
+
+### Registration
+![Registration](/public/images/screenshot-registration.png)
+
 ---
 
 ## Roadmap
 
+•⁠  ⁠[ ] Implement study challenges and leaderboard
+•⁠  ⁠[ ] Refine matching algorithm with AI suggestions
+•⁠  ⁠[ ] Enable calendar integration for availability sync
 
 ---
 
