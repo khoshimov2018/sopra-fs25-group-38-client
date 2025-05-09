@@ -104,7 +104,6 @@ body {
 
 .message-item {
   all: unset;
-  align-items: flex-start;
   width: 100%;
   text-align: left;
   display: flex;
