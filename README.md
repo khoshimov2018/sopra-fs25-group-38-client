@@ -1,4 +1,4 @@
-# StudyBuddy
+# StudyBuddy – Frontend
 
 **Find your ideal study partner — based on courses, goals, and learning style.**
 
@@ -13,24 +13,10 @@
 ---
 
 ## Table of Contents
-
-- [StudyBuddy](#studybuddy)
-  - [Table of Contents](#table-of-contents)
   - [Introduction](#introduction)
   - [Technologies Used](#technologies-used)
   - [High-Level Components](#high-level-components)
-    - [1. Matching System](#1-matching-system)
-    - [2. Chat System](#2-chat-system)
-    - [3. Profile Management](#3-profile-management)
-    - [4. User Authentication](#4-user-authentication)
-    - [5. API Service](#5-api-service)
   - [Launch \& Deployment](#launch--deployment)
-    - [Prerequisites](#prerequisites)
-    - [Local Development](#local-development)
-    - [Testing](#testing)
-    - [Building for Production](#building-for-production)
-    - [Deployment](#deployment)
-    - [Working with the Backend](#working-with-the-backend)
   - [Illustrations](#illustrations)
   - [Roadmap](#roadmap)
   - [Authors and Acknowledgment](#authors-and-acknowledgment)
@@ -40,7 +26,8 @@
 
 ## Introduction
 
-**StudyBuddy** is a web application designed to connect university students with compatible study partners based on shared courses, availability, and study goals. The platform features a swipe-based matching system, real-time chat, profile management, and AI-based study assistance.  
+**StudyBuddy** is a web application designed to connect university students with compatible study partners based on shared courses, availability, and study goals. The platform features a swipe-based matching system, real-time chat, profile management, and AI-based study assistance.
+
 This frontend project provides the user interface and client-side logic, built with Next.js and Ant Design, allowing users to interact seamlessly with the backend services.
 
 ---
@@ -184,9 +171,9 @@ Here are some screenshots showcasing the key features of StudyBuddy:
 
 ## Roadmap
 
-•⁠  ⁠[ ] Implement study challenges and leaderboard
-•⁠  ⁠[ ] Refine matching algorithm with AI suggestions
-•⁠  ⁠[ ] Enable calendar integration for availability sync
+- [ ] Implement study challenges and leaderboard  
+- [ ] Refine matching algorithm with AI suggestions  
+- [ ] Enable calendar integration for availability sync  
 
 ---
 
