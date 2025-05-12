@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import styles from '@/styles/profile.module.css';
 import { UserProfile } from '@/types/profile';
 import ProfileHeader from './ProfileHeader';
 import ProfileImage from './ProfileImage';
 import ViewProfile from './ViewProfile';
 import EditProfile from './EditProfile';
+import ProfilePreviewModal from './ProfilePreviewModal';
 
 interface ProfileContentProps {
   currentUser: UserProfile;
@@ -39,24 +40,44 @@ const ProfileContent: React.FC<ProfileContentProps> = ({
   onAddStudyLevel,
   onRemoveStudyLevel
 }) => {
+  const [previewModalVisible, setPreviewModalVisible] = useState(false);
+
+  // Show preview modal
+  const handlePreview = () => {
+    setPreviewModalVisible(true);
+  };
+
+  // Close preview modal
+  const handleClosePreview = () => {
+    setPreviewModalVisible(false);
+  };
+
+  // Save and publish from preview mode
+  const handleSaveAndPublish = () => {
+    onEditToggle(); // This will trigger the parent save function
+    setPreviewModalVisible(false);
+  };
+
   return (
     <div className={styles.content}>
-      <ProfileHeader 
-        isEditing={isEditing} 
-        onEditToggle={onEditToggle} 
+      <ProfileHeader
+        isEditing={isEditing}
+        onEditToggle={onEditToggle}
         onDeleteAccount={onDeleteAccount}
+        onPreview={isEditing && editableUser ? handlePreview : undefined}
         userId={userId}
       />
       
       <div className={styles.profileGrid}>
         <div className={styles.profileCard}>
           {isEditing && editableUser ? (
+            // Edit mode
             <div className={styles.profileWithSidebar}>
               <div className={styles.profileSidebar}>
-                <ProfileImage 
+                <ProfileImage
                   currentUser={currentUser}
                   editableUser={editableUser}
-                  isEditing={isEditing}
+                  isEditing={true}
                   onImageUpload={onImageUpload}
                 />
               </div>
@@ -68,16 +89,18 @@ const ProfileContent: React.FC<ProfileContentProps> = ({
                   onAddStudyLevel={onAddStudyLevel}
                   onRemoveStudyLevel={onRemoveStudyLevel}
                   onSave={onEditToggle}
+                  onPreview={handlePreview}
                 />
               </div>
             </div>
           ) : (
+            // View mode (other user's profile or own profile not in edit mode)
             <div className={styles.profileWithSidebar}>
               <div className={styles.profileSidebar}>
                 <ProfileImage 
                   currentUser={currentUser}
                   editableUser={editableUser}
-                  isEditing={isEditing}
+                  isEditing={false}
                   onImageUpload={onImageUpload}
                 />
               </div>
@@ -88,6 +111,16 @@ const ProfileContent: React.FC<ProfileContentProps> = ({
           )}
         </div>
       </div>
+
+      {/* Profile Preview Modal */}
+      {editableUser && (
+        <ProfilePreviewModal
+          visible={previewModalVisible}
+          user={editableUser}
+          onClose={handleClosePreview}
+          onSave={handleSaveAndPublish}
+        />
+      )}
     </div>
   );
 };

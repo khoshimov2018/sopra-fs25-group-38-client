@@ -36,6 +36,8 @@ interface UserProfile extends User {
   profileImage?: string;
   isLiked?: boolean;
   isDisliked?: boolean;
+  hasSharedGoals?: boolean;
+  sharedGoals?: string[];
 }
 
 
@@ -162,6 +164,28 @@ const MainPage: React.FC = () => {
     }
   };
 
+  // Helper function to extract study goals from a user
+  const extractStudyGoals = (user: any): string[] => {
+    if (!user) return [];
+
+    if (typeof user.studyGoals === "string") {
+      return user.studyGoals.split(",").map((t: string) => t.trim().toLowerCase()).filter(Boolean);
+    } else if (Array.isArray(user.studyGoals)) {
+      return user.studyGoals.map((g: string) => g.toLowerCase());
+    }
+
+    return [];
+  };
+
+  // Function to check for shared study goals
+  const getSharedGoals = (currentUserGoals: string[], profileGoals: string[]): string[] => {
+    if (!currentUserGoals.length || !profileGoals.length) return [];
+
+    return currentUserGoals.filter(goal =>
+      profileGoals.some(profileGoal => profileGoal.toLowerCase() === goal.toLowerCase())
+    );
+  };
+
   const fetchUsers = async (
     courseIds?: number[],
     availability?: UserAvailability[]
@@ -174,6 +198,10 @@ const MainPage: React.FC = () => {
 
       // Fetch users the current user has already interacted with
       const { matchedIds, blockedIds } = await fetchInteractedUsers(Number(currentUser.id));
+
+      // Fetch current user's full details to get their study goals
+      const currentUserDetails = await userService.getUserById(Number(currentUser.id));
+      const currentUserGoals = extractStudyGoals(currentUserDetails);
 
       let users = await studentFilterService.getFilteredStudents(
         courseIds && courseIds.length > 0 ? courseIds : undefined,
@@ -191,19 +219,25 @@ const MainPage: React.FC = () => {
           if (matchedIds.includes(id) || blockedIds.includes(id)) {
             return false;
           }
-          
+
           // Handle client-side seen/disliked logic
           const alreadySeen = seenIds.includes(id) && !dislikedIds.includes(id);
           const disliked = dislikedIds.includes(id);
           return showDislikedOnly ? disliked : !alreadySeen;
         });
       const fetchedProfiles: UserProfile[] = filtered.map(u => {
+        // Extract profile goals
         let tags = [];
-      if (typeof u.studyGoals === "string") {
-        tags = u.studyGoals.split(",").map(t => t.trim()).filter(Boolean);
-      } else if (Array.isArray(u.studyGoals)) {
-        tags = u.studyGoals;
-      }
+        if (typeof u.studyGoals === "string") {
+          tags = u.studyGoals.split(",").map(t => t.trim()).filter(Boolean);
+        } else if (Array.isArray(u.studyGoals)) {
+          tags = u.studyGoals;
+        }
+
+        // Find shared goals between current user and this profile
+        const profileGoals = extractStudyGoals(u);
+        const sharedGoals = getSharedGoals(currentUserGoals, profileGoals);
+        const hasSharedGoals = sharedGoals.length > 0;
 
         const studyLevels =
           u.userCourses?.map(c => ({
@@ -234,12 +268,14 @@ const MainPage: React.FC = () => {
           tags,
           studyLevels,
           profileImage:
-            u.profilePicture ?? 
+            u.profilePicture ??
             `https://placehold.co/600x800/random/white.png?text=${encodeURIComponent(
               u.name
             )}`,
           isLiked,
-          isDisliked
+          isDisliked,
+          hasSharedGoals,
+          sharedGoals
         };
       });
 
@@ -510,13 +546,49 @@ const MainPage: React.FC = () => {
                 </div>
 
                 <div className={styles.cardSection}>
-                  <div className={styles.detailsLabel}>Study Goals</div>
-                  <div className={styles.tagContainer}>
-                    {currentProfile.tags?.map((t) => (
-                      <span key={`tag-${t}`} className={styles.tag}>
-                        {t}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div className={styles.detailsLabel}>Study Goals</div>
+                    {currentProfile.hasSharedGoals && (
+                      <span
+                        style={{
+                          background: '#52c41a',
+                          color: 'white',
+                          padding: '2px 10px',
+                          borderRadius: '12px',
+                          fontSize: '13px',
+                          fontWeight: '500',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px'
+                        }}
+                      >
+                        <span style={{ fontSize: '14px' }}>★</span> Similar Goals!
                       </span>
-                    ))}
+                    )}
+                  </div>
+                  <div className={styles.tagContainer}>
+                    {currentProfile.tags?.map((t) => {
+                      // Check if this tag is in the shared goals list
+                      const isShared = currentProfile.sharedGoals?.some(
+                        goal => goal.toLowerCase() === t.toLowerCase()
+                      );
+
+                      return (
+                        <span
+                          key={`tag-${t}`}
+                          className={styles.tag}
+                          style={isShared ? {
+                            background: '#f6ffed',
+                            border: '1px solid #b7eb8f',
+                            color: '#52c41a',
+                            fontWeight: '500'
+                          } : {}}
+                        >
+                          {isShared && <span style={{ marginRight: '4px' }}>★</span>}
+                          {t}
+                        </span>
+                      );
+                    })}
                   </div>
                 </div>
 

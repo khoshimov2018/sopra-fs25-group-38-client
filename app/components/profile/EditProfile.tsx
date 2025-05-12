@@ -17,6 +17,7 @@ interface EditProfileProps {
   onAddStudyLevel: () => void;
   onRemoveStudyLevel: (index: number) => void;
   onSave: () => void;
+  onPreview?: () => void;
 }
 
 /**
@@ -47,13 +48,14 @@ const getStudyLevelsToDisplay = (user: UserProfile) => {
   return [];
 };
 
-const EditProfile: React.FC<EditProfileProps> = ({ 
+const EditProfile: React.FC<EditProfileProps> = ({
   user,
   onInputChange,
   onStudyLevelChange,
   onAddStudyLevel,
   onRemoveStudyLevel,
-  onSave
+  onSave,
+  onPreview
 }) => {
   const apiService = useApi();
   const [availableCourses, setAvailableCourses] = useState<{id: number, courseName: string}[]>([]);
@@ -528,7 +530,23 @@ const EditProfile: React.FC<EditProfileProps> = ({
         <Divider style={{ margin: '24px 0' }} />
         
   
-        <div style={{ display: 'flex', justifyContent: 'center', marginTop: '24px', marginBottom: '16px' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', marginTop: '24px', marginBottom: '16px' }}>
+          <button
+            type="button"
+            className={componentStyles.button}
+            style={{
+              maxWidth: '200px',
+              background: 'white',
+              border: '1px solid #6750A4',
+              color: '#6750A4'
+            }}
+            onClick={(e) => {
+              e.preventDefault();
+              if (onPreview) onPreview();
+            }}
+          >
+            Preview My Profile
+          </button>
           <button
             type="submit"
             className={componentStyles.button}
