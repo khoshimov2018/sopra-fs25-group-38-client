@@ -48,7 +48,7 @@ export class StudentFilterService {
       });
     } catch (error) {
       console.error("Error in getFilteredStudents:", error);
-      return []; // Return empty array on error
+      return [];
     }
   }
 

@@ -224,7 +224,6 @@ const EditProfile: React.FC<EditProfileProps> = ({
 
   return (
     <div className={styles.profileFormContainer}>
-      {/* Fixed header (not sticky) */}
       <div style={{
         position: 'relative',
         background: 'white',

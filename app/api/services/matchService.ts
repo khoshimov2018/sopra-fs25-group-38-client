@@ -30,8 +30,8 @@ export class MatchService {
 
   /**
    * Get all user IDs that the current user has interacted with (liked, matched, or blocked)
-   * @param userId Current user's ID
-   * @returns List of user IDs
+   * @param userId 
+   * @returns 
    */
   async getInteractedUserIds(userId: number): Promise<{ 
     likedIds: number[], 

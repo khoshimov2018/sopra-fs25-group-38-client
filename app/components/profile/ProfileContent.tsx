@@ -54,7 +54,7 @@ const ProfileContent: React.FC<ProfileContentProps> = ({
 
   // Save and publish from preview mode
   const handleSaveAndPublish = () => {
-    onEditToggle(); // This will trigger the parent save function
+    onEditToggle(); 
     setPreviewModalVisible(false);
   };
 
@@ -94,7 +94,6 @@ const ProfileContent: React.FC<ProfileContentProps> = ({
               </div>
             </div>
           ) : (
-            // View mode (other user's profile or own profile not in edit mode)
             <div className={styles.profileWithSidebar}>
               <div className={styles.profileSidebar}>
                 <ProfileImage 

@@ -45,7 +45,7 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ userId }) => {
       } else if (notification.type === 'LIKE') {
         router.push('/main');
       } else if (notification.type === 'MESSAGE') {
-        // For message notifications, navigate to the specific chat channel
+  
         router.push(`/chat?channelId=${notification.relatedEntityId}`);
       }
       

@@ -20,7 +20,7 @@ const Login: React.FC = () => {
 
   /**
    * Handles the login form submission
-   * @param values - The form values (email and password)
+   * @param values 
    */
   const handleLogin = async (values: UserLogin) => {
     try {
@@ -39,7 +39,6 @@ const Login: React.FC = () => {
         // Set token in localStorage directly as a string, not JSON
         localStorage.setItem("token", response.token);
         
-        // Also set via the hook for React state management
         setToken(response.token);
         
         message.success("Login successful!");
@@ -55,7 +54,6 @@ const Login: React.FC = () => {
           }
         }, 500);
       } else {
-        // This would only happen if the server didn't include a token in the response
         console.error("Login response missing token:", response);
         message.error("Login failed: No authentication token received from server");
       }

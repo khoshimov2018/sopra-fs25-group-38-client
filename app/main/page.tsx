@@ -124,7 +124,7 @@ const MainPage: React.FC = () => {
           message.error(result.error);
         }
         
-        setShowDislikedOnly(false); // reset flag after each fetch
+        setShowDislikedOnly(false); 
       } catch (error) {
         console.error(error);
         message.error("Failed to load profiles");
@@ -568,7 +568,7 @@ const MainPage: React.FC = () => {
                   </div>
                   <div className={styles.tagContainer}>
                     {currentProfile.tags?.map((t) => {
-                      // Check if this tag is in the shared goals list
+
                       const isShared = currentProfile.sharedGoals?.some(
                         goal => goal.toLowerCase() === t.toLowerCase()
                       );

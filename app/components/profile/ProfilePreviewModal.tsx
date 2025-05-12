@@ -179,7 +179,6 @@ const ProfilePreviewModal: React.FC<ProfilePreviewModalProps> = ({
             </div>
           </div>
 
-          {/* Like/Dislike buttons removed as requested */}
         </div>
       </div>
     </Modal>

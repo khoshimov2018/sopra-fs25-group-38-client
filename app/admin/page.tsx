@@ -316,7 +316,6 @@ interface Course {
             children: (
               <div style={{ marginTop: 24 }} className="admin-tab-content">
                   <div style={{ width: "80%", margin: "0 auto", marginBottom: 48 }} className="adminTableWrapper">
-                  {/* <div style={{ width: "80%", marginLeft: "40px", marginBottom: 48 }} className="adminTableWrapper"> */}
                   <Title level={4} style={{ color: "#000" }}>Course Management</Title>
 
                   <Form layout="inline" form={form} onFinish={({ courseName }) => handleAddCourse(courseName)} style={{ marginBottom: 20 }}>

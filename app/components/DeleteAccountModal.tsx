@@ -9,7 +9,7 @@ interface DeleteAccountModalProps {
   visible: boolean;
   onClose: () => void;
   onConfirm: () => void;
-  mode?: 'self' | 'admin'; // default is self deletion mode
+  mode?: 'self' | 'admin';
   targetName?: string;
 }
 
@@ -23,7 +23,7 @@ const DeleteAccountModal: React.FC<DeleteAccountModalProps> = ({
   const [confirmText, setConfirmText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const nameToShow = mode === 'admin' ? targetName : 'your'; // define admin mode
+  const nameToShow = mode === 'admin' ? targetName : 'your';
 
   const handleConfirmChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setConfirmText(e.target.value);

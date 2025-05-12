@@ -16,7 +16,6 @@ const ProfileImage: React.FC<ProfileImageProps> = ({
   isEditing,
   onImageUpload
 }) => {
-  // Always use editableUser's profile image if available (for both edit and preview mode)
   const profileImage = editableUser?.profileImage || currentUser.profileImage;
   
   return (

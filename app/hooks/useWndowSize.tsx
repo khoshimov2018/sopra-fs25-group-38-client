@@ -18,7 +18,6 @@ const useWindowSize = (): UseWindowSizeReturn => {
   });
 
   useEffect(() => {
-    // Define handleResize inside the effect to ensure it's properly cleaned up
     const handleResize = () => {
       setWindowSize({
         width: window.innerWidth,

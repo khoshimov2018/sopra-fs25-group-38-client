@@ -7,7 +7,7 @@ let servicesInstance: Services | null = null;
 
 /**
  * Custom hook that provides access to the API service and specialized service classes
- * @returns ApiService instance and specialized service objects
+ * @returns
  */
 export const useApi = () => {
   return useMemo(() => {
@@ -32,9 +32,7 @@ export const useApi = () => {
       
       // Return both the base service and specialized services
       return {
-        // Return the base API service
         apiService: apiServiceInstance,
-        // Return all specialized services
         ...servicesInstance
       };
     } catch (error) {

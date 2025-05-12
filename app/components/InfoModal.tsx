@@ -240,7 +240,6 @@ const InfoModal: React.FC<InfoModalProps> = ({
           </ul>
         </>
       );
-         // Other page content would go here
       default:
         return <Text>Information about this page is not available.</Text>;
     }
