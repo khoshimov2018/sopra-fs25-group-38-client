@@ -121,12 +121,20 @@ const InfoModal: React.FC<InfoModalProps> = ({
                 <Text> Use the buttons at the bottom to express your interest.</Text>
               </li>
               <li>
+                <Text strong>Button Color Coding:</Text>
+                <Text> The Like/Dislike buttons change color to indicate your previous choices, even after refreshing the page. A highlighted Like button means you've previously liked this user, while a highlighted Dislike button means you've previously disliked them.</Text>
+              </li>
+              <li>
                 <Text strong>Filter Students:</Text>
                 <Text> Click the filter icon in the top bar to find students with specific courses or availability.</Text>
               </li>
               <li>
                 <Text strong>Matching:</Text>
                 <Text> When you like someone who has also liked you, it's a match! You'll receive a notification and can start chatting.</Text>
+              </li>
+              <li>
+                <Text strong>Previously Liked Users:</Text>
+                <Text> Users you've already liked won't appear again when you refresh or return to this page.</Text>
               </li>
             </ul>
             

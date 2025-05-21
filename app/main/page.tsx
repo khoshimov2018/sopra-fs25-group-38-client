@@ -61,9 +61,9 @@ const MainPage: React.FC = () => {
   const [infoModalVisible, setInfoModalVisible] = useState(false);
   const [isUserLoaded, setIsUserLoaded] = useState(false);
   
-  const [seenIds, setSeenIds] = useState<number[]>([]);
-  const [likedIds, setLikedIds] = useState<number[]>([]);
-  const [dislikedIds, setDislikedIds] = useState<number[]>([]);
+  const { value: seenIds, set: setSeenIds } = useLocalStorage<number[]>("seenIds", []);
+  const { value: likedIds, set: setLikedIds } = useLocalStorage<number[]>("likedIds", []);
+  const { value: dislikedIds, set: setDislikedIds } = useLocalStorage<number[]>("dislikedIds", []);
   const [showDislikedOnly, setShowDislikedOnly] = useState(false);
   
   // Check if this is the first time the user is visiting this page
@@ -154,7 +154,7 @@ const MainPage: React.FC = () => {
       // If we're unable to fetch from the backend, we'll use the local state as a fallback
       if (remoteLikedIds.length > 0) {
         // Merge remote and local ids to ensure we don't miss anything
-        setLikedIds(prevIds => [...new Set([...prevIds, ...remoteLikedIds])]);
+        setLikedIds([...new Set([...likedIds, ...remoteLikedIds])]);
       }
       
       return { matchedIds, blockedIds };
@@ -196,8 +196,16 @@ const MainPage: React.FC = () => {
         return { profiles: [] };
       }
 
+      // Log the current state of liked IDs from localStorage
+      console.log("Liked IDs from localStorage:", likedIds);
+      
       // Fetch users the current user has already interacted with
       const { matchedIds, blockedIds } = await fetchInteractedUsers(Number(currentUser.id));
+      
+      console.log("After fetchInteractedUsers:");
+      console.log("- Matched IDs:", matchedIds);
+      console.log("- Blocked IDs:", blockedIds);
+      console.log("- Liked IDs (local):", likedIds);
 
       // Fetch current user's full details to get their study goals
       const currentUserDetails = await userService.getUserById(Number(currentUser.id));
@@ -209,14 +217,27 @@ const MainPage: React.FC = () => {
       );
 
       if (!Array.isArray(users)) users = [];
+      
+      console.log("Total users before filtering:", users.length);
 
       const filtered = users
         .filter(u => Number(u.id) !== Number(currentUser.id))
         // Filter out users that the current user has already matched with, liked, or blocked
         .filter(u => {
           const id = Number(u.id);
-          // Skip users that have been matched with or blocked
-          if (matchedIds.includes(id) || blockedIds.includes(id)) {
+          
+          // Debug: check if this user is in any of our exclude lists
+          const isMatched = matchedIds.includes(id);
+          const isBlocked = blockedIds.includes(id);
+          const isLiked = likedIds.includes(id);
+          
+          // Log every user we're excluding and why
+          if (isMatched || isBlocked || isLiked) {
+            console.log(`Excluding user ${id}: matched=${isMatched}, blocked=${isBlocked}, liked=${isLiked}`);
+          }
+          
+          // Skip users that have been matched with, blocked, or liked
+          if (isMatched || isBlocked || isLiked) {
             return false;
           }
 
@@ -377,19 +398,19 @@ const MainPage: React.FC = () => {
                     <NotificationBell userId={Number(currentUser.id)} />
                   </button>
                 )}
-                <Link href="/profile">
-                  <button className={styles.iconButton}>
-                    <UserOutlined />
-                  </button>
-                </Link>
-                <Link href={`/chat`}>
+                <button 
+                  onClick={() => router.push('/profile')}
+                  className={styles.iconButton}
+                >
+                  <UserOutlined />
+                </button>
                 <button
+                  onClick={() => router.push('/chat')}
                   className={styles.iconButton}
                   id="chat-button-main"
                 >
                   <MessageOutlined />
                 </button>
-                </Link>
                 <button
                   className={styles.iconButton}
                   onClick={() => setFilterModalVisible(true)}
@@ -405,7 +426,11 @@ const MainPage: React.FC = () => {
                 <button
                   className={styles.iconButton}
                   onClick={async () => {
+                    // Clear all localStorage values
                     localStorage.removeItem("token");
+                    localStorage.removeItem("seenIds");
+                    localStorage.removeItem("likedIds");
+                    localStorage.removeItem("dislikedIds");
                     clearToken();
                     router.push("/login");
                     if (token) {
@@ -479,19 +504,19 @@ const MainPage: React.FC = () => {
                   <NotificationBell userId={Number(currentUser.id)} />
                 </button>
               )}
-              <Link href="/profile">
-                <button className={styles.iconButton}>
-                  <UserOutlined />
-                </button>
-              </Link>
-              <Link href={`/chat`}>
+              <button 
+                onClick={() => router.push('/profile')}
+                className={styles.iconButton}
+              >
+                <UserOutlined />
+              </button>
               <button
+                onClick={() => router.push('/chat')}
                 className={styles.iconButton}
                 id="chat-button-main"
               >
                 <MessageOutlined />
               </button>
-              </Link>
               <button
                 className={styles.iconButton}
                 onClick={() => setFilterModalVisible(true)}
@@ -507,7 +532,11 @@ const MainPage: React.FC = () => {
               <button
                 className={styles.iconButton}
                 onClick={() => {
+                  // Clear all localStorage values
                   localStorage.removeItem("token");
+                  localStorage.removeItem("seenIds");
+                  localStorage.removeItem("likedIds");
+                  localStorage.removeItem("dislikedIds");
                   clearToken();
                   router.push("/login");
                 }}

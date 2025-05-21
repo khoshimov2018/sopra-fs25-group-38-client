@@ -823,12 +823,18 @@ const handleQuickReplySuggestion = () => {
                   <NotificationBell userId={Number(parsedUserId)} />
                 </button>
               )}
-              <Link href="/profile">
-                <button className={styles.iconButton}><UserOutlined /></button>
-              </Link>
-              <Link href={`/chat`}>
-                <button className={styles.iconButton}><MessageOutlined /></button>
-              </Link>
+              <button 
+                onClick={() => router.push('/profile')}
+                className={styles.iconButton}
+              >
+                <UserOutlined />
+              </button>
+              <button 
+                onClick={() => router.push('/chat')}
+                className={styles.iconButton}
+              >
+                <MessageOutlined />
+              </button>
               <button
                 className={styles.iconButton}
                 onClick={() => setInfoModalVisible(true)}

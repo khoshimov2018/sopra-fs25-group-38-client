@@ -2803,6 +2803,7 @@
         "npm:@types/react@^19.0.10",
         "npm:antd@^5.24.6",
         "npm:dompurify@^3.2.4",
+        "npm:dotenv@^16.5.0",
         "npm:eslint-config-next@^15.2.0",
         "npm:eslint@^9.21.0",
         "npm:marked@^15.0.7",

@@ -24,21 +24,24 @@ export default function useLocalStorage<T>(
     if (typeof window === "undefined") return; 
     try {
       const stored = globalThis.localStorage.getItem(key);
-      if (!stored) return; 
+      if (!stored || stored === "undefined") return; 
       
-
+      // Special case for token - we always store it as a plain string
       if (key === "token") {
         setValue(stored as unknown as T);
         return;
       }
       
+      // For non-token values, try to parse as JSON
       try {
         setValue(JSON.parse(stored) as T);
       } catch (parseError) {
+        // If parsing fails and we expect a string, use the raw value
         if (typeof defaultValueRef.current === 'string') {
           setValue(stored as unknown as T);
         } else {
           console.error(`Failed to parse stored value for key "${key}":`, parseError);
+          // Don't throw, just keep the default value
         }
       }
     } catch (error) {
