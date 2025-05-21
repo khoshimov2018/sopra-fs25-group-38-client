@@ -185,44 +185,43 @@ const ChatPage: React.FC = () => {
     typing: boolean;
   }
 
+  const hasFetchedUserId = useRef(false);
 
-    const hasFetchedUserId = useRef(false);
+  useEffect(() => {
+    if (!hasFetchedUserId.current) {
+      fetchUserId();
+      hasFetchedUserId.current = true;
+    }
+  }, [router, message]);
 
-    useEffect(() => {
-      if (!hasFetchedUserId.current) {
-        fetchUserId();
-        hasFetchedUserId.current = true;
+  const fetchUserId = async () => {
+    try {
+      const localStorageToken = localStorage.getItem("token");
+      const effectiveToken = token || localStorageToken;
+      console.log("What is effectiveToken", effectiveToken);
+      console.log("What is Token", token);
+      console.log("What is localStorageToken", localStorageToken);
+
+  
+      if (!effectiveToken) {
+        message.error("Invalid token format. Please login again.123");
+        actualLogout();
+        return;
       }
-    }, [router, message]);
-
-    const fetchUserId = async () => {
-      try {
-        const localStorageToken = localStorage.getItem("token");
-        const effectiveToken = token || localStorageToken;
-        console.log("What is effectiveToken", effectiveToken);
-        console.log("What is Token", token);
-        console.log("What is localStorageToken", localStorageToken);
-
-    
-        if (!effectiveToken) {
-          message.error("Invalid token format. Please login again.123");
-          actualLogout();
-          return;
-        }
-    
-        const tokenValue = effectiveToken.startsWith('Bearer ') ? effectiveToken.substring(7) : effectiveToken;
-        const apiUser = await apiService_token.userService?.getUserByToken(tokenValue);
-    
-        if (!apiUser?.id) {
-          throw new Error("Invalid token: userId not found");
-        }
-    
-        setParsedUserId(apiUser.id);
-        setCurrentUserImage(apiUser.profilePicture);
-      } catch (error) {
-          message.error("Network error. Please check your connection.");
-        }
-    };
+  
+      const tokenValue = effectiveToken.startsWith('Bearer ') ? effectiveToken.substring(7) : effectiveToken;
+      const apiUser = await apiService_token.userService?.getUserByToken(tokenValue);
+  
+      if (!apiUser?.id) {
+        throw new Error("Invalid token: userId not found");
+      }
+  
+      setParsedUserId(apiUser.id);
+      setCurrentUserImage(apiUser.profilePicture);
+    } catch (error) {
+        message.error("Network error. Please check your connection.");
+      }
+  };
 
   const handleTypingStatus = async (isTyping: boolean) => {
     if (!parsedUserId || !selectedChannel) {
@@ -314,6 +313,7 @@ const ChatPage: React.FC = () => {
       setReportReason(""); 
       fetchMatchedUsers(parsedUserId);
       setSelectedParticipant(null);
+      setSelectedChannel(null);
     } catch (error) {
       console.error("Failed to submit report:", error);
       message.error("Failed to submit report, please try again later.");
@@ -876,7 +876,6 @@ const handleQuickReplySuggestion = () => {
                     key={user.channelId}
                     className={`message-item ${String(selectedChannel) === String(user.channelId) ? "selected" : ""}`}
                     onClick={() => handleSelectChat(String(user.channelId))}
-                    onKeyDown={(e) => e.key === 'Enter' && handleSelectChat(String(user.channelId))}
                   >
                     <img className="avatar" src ={user.channelProfileImage || defaulindividualicon} alt =""/>
                     <div className="content">
@@ -929,6 +928,11 @@ const handleQuickReplySuggestion = () => {
                     }}
                   >
                     {getChannelHeaderText(selectedChannel, typingStatus, channels)}
+                      {selectedChannel === "AI Advisor" && (
+                        <span style={{ fontSize: "12px", color: "#888", marginLeft: "10px" }}>
+                          AI-provided information may be inaccurate. Please verify before relying on it.
+                        </span>
+                      )}
                       {selectedChannel && selectedChannel !== "AI Advisor" && channels.find((channel) => String(channel.channelId) === String(selectedChannel))?.channelType === "individual" && (
                         <span style={{ marginLeft: "10px", color: userStatus === "ONLINE" ? "green" : "red" }}>
                         {userStatus === "ONLINE" ? "Online" : "Offline"}
@@ -1063,12 +1067,17 @@ const handleQuickReplySuggestion = () => {
                       onChange={(e) => setInputValue(e.target.value)}
                       onFocus={() => {
                         if (selectedChannel !== "AI Advisor") {
-                          handleTypingStatus(true); 
+                          handleTypingStatus(true);
                         }
                       }}
                       onBlur={() => {
                         if (selectedChannel !== "AI Advisor") {
                           handleTypingStatus(false);
+                        }
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          handleSendMessage();
                         }
                       }}
                     />
@@ -1094,7 +1103,6 @@ const handleQuickReplySuggestion = () => {
                     <button
                       className="send-button" 
                       onClick={() => handleSendMessage()} 
-                      onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
                       aria-label="Send message">
                       <div className="icon"></div>
                     </button>
