@@ -11,12 +11,24 @@ import backgroundStyles from "@/styles/theme/backgrounds.module.css";
 import componentStyles from "@/styles/theme/components.module.css";
 import Logo from "@/components/Logo";
 import Button from "@/components/Button";
+import { useEffect } from "react";
 
 const Login: React.FC = () => {
   const apiService = useApi();
   const [form] = Form.useForm();
   const { set: setToken } = useLocalStorage<string>("token", "");
   const { message, contextHolder } = useMessage();
+
+  /**
+   * Handles auth-related redirect warning
+   */
+  useEffect(() => {
+    const redirectError = localStorage.getItem("loginRedirectError");
+    if (redirectError) {
+      message.warning(redirectError); 
+      localStorage.removeItem("loginRedirectError");
+    }
+  }, []);
 
   /**
    * Handles the login form submission

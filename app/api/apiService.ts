@@ -95,6 +95,24 @@ export class ApiService {
   ): Promise<T> {
     console.log(`Response status: ${res.status} ${res.statusText}`);
     
+    // if (res.status === 401) {
+    //   console.warn("Unauthorized - likely due to invalid or expired token. Redirecting to login.");
+    //   localStorage.removeItem("token");
+    //   localStorage.setItem("loginRedirectError", "Unauthorized access. Please contact the administrator.");
+    //   window.location.href = "/login";
+    // }
+
+    if (res.status === 401) {
+      const token = localStorage.getItem("token");
+      if (token) {
+        console.warn("Token expired or invalid. Redirecting to login.");
+        localStorage.removeItem("token");
+        localStorage.setItem("loginRedirectError", "Unauthorized access. Please contact the administrator.");
+        window.location.href = "/login";
+        return {} as T; // prevent further processing
+      }
+    }
+
     if (!res.ok) {
       const error = await this.handleErrorResponse(res, errorMessage);
       throw error;
